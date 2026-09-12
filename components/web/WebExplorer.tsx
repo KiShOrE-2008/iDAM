@@ -6,6 +6,13 @@ import { ParkingLocation, VehicleType, Language } from '@/types';
 import { getParkingLocations } from '@/lib/parking/service';
 import { TRANSLATIONS } from '@/lib/i18n/translations';
 
+import dynamic from 'next/dynamic';
+
+const RealMapView = dynamic(
+  () => import('./RealMapView').then((mod) => mod.RealMapView),
+  { ssr: false, loading: () => <div className="w-full h-full min-h-[480px] bg-slate-100 animate-pulse rounded-2xl flex items-center justify-center text-xs font-bold text-gray-400">Loading Real OpenStreetMap...</div> }
+);
+
 interface WebExplorerProps {
   lang: Language;
   onSelectLocation: (loc: ParkingLocation) => void;
@@ -43,7 +50,7 @@ export const WebExplorer: React.FC<WebExplorerProps> = ({ lang, onSelectLocation
           <div>
             <div className="inline-flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100/80 px-3 py-1 rounded-full mb-2">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Real-Time Parking Discovery</span>
+              <span>Real-Time OpenStreetMap Integration</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
               Explore Available Spaces in Madurai
@@ -91,71 +98,29 @@ export const WebExplorer: React.FC<WebExplorerProps> = ({ lang, onSelectLocation
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* Left Column: Interactive Visual Map (7 Cols) */}
-          <div className="lg:col-span-7 bg-white rounded-3xl p-4 border border-gray-200 shadow-lg relative min-h-[480px] flex flex-col justify-between overflow-hidden">
+          <div className="lg:col-span-7 bg-white rounded-3xl p-4 border border-gray-200 shadow-lg relative min-h-[520px] flex flex-col justify-between overflow-hidden">
             
             {/* Map Canvas Header Bar */}
-            <div className="flex items-center justify-between z-10 bg-white/90 backdrop-blur-md p-3 rounded-2xl border border-gray-100 shadow-xs">
+            <div className="flex items-center justify-between z-10 bg-white/90 backdrop-blur-md p-3 rounded-2xl border border-gray-100 shadow-xs mb-3">
               <div className="flex items-center space-x-2">
                 <MapPin className="w-5 h-5 text-emerald-700" />
-                <span className="font-bold text-gray-900 text-sm">Madurai Meenakshi Temple Region</span>
+                <span className="font-bold text-gray-900 text-sm">Madurai Live Map (OpenStreetMap)</span>
               </div>
               <span className="text-xs bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-full font-bold">
                 {locations.length} Spots Active
               </span>
             </div>
 
-            {/* Interactive Map Canvas Simulation */}
-            <div className="absolute inset-0 bg-slate-100 overflow-hidden">
-              <svg className="w-full h-full opacity-30" xmlns="http://www.w3.org/2000/svg">
-                <pattern id="web-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#cbd5e1" strokeWidth="1" />
-                </pattern>
-                <rect width="100%" height="100%" fill="url(#web-grid)" />
-                <path d="M 50 150 Q 200 120 400 200 T 700 180" fill="none" stroke="#94a3b8" strokeWidth="16" />
-                <path d="M 250 50 L 250 450" fill="none" stroke="#94a3b8" strokeWidth="12" />
-                <path d="M 100 320 L 600 320" fill="none" stroke="#94a3b8" strokeWidth="14" />
-              </svg>
-
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-100 border-2 border-amber-500/50 p-4 rounded-3xl text-center shadow-xl z-0">
-                <div className="text-2xl">🛕</div>
-                <div className="text-[11px] font-bold text-amber-950 font-serif">Meenakshi Temple</div>
-                <div className="text-[9px] text-amber-800">Madurai Central</div>
-              </div>
-
-              {locations.map((loc, idx) => {
-                const positions = [
-                  { top: '35%', left: '42%' },
-                  { top: '65%', left: '30%' },
-                  { top: '30%', left: '68%' },
-                  { top: '75%', left: '62%' },
-                  { top: '22%', left: '25%' },
-                ];
-                const pos = positions[idx % positions.length];
-                const isSelected = selectedSpotId === loc.id;
-
-                return (
-                  <button
-                    key={loc.id}
-                    onClick={() => setSelectedSpotId(loc.id)}
-                    style={{ top: pos.top, left: pos.left }}
-                    className={`absolute z-10 transform -translate-x-1/2 -translate-y-1/2 transition-all cursor-pointer ${
-                      isSelected ? 'scale-110 z-20' : 'hover:scale-105'
-                    }`}
-                  >
-                    <div
-                      className={`flex items-center space-x-1 px-3 py-1.5 rounded-full shadow-lg font-extrabold text-xs border transition-all ${
-                        isSelected
-                          ? 'bg-emerald-950 text-white border-emerald-500 ring-4 ring-emerald-500/20'
-                          : 'bg-white text-emerald-900 border-emerald-200 hover:bg-emerald-50'
-                      }`}
-                    >
-                      <MapPin className="w-3.5 h-3.5 fill-current" />
-                      <span>₹{vehicleFilter === 'bike' ? loc.hourlyRateBike : loc.hourlyRateCar}</span>
-                    </div>
-                  </button>
-                );
-              })}
+            {/* Real Interactive Leaflet Map */}
+            <div className="w-full flex-1 relative min-h-[400px] rounded-2xl overflow-hidden shadow-inner">
+              <RealMapView
+                locations={locations}
+                selectedLocation={selectedLocation}
+                onSelectLocation={(loc) => setSelectedSpotId(loc.id)}
+                vehicleFilter={vehicleFilter}
+              />
             </div>
+
 
             {selectedLocation && (
               <div className="relative z-10 bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-gray-200 shadow-xl flex items-center justify-between gap-4">

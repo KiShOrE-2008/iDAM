@@ -60,3 +60,34 @@ export interface SearchFilter {
   maxPrice: number;
   sortBy: 'distance' | 'price' | 'rating';
 }
+
+export interface UserProfile {
+  name: string;
+  phone: string;
+  email?: string;
+  role: 'driver' | 'owner';
+  vehicleNumber?: string;
+  vehicleType?: 'car' | 'bike';
+  // Owner info
+  propertyName?: string;
+  propertyAddress?: string;
+  totalSpots?: number;
+  availableSpots?: number;
+  hourlyRateCar?: number;
+  hourlyRateBike?: number;
+}
+
+export interface ParkingInvoice {
+  invoiceNumber: string;
+  bookingId: string;
+  date: string;
+  locationName: string;
+  address: string;
+  durationHours: number;
+  baseAmount: number;
+  gstAmount: number;
+  platformFee: number;
+  totalAmount: number;
+  paymentMethod: string;
+  vehicleNumber: string;
+}

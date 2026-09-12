@@ -6,7 +6,6 @@ import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
 import { HowItWorks } from '@/components/HowItWorks';
 import { WebExplorer } from '@/components/WebExplorer';
-import { MobileSimulator } from '@/components/mobile/MobileSimulator';
 import { SplashScreen } from '@/components/mobile/SplashScreen';
 import { ExploreScreen } from '@/components/mobile/ExploreScreen';
 import { ParkingDetailsScreen } from '@/components/mobile/ParkingDetailsScreen';
@@ -18,11 +17,9 @@ import { Footer } from '@/components/Footer';
 import { Language, ParkingLocation } from '@/types';
 import { getParkingLocations } from '@/lib/parking/service';
 import { MOCK_PARKING_LOCATIONS } from '@/lib/data/mockData';
-import { Smartphone, Monitor } from 'lucide-react';
 
 export default function Home() {
   const [lang, setLang] = useState<Language>('en');
-  const [activeView, setActiveView] = useState<'web' | 'mobile'>('web');
   const [isOwnerModalOpen, setIsOwnerModalOpen] = useState(false);
   const [locations, setLocations] = useState<ParkingLocation[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,15 +51,6 @@ export default function Home() {
     }
     loadData();
   }, []);
-
-
-  const handleSelectLocation = (loc: ParkingLocation) => {
-    setActiveView('mobile');
-    const elem = document.getElementById('mobile-demo');
-    if (elem) {
-      elem.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
 
   // If launched as a Native Android App via Capacitor, show full-screen mobile app screens
   if (isNativeApp) {
@@ -128,44 +116,18 @@ export default function Home() {
   }
 
   return (
-
     <div className="min-h-screen bg-white font-sans text-slate-900 antialiased selection:bg-emerald-200 selection:text-emerald-900">
       
-      {/* Top Banner View Mode Switcher */}
-      <div className="bg-emerald-950 text-white text-xs font-semibold py-2 px-4 text-center border-b border-emerald-900 flex items-center justify-center space-x-4">
-        <span>📍 IDAM | இடம் - Madurai Smart Parking Platform Demo</span>
-        <div className="hidden sm:flex items-center space-x-2 bg-emerald-900/90 px-3 py-1 rounded-full border border-emerald-700/50">
-          <button
-            onClick={() => setActiveView('web')}
-            className={`flex items-center space-x-1 px-2.5 py-0.5 rounded-full transition-all ${
-              activeView === 'web' ? 'bg-emerald-500 text-slate-950 font-bold' : 'text-slate-300 hover:text-white'
-            }`}
-          >
-            <Monitor className="w-3.5 h-3.5" />
-            <span>Web Platform</span>
-          </button>
-          <button
-            onClick={() => setActiveView('mobile')}
-            className={`flex items-center space-x-1 px-2.5 py-0.5 rounded-full transition-all ${
-              activeView === 'mobile' ? 'bg-emerald-500 text-slate-950 font-bold' : 'text-slate-300 hover:text-white'
-            }`}
-          >
-            <Smartphone className="w-3.5 h-3.5" />
-            <span>Mobile App Flow</span>
-          </button>
-        </div>
-      </div>
-
       {/* Main Navbar */}
       <Navbar
         lang={lang}
         onLanguageToggle={setLang}
-        activeView={activeView}
-        onViewChange={setActiveView}
+        activeView="web"
+        onViewChange={() => {}}
         onOpenOwnerModal={() => setIsOwnerModalOpen(true)}
       />
 
-      {/* Content Rendering based on Active View or Integrated Scroll */}
+      {/* Main Content */}
       <main id="home">
         {/* Web Landing Page Hero */}
         <Hero
@@ -177,13 +139,7 @@ export default function Home() {
         {/* Real-time Discovery Map & Search */}
         <WebExplorer
           lang={lang}
-          onSelectLocation={handleSelectLocation}
-        />
-
-        {/* Interactive 6-Screen Mobile App Simulator */}
-        <MobileSimulator
-          locations={locations}
-          lang={lang}
+          onSelectLocation={() => {}}
         />
 
         {/* How It Works & Owner Monetization Section */}

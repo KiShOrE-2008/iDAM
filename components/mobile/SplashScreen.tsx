@@ -16,33 +16,22 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ lang, onNext }) => {
   return (
     <div className="h-full flex flex-col justify-between p-6 bg-gradient-to-b from-emerald-50/50 via-white to-emerald-100/40 text-gray-900 overflow-hidden relative">
       
-      {/* Top Brand Logo */}
-      <div className="pt-8 text-center space-y-1 z-10">
-        <div className="inline-flex items-center space-x-2">
-          <div className="w-9 h-9 rounded-xl bg-emerald-800 flex items-center justify-center text-white shadow-md">
-            <MapPin className="w-5 h-5 fill-current" />
-          </div>
-          <span className="font-extrabold text-2xl tracking-tight text-gray-900">iDAM</span>
-        </div>
-        <div className="text-sm font-bold text-emerald-800 font-tamil tracking-wider">
-          இடம்
-        </div>
-      </div>
-
-      {/* Center Temple Illustration */}
-      <div className="my-auto z-10 space-y-4 text-center">
-        <div className="relative mx-auto w-48 h-48 rounded-3xl overflow-hidden shadow-xl border-4 border-white bg-amber-50 flex items-center justify-center">
+      {/* Top Brand & Main Logo */}
+      <div className="my-auto z-10 space-y-6 text-center">
+        <div className="relative mx-auto w-56 sm:w-64 rounded-3xl p-4 bg-white shadow-xl border border-gray-100 flex items-center justify-center">
           <img
-            src="https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&q=80&w=500"
-            alt="Madurai Meenakshi Temple"
-            className="w-full h-full object-cover"
+            src="/idam-logo.png"
+            alt="iDAM | இடம் Logo"
+            className="w-full h-auto object-contain"
           />
         </div>
 
         <div className="space-y-1">
-          <h2 className="text-2xl font-extrabold text-gray-900">Find your space.</h2>
           <p className="text-emerald-800 font-bold text-base font-tamil">
             {t.sloganTamil}
+          </p>
+          <p className="text-xs text-gray-500 font-semibold">
+            Madurai Smart Parking Discovery & Reservation
           </p>
         </div>
       </div>
