@@ -10,6 +10,9 @@ import { BookingScreen } from './BookingScreen';
 import { PaymentScreen } from './PaymentScreen';
 import { SuccessPassScreen } from './SuccessPassScreen';
 
+import { ProfileDashboardScreen } from './ProfileDashboardScreen';
+import { SupportHubScreen } from './SupportHubScreen';
+
 import { MOCK_PARKING_LOCATIONS } from '@/lib/data/mockData';
 
 interface MobileSimulatorProps {
@@ -43,7 +46,9 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ locations, lan
     '3. Parking Details',
     '4. Booking',
     '5. Payment',
-    '6. Success / Pass'
+    '6. Success / Pass',
+    '7. Profile / Dashboard',
+    '8. Support & Help'
   ];
 
   return (
@@ -60,7 +65,7 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ locations, lan
             IDAM Mobile App Workflow
           </h2>
           <p className="text-sm text-slate-400">
-            Step through all 6 screens from the design specification: Splash &rarr; Map &rarr; Details &rarr; Booking &rarr; Payment &rarr; QR Pass
+            Step through all 8 screens: Splash &rarr; Map &rarr; Details &rarr; Booking &rarr; Payment &rarr; QR Pass &rarr; Dashboard &rarr; Support
           </p>
         </div>
 
@@ -158,8 +163,23 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ locations, lan
                 <SuccessPassScreen
                   location={currentLoc}
                   bookingDetails={bookingDetails}
-                  onReset={() => setCurrentStep(1)}
+                  onReset={() => setCurrentStep(7)}
                   lang={lang}
+                />
+              )}
+
+              {currentStep === 7 && (
+                <ProfileDashboardScreen
+                  lang={lang}
+                  onBack={() => setCurrentStep(2)}
+                  onNavigateToSupport={() => setCurrentStep(8)}
+                />
+              )}
+
+              {currentStep === 8 && (
+                <SupportHubScreen
+                  lang={lang}
+                  onBack={() => setCurrentStep(7)}
                 />
               )}
             </div>
@@ -184,11 +204,11 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ locations, lan
             <span>Previous Screen</span>
           </button>
 
-          <span>Step {currentStep} of 6</span>
+          <span>Step {currentStep} of 8</span>
 
           <button
-            onClick={() => setCurrentStep(Math.min(6, currentStep + 1))}
-            disabled={currentStep === 6}
+            onClick={() => setCurrentStep(Math.min(8, currentStep + 1))}
+            disabled={currentStep === 8}
             className="flex items-center space-x-1 hover:text-white disabled:opacity-30"
           >
             <span>Next Screen</span>
