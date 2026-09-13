@@ -12,6 +12,11 @@ export const metadata: Metadata = {
   title: "IDAM | இடம் - Smart Parking Discovery & Reservation",
   description: "Location-based parking discovery and reservation platform in Madurai. Discover, book, and pay for parking spaces near Meenakshi Temple and city hotspots.",
   keywords: ["IDAM", "Parking Madurai", "Meenakshi Temple Parking", "Book Parking Spot", "Smart Parking India"],
+  icons: {
+    icon: "/idam-logo.png",
+    shortcut: "/idam-logo.png",
+    apple: "/idam-logo.png",
+  },
 };
 
 export default function RootLayout({

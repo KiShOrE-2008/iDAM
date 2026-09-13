@@ -55,28 +55,37 @@ export const Navbar: React.FC<NavbarProps> = ({
         </Link>
 
         {/* Center Desktop Navigation with Animated Sliding Underline */}
-        <nav className="hidden md:flex items-center space-x-7 text-sm font-bold text-gray-700">
-          <Link href="/" className="relative group/link py-1 hover:text-emerald-900 transition-colors">
+        <nav className="hidden md:flex items-center space-x-3 lg:space-x-5 xl:space-x-6 text-xs lg:text-sm font-bold text-gray-700 whitespace-nowrap">
+          <Link href="/" className="relative group/link py-1 hover:text-emerald-900 transition-colors whitespace-nowrap">
             <span>{t.navHome}</span>
             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-700 group-hover/link:w-full transition-all duration-300 ease-out rounded-full"></span>
           </Link>
-          <Link href="/explore" className="relative group/link py-1 hover:text-emerald-900 transition-colors">
+          {!isLoggedIn && (
+            <Link href="/#mobile-demo" className="relative group/link py-1 text-emerald-800 hover:text-emerald-950 font-extrabold flex items-center space-x-1 transition-colors whitespace-nowrap">
+              <span className="bg-emerald-200/60 px-2 py-0.5 rounded-full text-xs">📱 Mobile App</span>
+            </Link>
+          )}
+          <Link href="/explore" className="relative group/link py-1 hover:text-emerald-900 transition-colors whitespace-nowrap">
             <span>Explore Map</span>
             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-700 group-hover/link:w-full transition-all duration-300 ease-out rounded-full"></span>
           </Link>
-          <Link href="/dashboard" className="relative group/link py-1 hover:text-emerald-900 transition-colors">
-            <span>Dashboard</span>
-            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-700 group-hover/link:w-full transition-all duration-300 ease-out rounded-full"></span>
-          </Link>
-          <Link href="/owner" className="relative group/link py-1 hover:text-emerald-900 transition-colors">
-            <span>{t.navForOwners}</span>
-            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-700 group-hover/link:w-full transition-all duration-300 ease-out rounded-full"></span>
-          </Link>
-          <Link href="/my-bookings" className="relative group/link py-1 hover:text-emerald-900 transition-colors">
-            <span>My Passes</span>
-            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-700 group-hover/link:w-full transition-all duration-300 ease-out rounded-full"></span>
-          </Link>
-          <Link href="/about" className="relative group/link py-1 hover:text-emerald-900 transition-colors">
+          {isLoggedIn && (
+            <>
+              <Link href="/dashboard" className="relative group/link py-1 hover:text-emerald-900 transition-colors whitespace-nowrap">
+                <span>Dashboard</span>
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-700 group-hover/link:w-full transition-all duration-300 ease-out rounded-full"></span>
+              </Link>
+              <Link href="/owner" className="relative group/link py-1 hover:text-emerald-900 transition-colors whitespace-nowrap">
+                <span>{t.navForOwners}</span>
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-700 group-hover/link:w-full transition-all duration-300 ease-out rounded-full"></span>
+              </Link>
+              <Link href="/my-bookings" className="relative group/link py-1 hover:text-emerald-900 transition-colors whitespace-nowrap">
+                <span>My Passes</span>
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-700 group-hover/link:w-full transition-all duration-300 ease-out rounded-full"></span>
+              </Link>
+            </>
+          )}
+          <Link href="/about" className="relative group/link py-1 hover:text-emerald-900 transition-colors whitespace-nowrap">
             <span>{t.navAbout}</span>
             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-700 group-hover/link:w-full transition-all duration-300 ease-out rounded-full"></span>
           </Link>
@@ -112,7 +121,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* List Your Space Button */}
           <button
             onClick={onOpenOwnerModal}
-            className="hidden lg:block text-xs font-extrabold text-gray-700 hover:text-emerald-800 px-3 py-2 transition-colors"
+            className="hidden lg:block text-xs font-extrabold text-gray-700 hover:text-emerald-800 px-3 py-2 transition-colors whitespace-nowrap"
           >
             {t.listSpaceBtn}
           </button>

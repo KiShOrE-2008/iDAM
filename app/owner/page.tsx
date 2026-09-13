@@ -6,10 +6,13 @@ import { Footer } from '@/components/Footer';
 import { OwnerModal } from '@/components/OwnerModal';
 import { MOCK_PARKING_LOCATIONS } from '@/lib/data/mockData';
 import { Language } from '@/types';
-import { Building2, PlusCircle, DollarSign, Users, Car, CheckCircle2, AlertCircle, Clock, ShieldCheck, QrCode } from 'lucide-react';
+import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
+import { Building2, PlusCircle, DollarSign, Users, Car, CheckCircle2, AlertCircle, Clock, ShieldCheck, QrCode, Lock } from 'lucide-react';
 
 export default function OwnerPortalPage() {
   const [lang, setLang] = useState<Language>('en');
+  const { isLoggedIn } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeSpace, setActiveSpace] = useState(MOCK_PARKING_LOCATIONS[0]);
   const [isSpaceOpen, setIsSpaceOpen] = useState(true);
@@ -20,6 +23,46 @@ export default function OwnerPortalPage() {
     { id: 'bk-103', code: 'IDM-12049', vehicle: 'TN 58 X 9999', type: 'Car', time: '02:00 PM - 04:00 PM', amount: 85, status: 'Upcoming' },
     { id: 'bk-104', code: 'IDM-55321', vehicle: 'TN 59 K 1122', type: 'Car', time: '08:00 AM - 09:30 AM', amount: 65, status: 'Completed' },
   ];
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-between font-sans">
+        <Navbar
+          lang={lang}
+          onLanguageToggle={setLang}
+          activeView="web"
+          onViewChange={() => {}}
+          onOpenOwnerModal={() => setIsModalOpen(true)}
+        />
+        <main className="max-w-md mx-auto px-4 py-16 text-center space-y-6 flex-1 flex flex-col items-center justify-center">
+          <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto shadow-inner">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-extrabold text-gray-900">Sign In Required</h1>
+            <p className="text-sm text-gray-600">
+              Please sign in to access the Space Owner Portal and manage your parking inventory.
+            </p>
+          </div>
+          <div className="flex items-center space-x-3 w-full pt-2">
+            <Link
+              href="/login"
+              className="flex-1 bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 px-6 rounded-2xl text-xs shadow-md transition-all text-center"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/signup"
+              className="flex-1 bg-white hover:bg-gray-50 text-gray-800 font-bold py-3.5 px-6 rounded-2xl text-xs border border-gray-200 shadow-2xs transition-all text-center"
+            >
+              Create Account
+            </Link>
+          </div>
+        </main>
+        <Footer lang={lang} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-between font-sans">

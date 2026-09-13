@@ -6,11 +6,14 @@ import { Footer } from '@/components/Footer';
 import { useRouter } from 'next/navigation';
 import { Language } from '@/types';
 import { MOCK_PARKING_LOCATIONS } from '@/lib/data/mockData';
-import { Calendar, Clock, MapPin, QrCode, Search, CheckCircle2, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
+import { Calendar, Clock, MapPin, QrCode, Search, CheckCircle2, ChevronRight, Lock } from 'lucide-react';
 
 export default function MyBookingsPage() {
   const router = useRouter();
   const [lang, setLang] = useState<Language>('en');
+  const { isLoggedIn } = useAuth();
   const [lookupCode, setLookupCode] = useState('');
 
   const activeBookings = [
@@ -35,6 +38,46 @@ export default function MyBookingsPage() {
       status: 'COMPLETED'
     }
   ];
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-between font-sans">
+        <Navbar
+          lang={lang}
+          onLanguageToggle={setLang}
+          activeView="web"
+          onViewChange={() => {}}
+          onOpenOwnerModal={() => {}}
+        />
+        <main className="max-w-md mx-auto px-4 py-16 text-center space-y-6 flex-1 flex flex-col items-center justify-center">
+          <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto shadow-inner">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-extrabold text-gray-900">Sign In Required</h1>
+            <p className="text-sm text-gray-600">
+              Please sign in to view your active parking passes and booking history.
+            </p>
+          </div>
+          <div className="flex items-center space-x-3 w-full pt-2">
+            <Link
+              href="/login"
+              className="flex-1 bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 px-6 rounded-2xl text-xs shadow-md transition-all text-center"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/signup"
+              className="flex-1 bg-white hover:bg-gray-50 text-gray-800 font-bold py-3.5 px-6 rounded-2xl text-xs border border-gray-200 shadow-2xs transition-all text-center"
+            >
+              Create Account
+            </Link>
+          </div>
+        </main>
+        <Footer lang={lang} />
+      </div>
+    );
+  }
 
   const handleLookup = (e: React.FormEvent) => {
     e.preventDefault();

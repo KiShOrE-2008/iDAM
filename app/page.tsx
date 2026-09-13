@@ -12,6 +12,9 @@ import { ParkingDetailsScreen } from '@/components/mobile/ParkingDetailsScreen';
 import { BookingScreen } from '@/components/mobile/BookingScreen';
 import { PaymentScreen } from '@/components/mobile/PaymentScreen';
 import { SuccessPassScreen } from '@/components/mobile/SuccessPassScreen';
+import { ProfileDashboardScreen } from '@/components/mobile/ProfileDashboardScreen';
+import { SupportHubScreen } from '@/components/mobile/SupportHubScreen';
+import { MobileSimulator } from '@/components/mobile/MobileSimulator';
 import { OwnerModal } from '@/components/OwnerModal';
 import { Footer } from '@/components/Footer';
 import { Language, ParkingLocation } from '@/types';
@@ -68,6 +71,8 @@ export default function Home() {
               onSelectLocation={setSelectedLocation}
               onNext={() => setNativeStep(3)}
               lang={lang}
+              onNavigateToProfile={() => setNativeStep(7)}
+              onNavigateToBookings={() => setNativeStep(7)}
             />
           )}
 
@@ -106,8 +111,23 @@ export default function Home() {
             <SuccessPassScreen
               location={selectedLocation}
               bookingDetails={bookingDetails}
-              onReset={() => setNativeStep(1)}
+              onReset={() => setNativeStep(7)}
               lang={lang}
+            />
+          )}
+
+          {nativeStep === 7 && (
+            <ProfileDashboardScreen
+              lang={lang}
+              onBack={() => setNativeStep(2)}
+              onNavigateToSupport={() => setNativeStep(8)}
+            />
+          )}
+
+          {nativeStep === 8 && (
+            <SupportHubScreen
+              lang={lang}
+              onBack={() => setNativeStep(7)}
             />
           )}
         </div>
@@ -140,6 +160,12 @@ export default function Home() {
         <WebExplorer
           lang={lang}
           onSelectLocation={() => {}}
+        />
+
+        {/* Interactive Mobile Application Experience Simulator */}
+        <MobileSimulator
+          locations={locations}
+          lang={lang}
         />
 
         {/* How It Works & Owner Monetization Section */}

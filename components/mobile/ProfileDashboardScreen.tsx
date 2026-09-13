@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, Car, Shield, FileText, ChevronRight, Download, Clock, CheckCircle, ArrowLeft, Star, TrendingUp } from 'lucide-react';
+import { User, Car, Shield, FileText, ChevronRight, Download, Clock, CheckCircle, ArrowLeft, Star, TrendingUp, Home, BookOpen, UserCheck } from 'lucide-react';
 import { Language } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 
@@ -59,7 +59,7 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
   ];
 
   return (
-    <div className="h-full flex flex-col justify-between bg-slate-50 relative overflow-y-auto">
+    <div className="h-full flex flex-col justify-between bg-slate-50 relative overflow-y-auto animate-fade-in">
       
       {/* Top Mobile Header */}
       <div className="p-3 bg-white border-b border-slate-200 sticky top-0 z-20 flex items-center justify-between shadow-2xs">
@@ -76,13 +76,13 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
       <div className="p-3 space-y-3 flex-1">
         
         {/* User Card */}
-        <div className="bg-gradient-to-r from-slate-900 to-emerald-950 text-white p-3 rounded-2xl shadow-sm space-y-2">
+        <div className="bg-gradient-to-r from-slate-900 to-emerald-950 text-white p-3.5 rounded-2xl shadow-md space-y-2.5 animate-slide-up">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-500 text-slate-950 font-bold flex items-center justify-center text-sm ring-2 ring-emerald-300/40">
+            <div className="w-10 h-10 rounded-full bg-emerald-500 text-slate-950 font-extrabold flex items-center justify-center text-sm ring-2 ring-emerald-300/40">
               {user ? user.name.charAt(0) : 'G'}
             </div>
             <div>
-              <h4 className="font-bold text-xs text-white">{user ? user.name : 'Guest User'}</h4>
+              <h4 className="font-extrabold text-xs text-white">{user ? user.name : 'Guest User'}</h4>
               <p className="text-[10px] text-emerald-300/80">{user ? user.email : 'guest@idam.demo'}</p>
             </div>
           </div>
@@ -110,7 +110,7 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
 
         {/* DRIVER VIEW */}
         {userRole === 'driver' && (
-          <div className="space-y-2">
+          <div className="space-y-2 animate-scale-in">
             <div className="flex items-center justify-between px-1">
               <h4 className="text-xs font-bold text-slate-900">Recent Parking Passes</h4>
               <span className="text-[10px] font-semibold text-emerald-700">2 Passes</span>
@@ -120,7 +120,7 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
               <div
                 key={pass.id}
                 onClick={() => setSelectedPass(pass)}
-                className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs hover:border-emerald-500 transition-all cursor-pointer space-y-1.5"
+                className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs hover:border-emerald-500 transition-all cursor-pointer space-y-1.5 transform active:scale-98"
               >
                 <div className="flex items-center justify-between text-[10px]">
                   <span className="font-extrabold text-slate-800">{pass.id}</span>
@@ -140,7 +140,7 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
 
         {/* OWNER VIEW */}
         {userRole === 'owner' && (
-          <div className="space-y-2">
+          <div className="space-y-2 animate-scale-in">
             <div className="bg-emerald-900 text-white p-3 rounded-2xl space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-semibold text-emerald-200">Temple Area Parking</span>
@@ -165,7 +165,7 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Support & Help</p>
           <button
             onClick={onNavigateToSupport}
-            className="w-full flex items-center justify-between p-1.5 text-xs text-slate-700 hover:bg-slate-50 rounded-lg"
+            className="w-full flex items-center justify-between p-1.5 text-xs text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
           >
             <div className="flex items-center space-x-2">
               <FileText className="w-3.5 h-3.5 text-emerald-600" />
@@ -189,8 +189,8 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
 
       {/* Tax Invoice Modal */}
       {selectedPass && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3">
-          <div className="bg-white w-full max-w-[320px] rounded-2xl p-4 shadow-xl border border-slate-200 space-y-3">
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 animate-fade-in">
+          <div className="bg-white w-full max-w-[320px] rounded-2xl p-4 shadow-xl border border-slate-200 space-y-3 animate-scale-in">
             <div className="flex items-center justify-between border-b pb-2">
               <div>
                 <p className="text-[10px] text-slate-400 font-bold">TAX INVOICE</p>
@@ -225,13 +225,40 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
 
             <button
               onClick={() => setSelectedPass(null)}
-              className="w-full bg-emerald-800 text-white font-bold py-2 rounded-xl text-xs hover:bg-emerald-900"
+              className="w-full bg-emerald-800 text-white font-bold py-2 rounded-xl text-xs hover:bg-emerald-900 transition-colors"
             >
               Close Invoice
             </button>
           </div>
         </div>
       )}
+
+      {/* Bottom App Navigation Bar */}
+      <div className="bg-white border-t border-gray-200 px-6 py-2 flex items-center justify-between text-[11px] font-semibold text-gray-500 z-20">
+        <button
+          onClick={onBack}
+          className="flex flex-col items-center hover:text-gray-900 transition-colors"
+        >
+          <Home className="w-4 h-4" />
+          <span>Home</span>
+        </button>
+
+        <button
+          onClick={() => {}}
+          className="flex flex-col items-center text-emerald-800 font-bold scale-105 transition-colors"
+        >
+          <BookOpen className="w-4 h-4" />
+          <span>Passes</span>
+        </button>
+
+        <button
+          onClick={() => {}}
+          className="flex flex-col items-center text-emerald-800 font-bold scale-105 transition-colors"
+        >
+          <UserCheck className="w-4 h-4" />
+          <span>Profile</span>
+        </button>
+      </div>
 
     </div>
   );

@@ -125,6 +125,9 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ locations, lan
                   onSelectLocation={setSelectedLocation}
                   onNext={() => setCurrentStep(3)}
                   lang={lang}
+                  onNavigateToProfile={() => setCurrentStep(7)}
+                  onNavigateToBookings={() => setCurrentStep(7)}
+                  activeTab="home"
                 />
               )}
 

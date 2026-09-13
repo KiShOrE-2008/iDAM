@@ -177,6 +177,46 @@ export default function DashboardPage() {
     hourlyRateBike: 20,
   };
 
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-between font-sans">
+        <Navbar
+          lang={lang}
+          onLanguageToggle={setLang}
+          activeView="web"
+          onViewChange={() => {}}
+          onOpenOwnerModal={() => {}}
+        />
+        <main className="max-w-md mx-auto px-4 py-16 text-center space-y-6 flex-1 flex flex-col items-center justify-center">
+          <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto shadow-inner">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-extrabold text-gray-900">Sign In Required</h1>
+            <p className="text-sm text-gray-600">
+              Please sign in to access your personal dashboard, active parking passes, and owner analytics.
+            </p>
+          </div>
+          <div className="flex items-center space-x-3 w-full pt-2">
+            <Link
+              href="/login"
+              className="flex-1 bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 px-6 rounded-2xl text-xs shadow-md transition-all text-center"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/signup"
+              className="flex-1 bg-white hover:bg-gray-50 text-gray-800 font-bold py-3.5 px-6 rounded-2xl text-xs border border-gray-200 shadow-2xs transition-all text-center"
+            >
+              Create Account
+            </Link>
+          </div>
+        </main>
+        <Footer lang={lang} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-between font-sans">
       <Navbar
