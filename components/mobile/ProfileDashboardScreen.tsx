@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Car, Shield, FileText, ChevronRight, Download, Clock, CheckCircle, ArrowLeft, Star, TrendingUp, Home, BookOpen, UserCheck } from 'lucide-react';
+import Link from 'next/link';
+import { User, Car, Shield, FileText, ChevronRight, Download, Clock, CheckCircle, ArrowLeft, Star, TrendingUp, Home, BookOpen, UserCheck, Wallet, Plus, PlusCircle, Trash2, Zap, Settings, ShieldCheck, Building2, Sparkles, LogOut } from 'lucide-react';
 import { Language } from '@/types';
 import { useAuth } from '@/context/AuthContext';
+import { OwnerDashboard } from './owner/OwnerDashboard';
 
 interface ProfileDashboardScreenProps {
   lang: Language;
@@ -15,39 +17,56 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
   onBack,
   onNavigateToSupport
 }) => {
-  const { user, login, switchRole, logout } = useAuth();
-  const [localRole, setLocalRole] = useState<'driver' | 'owner'>(user?.role || 'driver');
-  const userRole = user?.role || localRole;
+  const { profile, signOut, switchRole, isDemoMode, exitDemo } = useAuth();
+  const [localRole, setLocalRole] = useState<'driver' | 'owner'>(profile?.role || 'driver');
+  const userRole = profile?.role || localRole;
   const [selectedPass, setSelectedPass] = useState<any>(null);
+  const [walletBalance, setWalletBalance] = useState(500);
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
 
-  // Sync localRole when user logs in/out or role changes externally
+  // Vehicle Garage State
+  const [vehicles, setVehicles] = useState([
+    { id: 'v1', plate: 'TN 59 AB 1234', type: 'Car', default: true },
+    { id: 'v2', plate: 'TN 59 C 5678', type: 'Bike', default: false }
+  ]);
+  const [newPlate, setNewPlate] = useState('');
+  const [showAddVehicle, setShowAddVehicle] = useState(false);
+
   useEffect(() => {
-    if (user?.role) {
-      setLocalRole(user.role);
+    if (profile?.role) {
+      setLocalRole(profile.role);
     }
-  }, [user?.role]);
+  }, [profile?.role]);
 
   const handleRoleToggle = (newRole: 'driver' | 'owner') => {
     setLocalRole(newRole);
-    if (user) {
-      switchRole(newRole);
-    }
+    switchRole(newRole);
+  };
+
+  const handleAddVehicle = () => {
+    if (!newPlate.trim()) return;
+    setVehicles([
+      ...vehicles,
+      { id: Date.now().toString(), plate: newPlate.toUpperCase(), type: 'Car', default: false }
+    ]);
+    setNewPlate('');
+    setShowAddVehicle(false);
   };
 
   const mockPasses = [
     {
       id: 'IDM-82931',
-      title: 'Temple Area Parking',
+      title: 'West Tower Square Parking',
       vehicle: 'TN 59 AB 1234 (Car)',
-      slot: 'A-12',
+      slot: 'A-02',
       time: '10:00 AM - 12:00 PM',
-      date: '12 Sep 2026',
-      amount: '₹85',
-      base: '₹65',
-      gst: '₹12',
-      fee: '₹8',
+      date: '15 Sep 2026',
+      amount: '₹75',
+      base: '₹70',
+      gst: '₹0',
+      fee: '₹5',
       status: 'CONFIRMED',
-      statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-300'
+      statusColor: 'bg-emerald-100 text-emerald-900 border-emerald-300 font-extrabold'
     },
     {
       id: 'IDM-44120',
@@ -61,164 +80,264 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
       gst: '₹9',
       fee: '₹6',
       status: 'COMPLETED',
-      statusColor: 'bg-blue-100 text-blue-800 border-blue-300'
+      statusColor: 'bg-slate-100 text-slate-700 border-slate-300'
     }
   ];
 
   return (
-    <div className="h-full flex flex-col justify-between bg-slate-50 relative overflow-y-auto animate-fade-in">
+    <div className="h-full flex flex-col justify-between bg-[#F8F8F5] relative overflow-y-auto no-scrollbar animate-fade-in text-slate-900 select-none">
       
       {/* Top Mobile Header */}
-      <div className="p-3.5 bg-white border-b border-slate-200 sticky top-0 z-20 flex items-center justify-between shadow-2xs">
-        <button onClick={onBack} className="p-1.5 rounded-lg text-slate-700 hover:bg-slate-100">
+      <div className="p-3.5 bg-white border-b border-slate-200/80 sticky top-0 z-20 flex items-center justify-between shadow-2xs">
+        <button onClick={onBack} className="p-1 rounded-lg text-slate-700 hover:bg-slate-100 active:scale-95 transition-transform">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h3 className="font-extrabold text-sm text-slate-900">
-          {userRole === 'owner' ? 'Owner Portal' : 'My Passes & Profile'}
+        <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">
+          {userRole === 'owner' ? 'Owner Portal' : 'My Account & Passes'}
         </h3>
-        <div className="w-6" />
+        <div className="w-5" />
       </div>
 
       {/* Main Content Area */}
       <div className="p-4 space-y-4 flex-1">
         
         {/* User Card */}
-        <div className="bg-gradient-to-r from-slate-900 to-emerald-950 text-white p-4 rounded-2xl shadow-md space-y-3 animate-slide-up">
+        <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-11 h-11 rounded-full bg-emerald-500 text-slate-950 font-black flex items-center justify-center text-base ring-2 ring-emerald-300/40">
-                {user ? user.name.charAt(0) : 'G'}
+              <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white font-black flex items-center justify-center text-lg shadow-md">
+                {profile ? profile.name.charAt(0) : 'K'}
               </div>
               <div>
-                <h4 className="font-extrabold text-sm text-white">{user ? user.name : 'Guest User'}</h4>
-                <p className="text-xs text-emerald-300/80">{user ? user.email : 'guest@idam.demo'}</p>
+                <h4 className="font-black text-sm text-slate-900">{profile ? profile.name : 'Kishore Kumar'}</h4>
+                <p className="text-[11px] text-slate-500 font-medium">{profile ? profile.email : 'kishore@email.com'}</p>
+                {isDemoMode && (
+                  <span className="inline-block mt-0.5 text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.2 rounded-full uppercase">
+                    DEMO MODE
+                  </span>
+                )}
               </div>
             </div>
-            {!user ? (
-              <button
-                onClick={() => login({ role: localRole })}
-                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black px-3.5 py-1.5 rounded-xl transition-all shadow-sm"
-              >
-                Sign In
-              </button>
-            ) : (
-              <button
-                onClick={() => logout()}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1 rounded-xl transition-all"
-              >
-                Logout
-              </button>
-            )}
+
+            <button
+              onClick={() => signOut()}
+              title="Sign Out"
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Role Switcher */}
-          <div className="flex bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 text-xs font-bold">
+          <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-black">
             <button
               onClick={() => handleRoleToggle('driver')}
               className={`flex-1 py-1.5 rounded-lg text-center transition-all ${
-                userRole === 'driver' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-xs' : 'text-slate-400'
+                userRole === 'driver' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-500'
               }`}
             >
-              Driver View
+              🚗 Driver
             </button>
             <button
               onClick={() => handleRoleToggle('owner')}
               className={`flex-1 py-1.5 rounded-lg text-center transition-all ${
-                userRole === 'owner' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-xs' : 'text-slate-400'
+                userRole === 'owner' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-500'
               }`}
             >
-              Owner View
+              🅿️ Owner
             </button>
           </div>
         </div>
 
         {/* DRIVER VIEW */}
         {userRole === 'driver' && (
-          <div className="space-y-3 animate-scale-in">
-            <div className="flex items-center justify-between px-1">
-              <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Recent Parking Passes</h4>
-              <span className="text-xs font-bold text-emerald-700">2 Passes</span>
+          <div className="space-y-4 animate-scale-in">
+            
+            {/* List Your Space Entry Banner */}
+            <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-900 text-white p-4 rounded-3xl shadow-md space-y-2 border border-emerald-500/30">
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-emerald-400 tracking-wider">Earn from unused parking</span>
+                  <h4 className="font-black text-sm text-white">List your parking space</h4>
+                </div>
+                <Sparkles className="w-5 h-5 text-amber-400" />
+              </div>
+              <p className="text-[11px] text-slate-300 font-medium">Turn empty driveways, garages or commercial space into recurring revenue.</p>
+              <Link
+                href="/list-your-space"
+                className="inline-flex items-center space-x-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black px-4 py-2 rounded-xl shadow-md transition-all active:scale-95"
+              >
+                <span>List Space Now →</span>
+              </Link>
             </div>
 
-            {mockPasses.map((pass) => (
-              <div
-                key={pass.id}
-                onClick={() => setSelectedPass(pass)}
-                className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs hover:border-emerald-500 transition-all cursor-pointer space-y-2 transform active:scale-98"
-              >
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-extrabold text-slate-800 font-mono">{pass.id}</span>
-                  <span className={`px-2.5 py-0.5 rounded-full font-extrabold text-[11px] border ${pass.statusColor}`}>
-                    {pass.status}
-                  </span>
+            {/* iDAM Wallet Card */}
+            <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-xs font-black text-slate-900">
+                  <Wallet className="w-4 h-4 text-emerald-700" />
+                  <span>iDAM Wallet</span>
                 </div>
-                <h5 className="font-extrabold text-sm text-slate-900 truncate">{pass.title}</h5>
-                <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
-                  <span>{pass.date} • {pass.time}</span>
-                  <span className="font-extrabold text-emerald-800 text-sm">{pass.amount}</span>
-                </div>
+                <button
+                  onClick={() => setShowTopUpModal(true)}
+                  className="bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-black text-[11px] px-2.5 py-1 rounded-lg border border-emerald-200 transition-all flex items-center space-x-1"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Top Up</span>
+                </button>
               </div>
-            ))}
+              <div className="text-xl font-black text-slate-900">
+                ₹{walletBalance}
+              </div>
+            </div>
+
+            {/* Vehicles Garage */}
+            <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-1.5 text-xs font-black text-slate-900">
+                  <Car className="w-4 h-4 text-emerald-700" />
+                  <span>Registered Vehicles</span>
+                </div>
+                <button
+                  onClick={() => setShowAddVehicle(!showAddVehicle)}
+                  className="text-emerald-800 font-black text-xs flex items-center space-x-1 hover:underline"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>Add</span>
+                </button>
+              </div>
+
+              {showAddVehicle && (
+                <div className="flex space-x-2 pt-1">
+                  <input
+                    type="text"
+                    value={newPlate}
+                    onChange={(e) => setNewPlate(e.target.value)}
+                    placeholder="Plate e.g. TN 59 AB 9999"
+                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-mono font-bold uppercase"
+                  />
+                  <button
+                    onClick={handleAddVehicle}
+                    className="bg-slate-900 text-white font-black text-xs px-3 py-1 rounded-xl"
+                  >
+                    Save
+                  </button>
+                </div>
+              )}
+
+              <div className="space-y-1.5 text-xs">
+                {vehicles.map((v) => (
+                  <div key={v.id} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <div className="flex items-center space-x-2">
+                      <span className="bg-amber-400 text-slate-950 font-black px-1.5 py-0.5 rounded text-[10px]">IND</span>
+                      <span className="font-mono font-black text-slate-900">{v.plate}</span>
+                    </div>
+                    {v.default && (
+                      <span className="text-[10px] font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
+                        Primary
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Recent Passes */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Passes & History</h4>
+                <span className="text-xs font-bold text-emerald-800">{mockPasses.length} Passes</span>
+              </div>
+
+              {mockPasses.map((pass) => (
+                <div
+                  key={pass.id}
+                  onClick={() => setSelectedPass(pass)}
+                  className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs hover:border-emerald-600 transition-all cursor-pointer space-y-2 transform active:scale-98"
+                >
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-black text-slate-900 font-mono">{pass.id}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] border ${pass.statusColor}`}>
+                      {pass.status}
+                    </span>
+                  </div>
+                  <h5 className="font-black text-xs text-slate-900 truncate">{pass.title}</h5>
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold">
+                    <span>{pass.date} • Slot {pass.slot}</span>
+                    <span className="font-black text-slate-900 text-xs">{pass.amount}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
           </div>
         )}
 
         {/* OWNER VIEW */}
         {userRole === 'owner' && (
-          <div className="space-y-3 animate-scale-in">
-            <div className="bg-emerald-900 text-white p-4 rounded-2xl space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-200">Temple Area Parking</span>
-                <span className="text-xs bg-emerald-500 text-slate-950 px-2.5 py-0.5 rounded-full font-black">Open</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2.5 text-center pt-1">
-                <div className="bg-emerald-950/60 p-2.5 rounded-xl border border-emerald-800/50">
-                  <p className="text-[10px] font-bold text-emerald-300 uppercase">Earnings Today</p>
-                  <p className="text-base font-black text-white">₹1,240</p>
-                </div>
-                <div className="bg-emerald-950/60 p-2 rounded-xl border border-emerald-800/50">
-                  <p className="text-[9px] text-emerald-300">Occupancy</p>
-                  <p className="text-sm font-extrabold text-white">23 / 35</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <OwnerDashboard onNavigateToExplore={onBack} />
         )}
 
-        {/* Support Hub Quick Links */}
-        <div className="bg-white p-2.5 rounded-xl border border-slate-200 space-y-2">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Support & Help</p>
+        {/* Support Quick Access */}
+        <div className="bg-white p-3 rounded-2xl border border-slate-200 space-y-2">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Help & Legal</p>
           <button
             onClick={onNavigateToSupport}
-            className="w-full flex items-center justify-between p-1.5 text-xs text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
+            className="w-full flex items-center justify-between p-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
           >
             <div className="flex items-center space-x-2">
-              <FileText className="w-3.5 h-3.5 text-emerald-600" />
+              <FileText className="w-4 h-4 text-emerald-700" />
               <span>Help Center & Policies</span>
             </div>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            <ChevronRight className="w-4 h-4 text-slate-400" />
           </button>
         </div>
 
-        {/* Logout Button */}
-        {user && (
-          <button
-            onClick={logout}
-            className="w-full py-2 bg-red-50 text-red-700 border border-red-200 rounded-xl font-bold text-xs hover:bg-red-100 transition-colors"
-          >
-            Sign Out
-          </button>
-        )}
-
       </div>
+
+      {/* Top Up Modal */}
+      {showTopUpModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl p-5 max-w-xs w-full space-y-3 shadow-2xl border border-slate-200 text-left animate-scale-in">
+            <h4 className="font-black text-sm text-slate-900">Add Money to iDAM Wallet</h4>
+            <div className="grid grid-cols-3 gap-2 text-xs font-black">
+              <button
+                onClick={() => { setWalletBalance(walletBalance + 200); setShowTopUpModal(false); }}
+                className="p-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-900 text-center"
+              >
+                +₹200
+              </button>
+              <button
+                onClick={() => { setWalletBalance(walletBalance + 500); setShowTopUpModal(false); }}
+                className="p-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-900 text-center"
+              >
+                +₹500
+              </button>
+              <button
+                onClick={() => { setWalletBalance(walletBalance + 1000); setShowTopUpModal(false); }}
+                className="p-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-900 text-center"
+              >
+                +₹1000
+              </button>
+            </div>
+            <button
+              onClick={() => setShowTopUpModal(false)}
+              className="w-full py-2 bg-slate-100 text-slate-700 font-extrabold text-xs rounded-xl"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Tax Invoice Modal */}
       {selectedPass && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 animate-fade-in">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 animate-fade-in">
           <div className="bg-white w-full max-w-[320px] rounded-2xl p-4 shadow-xl border border-slate-200 space-y-3 animate-scale-in">
             <div className="flex items-center justify-between border-b pb-2">
               <div>
-                <p className="text-[10px] text-slate-400 font-bold">TAX INVOICE</p>
-                <h4 className="font-extrabold text-xs text-slate-900">{selectedPass.id}</h4>
+                <p className="text-[10px] text-slate-400 font-black">TAX INVOICE</p>
+                <h4 className="font-black text-xs text-slate-900">{selectedPass.id}</h4>
               </div>
               <button
                 onClick={() => setSelectedPass(null)}
@@ -231,25 +350,21 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
             <div className="space-y-1 text-[11px] text-slate-600">
               <div className="flex justify-between">
                 <span>Parking Spot Fee</span>
-                <span className="font-semibold text-slate-900">{selectedPass.base}</span>
+                <span className="font-bold text-slate-900">{selectedPass.base}</span>
               </div>
               <div className="flex justify-between">
-                <span>GST (18%)</span>
-                <span className="font-semibold text-slate-900">{selectedPass.gst}</span>
+                <span>Service Fee</span>
+                <span className="font-bold text-slate-900">{selectedPass.fee}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Convenience Fee</span>
-                <span className="font-semibold text-slate-900">{selectedPass.fee}</span>
-              </div>
-              <div className="flex justify-between border-t pt-1 font-extrabold text-slate-900 text-xs">
+              <div className="flex justify-between border-t pt-1 font-black text-slate-900 text-xs">
                 <span>Total Amount Paid</span>
-                <span className="text-emerald-700">{selectedPass.amount}</span>
+                <span className="text-emerald-800">{selectedPass.amount}</span>
               </div>
             </div>
 
             <button
               onClick={() => setSelectedPass(null)}
-              className="w-full bg-emerald-800 text-white font-bold py-2 rounded-xl text-xs hover:bg-emerald-900 transition-colors"
+              className="w-full bg-slate-900 text-white font-black py-2.5 rounded-xl text-xs hover:bg-slate-800 transition-colors"
             >
               Close Invoice
             </button>
@@ -258,28 +373,28 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
       )}
 
       {/* Bottom App Navigation Bar */}
-      <div className="bg-white border-t border-gray-200 px-6 py-2 flex items-center justify-between text-[11px] font-semibold text-gray-500 z-20">
+      <div className="bg-white border-t border-slate-200 px-6 py-2.5 flex items-center justify-between text-xs font-bold text-slate-500 z-20">
         <button
           onClick={onBack}
-          className="flex flex-col items-center hover:text-gray-900 transition-colors"
+          className="flex flex-col items-center hover:text-slate-900 transition-colors"
         >
-          <Home className="w-4 h-4" />
+          <Home className="w-5 h-5" />
           <span>Home</span>
         </button>
 
         <button
           onClick={() => {}}
-          className="flex flex-col items-center text-emerald-800 font-bold scale-105 transition-colors"
+          className="flex flex-col items-center text-emerald-900 font-black scale-105 transition-colors"
         >
-          <BookOpen className="w-4 h-4" />
+          <BookOpen className="w-5 h-5" />
           <span>Passes</span>
         </button>
 
         <button
           onClick={onBack}
-          className="flex flex-col items-center hover:text-gray-900 transition-colors"
+          className="flex flex-col items-center hover:text-slate-900 transition-colors"
         >
-          <UserCheck className="w-4 h-4" />
+          <UserCheck className="w-5 h-5" />
           <span>Profile</span>
         </button>
       </div>

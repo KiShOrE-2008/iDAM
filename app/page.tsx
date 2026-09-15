@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { Smartphone, Monitor } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
 import { HowItWorks } from '@/components/HowItWorks';
@@ -29,21 +30,25 @@ export default function Home() {
   const [selectedBookingLocation, setSelectedBookingLocation] = useState<ParkingLocation | null>(null);
   const [locations, setLocations] = useState<ParkingLocation[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isNativeApp, setIsNativeApp] = useState(false);
+
+  // Mode Switcher State: 'web' or 'mobile_standalone'
+  const [demoViewMode, setDemoViewMode] = useState<'web' | 'mobile_standalone'>('web');
 
   // Native Mobile Flow State
   const [nativeStep, setNativeStep] = useState<number>(1);
   const [selectedLocation, setSelectedLocation] = useState<ParkingLocation>(MOCK_PARKING_LOCATIONS[0]);
   const [bookingDetails, setBookingDetails] = useState({
     date: '12 Sep',
-    time: '10:00',
+    time: '10:00 AM',
     duration: 2,
-    total: 85
+    total: 85,
+    vehicleNumber: 'TN 59 AB 1234',
+    addons: ['EV Fast Charge']
   });
 
   useEffect(() => {
     if (typeof window !== 'undefined' && Capacitor.isNativePlatform()) {
-      setIsNativeApp(true);
+      setDemoViewMode('mobile_standalone');
     }
   }, []);
 
@@ -58,11 +63,29 @@ export default function Home() {
     loadData();
   }, []);
 
-  // If launched as a Native Android App via Capacitor, show full-screen mobile app screens
-  if (isNativeApp) {
+  // Standalone Full-Screen Mobile App View
+  if (demoViewMode === 'mobile_standalone') {
     return (
-      <div className="h-screen w-screen bg-white flex flex-col overflow-hidden font-sans">
-        <div className="flex-1 relative overflow-hidden">
+      <div className="h-screen w-screen bg-slate-950 flex flex-col overflow-hidden font-sans select-none">
+        
+        {/* Top Viewport Mode Switcher Banner */}
+        <div className="bg-slate-900 border-b border-slate-800 px-4 py-2 flex items-center justify-between text-xs text-slate-300 z-50">
+          <div className="flex items-center space-x-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="font-bold text-white">iDAM Mobile App Live Demo</span>
+          </div>
+
+          <button
+            onClick={() => setDemoViewMode('web')}
+            className="flex items-center space-x-1 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3 py-1 rounded-full text-[11px] font-extrabold transition-all"
+          >
+            <Monitor className="w-3.5 h-3.5" />
+            <span>Switch to Web Landing View</span>
+          </button>
+        </div>
+
+        {/* Mobile Viewport Container */}
+        <div className="flex-1 relative overflow-hidden bg-white max-w-[440px] mx-auto w-full border-x border-slate-800 shadow-2xl">
           {nativeStep === 1 && (
             <SplashScreen lang={lang} onNext={() => setNativeStep(2)} />
           )}
@@ -93,7 +116,10 @@ export default function Home() {
               location={selectedLocation}
               onBack={() => setNativeStep(3)}
               onNext={(details) => {
-                setBookingDetails(details);
+                setBookingDetails({
+                  ...bookingDetails,
+                  ...details
+                });
                 setNativeStep(5);
               }}
               lang={lang}
@@ -141,6 +167,22 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white font-sans text-slate-900 antialiased selection:bg-emerald-200 selection:text-emerald-900">
       
+      {/* Top Demo View Switcher Pill Bar */}
+      <div className="bg-slate-950 text-white px-4 py-2 border-b border-slate-800 flex items-center justify-between text-xs font-bold">
+        <div className="flex items-center space-x-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>iDAM Showcase • Web & Mobile Demo</span>
+        </div>
+
+        <button
+          onClick={() => setDemoViewMode('mobile_standalone')}
+          className="flex items-center space-x-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-3.5 py-1 rounded-full text-xs font-black shadow-md transition-all transform active:scale-95"
+        >
+          <Smartphone className="w-3.5 h-3.5" />
+          <span>Launch Full-Screen Mobile App Demo 📱</span>
+        </button>
+      </div>
+
       {/* Main Navbar */}
       <Navbar
         lang={lang}
