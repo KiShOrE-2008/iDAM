@@ -20,6 +20,16 @@ export const SuccessPassScreen: React.FC<SuccessPassScreenProps> = ({
   lang
 }) => {
   const passCode = 'IDM-82931';
+  const currentYear = new Date().getFullYear();
+
+  const computedEndTime = (() => {
+    const [hourStr, minStr] = bookingDetails.time.split(':');
+    const startHour = parseInt(hourStr, 10);
+    const endHour = (startHour + bookingDetails.duration) % 24;
+    const period = endHour >= 12 ? 'PM' : 'AM';
+    const displayHour = endHour > 12 ? endHour - 12 : endHour === 0 ? 12 : endHour;
+    return `${displayHour}:${minStr || '00'} ${period}`;
+  })();
 
   useEffect(() => {
     try {
@@ -80,12 +90,12 @@ export const SuccessPassScreen: React.FC<SuccessPassScreenProps> = ({
 
           <div className="flex items-center space-x-2 text-gray-600 text-[11px]">
             <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-            <span>{bookingDetails.date} 2024</span>
+            <span>{bookingDetails.date} {currentYear}</span>
           </div>
 
           <div className="flex items-center space-x-2 text-gray-600 text-[11px]">
             <Clock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-            <span>{bookingDetails.time} AM - 12:00 PM</span>
+            <span>{bookingDetails.time} - {computedEndTime}</span>
           </div>
         </div>
 
@@ -101,7 +111,9 @@ export const SuccessPassScreen: React.FC<SuccessPassScreenProps> = ({
       {/* Bottom Action Buttons */}
       <div className="pb-2 grid grid-cols-2 gap-2 text-xs font-bold">
         <button
-          onClick={onReset}
+          onClick={() => {
+            alert(`Pass Code: ${passCode}\nLocation: ${location.title}\nDate: ${bookingDetails.date} ${currentYear}`);
+          }}
           className="bg-white hover:bg-gray-50 text-gray-800 border border-gray-200 py-3 rounded-2xl shadow-2xs flex items-center justify-center space-x-1.5"
         >
           <Eye className="w-3.5 h-3.5 text-gray-600" />

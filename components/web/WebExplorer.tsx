@@ -37,7 +37,7 @@ export const WebExplorer: React.FC<WebExplorerProps> = ({ lang, onSelectLocation
       setIsLoading(false);
     }
     loadData();
-  }, [searchQuery, vehicleFilter]);
+  }, [searchQuery, vehicleFilter, selectedSpotId]);
 
   const selectedLocation = locations.find(l => l.id === selectedSpotId) || locations[0];
 

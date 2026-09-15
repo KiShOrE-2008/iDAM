@@ -16,6 +16,7 @@ import { ProfileDashboardScreen } from '@/components/mobile/ProfileDashboardScre
 import { SupportHubScreen } from '@/components/mobile/SupportHubScreen';
 import { MobileSimulator } from '@/components/mobile/MobileSimulator';
 import { OwnerModal } from '@/components/OwnerModal';
+import { WebBookingModal } from '@/components/web/WebBookingModal';
 import { Footer } from '@/components/Footer';
 import { Language, ParkingLocation } from '@/types';
 import { getParkingLocations } from '@/lib/parking/service';
@@ -24,6 +25,8 @@ import { MOCK_PARKING_LOCATIONS } from '@/lib/data/mockData';
 export default function Home() {
   const [lang, setLang] = useState<Language>('en');
   const [isOwnerModalOpen, setIsOwnerModalOpen] = useState(false);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [selectedBookingLocation, setSelectedBookingLocation] = useState<ParkingLocation | null>(null);
   const [locations, setLocations] = useState<ParkingLocation[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isNativeApp, setIsNativeApp] = useState(false);
@@ -159,7 +162,10 @@ export default function Home() {
         {/* Real-time Discovery Map & Search */}
         <WebExplorer
           lang={lang}
-          onSelectLocation={() => {}}
+          onSelectLocation={(loc) => {
+            setSelectedBookingLocation(loc);
+            setIsBookingModalOpen(true);
+          }}
         />
 
         {/* Interactive Mobile Application Experience Simulator */}
@@ -182,6 +188,14 @@ export default function Home() {
       <OwnerModal
         isOpen={isOwnerModalOpen}
         onClose={() => setIsOwnerModalOpen(false)}
+        lang={lang}
+      />
+
+      {/* Web Booking Modal */}
+      <WebBookingModal
+        location={selectedBookingLocation}
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
         lang={lang}
       />
 

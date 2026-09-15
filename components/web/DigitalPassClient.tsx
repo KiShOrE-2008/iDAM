@@ -10,6 +10,19 @@ import { CheckCircle2, MapPin, Calendar, Clock, Navigation, Share2, Printer, Arr
 import { Language } from '@/types';
 import { MOCK_PARKING_LOCATIONS } from '@/lib/data/mockData';
 
+// Mock pass registry — in production this would be fetched from the DB by passId
+const MOCK_PASS_REGISTRY: Record<string, {
+  locationIndex: number;
+  date: string;
+  timeSlot: string;
+  vehicle: string;
+  amount: string;
+  payment: string;
+}> = {
+  'IDM-82931': { locationIndex: 0, date: '12 Sep 2026', timeSlot: '10:00 AM - 12:00 PM', vehicle: 'TN 59 AB 1234', amount: '₹85', payment: 'UPI' },
+  'IDM-44120': { locationIndex: 1, date: '10 Sep 2026', timeSlot: '02:00 PM - 04:00 PM', vehicle: 'TN 59 C 5678', amount: '₹65', payment: 'UPI' },
+};
+
 interface DigitalPassClientProps {
   passId: string;
 }
@@ -18,7 +31,14 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
   const router = useRouter();
   const [lang, setLang] = useState<Language>('en');
 
-  const location = MOCK_PARKING_LOCATIONS[0];
+  // Look up pass data by passId — fallback to first location if unknown pass
+  const passData = MOCK_PASS_REGISTRY[passId];
+  const location = MOCK_PARKING_LOCATIONS[passData?.locationIndex ?? 0];
+  const passDate = passData?.date ?? `${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+  const passTimeSlot = passData?.timeSlot ?? '10:00 AM - 12:00 PM';
+  const passVehicle = passData?.vehicle ?? 'N/A';
+  const passAmount = passData?.amount ?? '₹0';
+  const passPayment = passData?.payment ?? 'UPI';
 
   useEffect(() => {
     try {
@@ -34,7 +54,7 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
 
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(
-      `🚗 My iDAM Parking Pass: ${passId}\n📍 Location: ${location.title}\n🕒 Date: 12 Sep 2024 (10:00 AM - 12:00 PM)\nStatus: CONFIRMED`
+      `🚗 My iDAM Parking Pass: ${passId}\n📍 Location: ${location.title}\n🕒 ${passDate} (${passTimeSlot})\nStatus: CONFIRMED`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
@@ -135,37 +155,37 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Date</label>
-                    <div className="font-bold text-gray-800 flex items-center space-x-1 mt-0.5">
-                      <Calendar className="w-3.5 h-3.5 text-gray-500" />
-                      <span>12 Sep 2024</span>
+                    <div>
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Date</label>
+                      <div className="font-bold text-gray-800 flex items-center space-x-1 mt-0.5">
+                        <Calendar className="w-3.5 h-3.5 text-gray-500" />
+                        <span>{passDate}</span>
+                      </div>
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Time Slot</label>
-                    <div className="font-bold text-gray-800 flex items-center space-x-1 mt-0.5">
-                      <Clock className="w-3.5 h-3.5 text-gray-500" />
-                      <span>10:00 AM - 12:00 PM</span>
+                    <div>
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Time Slot</label>
+                      <div className="font-bold text-gray-800 flex items-center space-x-1 mt-0.5">
+                        <Clock className="w-3.5 h-3.5 text-gray-500" />
+                        <span>{passTimeSlot}</span>
+                      </div>
                     </div>
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
-                  <div>
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Vehicle Plate</label>
-                    <div className="font-mono font-extrabold text-gray-900 text-base mt-0.5">
-                      TN 59 AB 1234
+                    <div>
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Vehicle Plate</label>
+                      <div className="font-mono font-extrabold text-gray-900 text-base mt-0.5">
+                        {passVehicle}
+                      </div>
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Amount Paid</label>
-                    <div className="font-extrabold text-emerald-800 text-base mt-0.5">
-                      ₹85 (UPI)
+                    <div>
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Amount Paid</label>
+                      <div className="font-extrabold text-emerald-800 text-base mt-0.5">
+                        {passAmount} ({passPayment})
+                      </div>
                     </div>
-                  </div>
                 </div>
               </div>
 

@@ -20,9 +20,12 @@ export const RealMapView: React.FC<RealMapViewProps> = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<any>(null);
   const markersGroup = useRef<any>(null);
+  const isMounted = useRef(false);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !mapRef.current) return;
+    if (isMounted.current) return; // prevent Strict Mode double-init
+    isMounted.current = true;
 
     // Dynamically import Leaflet JS to avoid SSR window errors
     import('leaflet').then((L) => {
@@ -97,9 +100,11 @@ export const RealMapView: React.FC<RealMapViewProps> = ({
     });
 
     return () => {
-      if (leafletMap.current) {
+      // Only truly destroy on component unmount, not on Strict Mode double-invoke
+      if (leafletMap.current && !document.body.contains(mapRef.current)) {
         leafletMap.current.remove();
         leafletMap.current = null;
+        isMounted.current = false;
       }
     };
   }, []);

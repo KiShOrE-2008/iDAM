@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ArrowLeft, Minus, Plus } from 'lucide-react';
 import { ParkingLocation, Language } from '@/types';
 
@@ -17,7 +17,19 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   onNext,
   lang
 }) => {
-  const [selectedDate, setSelectedDate] = useState('12 Sep');
+  const today = new Date();
+  const dateOptions = useMemo(() => {
+    return Array.from({ length: 4 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const day = i === 0 ? 'Today' : d.toLocaleDateString('en-IN', { weekday: 'short' });
+      const date = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+      return { day, date };
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [selectedDate, setSelectedDate] = useState(dateOptions[0].date);
   const [selectedTime, setSelectedTime] = useState('10:00');
   const [duration, setDuration] = useState(2);
 
@@ -54,12 +66,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
         
         {/* Date Selector Pills */}
         <div className="grid grid-cols-4 gap-2">
-          {[
-            { day: 'Today', date: '12 Sep' },
-            { day: 'Sat', date: '13 Sep' },
-            { day: 'Sun', date: '14 Sep' },
-            { day: 'Mon', date: '15 Sep' }
-          ].map((item, idx) => {
+          {dateOptions.map((item, idx) => {
             const isSelected = selectedDate === item.date;
             return (
               <button

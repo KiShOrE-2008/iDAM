@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { MapPin, ArrowRight, User, LayoutDashboard, LogOut, ChevronDown, Ticket, RefreshCw } from 'lucide-react';
@@ -27,6 +27,20 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { user, isLoggedIn, logout, switchRole } = useAuth();
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleOutsideClick(e: MouseEvent) {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    }
+    if (isProfileOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isProfileOpen]);
 
   const handleLogout = () => {
     logout();
@@ -128,7 +142,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {isLoggedIn ? (
             /* Profile Option Dropdown */
-            <div className="relative">
+            <div className="relative" ref={profileDropdownRef}>
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="flex items-center space-x-2 bg-emerald-50 border border-emerald-200/80 hover:border-emerald-300 text-emerald-950 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shadow-xs"
@@ -146,7 +160,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               {isProfileOpen && (
                 <div
                   className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 text-xs font-bold text-gray-700 z-50 animate-in fade-in zoom-in-95 duration-150"
-                  onMouseLeave={() => setIsProfileOpen(false)}
                 >
                   <div className="px-4 py-2.5 border-b border-gray-100 bg-emerald-50/50">
                     <p className="font-extrabold text-gray-900 truncate">{user?.name}</p>
@@ -194,18 +207,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           ) : (
             <>
-              {/* Sign In Link */}
-              <Link
-                href="/login"
-                className="hidden sm:block text-xs font-extrabold text-gray-700 hover:text-emerald-800 px-3 py-2 transition-colors"
+              {/* Sign In Button */}
+              <button
+                type="button"
+                onClick={() => setIsAuthOpen(true)}
+                className="text-xs font-extrabold text-gray-700 hover:text-emerald-800 px-3 py-2 transition-colors whitespace-nowrap"
               >
                 {t.signIn}
-              </Link>
+              </button>
               
               {/* Sign Up / Get Started Button */}
               <Link
                 href="/signup"
-                className="flex items-center space-x-2 bg-emerald-950 text-white px-5 py-2.5 rounded-full text-xs font-bold hover:bg-emerald-900 shadow-md shadow-emerald-950/20 transition-all hover:scale-105 active:scale-95"
+                className="flex items-center space-x-2 bg-emerald-950 text-white px-5 py-2.5 rounded-full text-xs font-bold hover:bg-emerald-900 shadow-md shadow-emerald-950/20 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
               >
                 <span>{t.getStarted}</span>
                 <ArrowRight className="w-3.5 h-3.5" />

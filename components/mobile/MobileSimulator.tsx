@@ -29,7 +29,7 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ locations, lan
     if (locations.length > 0 && !locations.find(l => l.id === selectedLocation?.id)) {
       setSelectedLocation(locations[0]);
     }
-  }, [locations]);
+  }, [locations, selectedLocation]);
 
   const currentLoc = selectedLocation || activeLocations[0] || MOCK_PARKING_LOCATIONS[0];
 
@@ -91,12 +91,12 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ locations, lan
         </div>
 
         {/* Smartphone Hardware Frame Simulation */}
-        <div className="relative mx-auto w-full max-w-[360px] h-[680px] bg-slate-950 rounded-[48px] p-3 shadow-2xl border-4 border-slate-800 ring-1 ring-white/10">
+        <div className="relative mx-auto w-full max-w-[440px] sm:max-w-[480px] h-[800px] sm:h-[860px] bg-slate-950 rounded-[52px] p-3.5 shadow-2xl border-4 border-slate-800 ring-1 ring-white/10 transition-all">
           
           {/* Phone Speaker Notch */}
-          <div className="absolute top-5 left-1/2 -translate-x-1/2 w-28 h-4 bg-slate-900 rounded-full z-40 flex items-center justify-center space-x-2">
+          <div className="absolute top-5 left-1/2 -translate-x-1/2 w-32 h-4.5 bg-slate-900 rounded-full z-40 flex items-center justify-center space-x-2">
             <div className="w-3 h-3 rounded-full bg-slate-950" />
-            <div className="w-10 h-1 bg-slate-800 rounded-full" />
+            <div className="w-12 h-1 bg-slate-800 rounded-full" />
           </div>
 
           {/* Phone Display Screen Area */}

@@ -209,38 +209,38 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
       </div>
 
       {/* Bottom App Navigation Bar */}
-      <div className="bg-white border-t border-gray-200 px-6 py-2 flex items-center justify-between text-[11px] font-semibold text-gray-500 z-20">
+      <div className="bg-white border-t border-gray-200 px-8 py-2.5 flex items-center justify-between text-xs font-bold text-gray-500 z-20">
         
         {/* Home Tab */}
         <button
-          onClick={() => {}}
-          className={`flex flex-col items-center transition-colors ${
-            activeTab === 'home' ? 'text-emerald-800 font-bold scale-105' : 'hover:text-gray-900'
+          onClick={onNavigateToProfile}
+          className={`flex flex-col items-center gap-0.5 transition-colors ${
+            activeTab === 'home' ? 'text-emerald-800 font-extrabold scale-105' : 'hover:text-gray-900'
           }`}
         >
-          <Home className="w-4 h-4" />
+          <Home className="w-5 h-5" />
           <span>Home</span>
         </button>
 
         {/* Bookings / Passes Tab */}
         <button
-          onClick={onNavigateToBookings || onNavigateToProfile}
-          className={`flex flex-col items-center transition-colors ${
-            activeTab === 'bookings' ? 'text-emerald-800 font-bold scale-105' : 'hover:text-gray-900'
+          onClick={onNavigateToBookings ?? onNavigateToProfile}
+          className={`flex flex-col items-center gap-0.5 transition-colors ${
+            activeTab === 'bookings' ? 'text-emerald-800 font-extrabold scale-105' : 'hover:text-gray-900'
           }`}
         >
-          <BookOpen className="w-4 h-4" />
+          <BookOpen className="w-5 h-5" />
           <span>Passes</span>
         </button>
 
         {/* Profile Tab */}
         <button
           onClick={onNavigateToProfile}
-          className={`flex flex-col items-center transition-colors ${
-            activeTab === 'profile' ? 'text-emerald-800 font-bold scale-105' : 'hover:text-gray-900'
+          className={`flex flex-col items-center gap-0.5 transition-colors ${
+            activeTab === 'profile' ? 'text-emerald-800 font-extrabold scale-105' : 'hover:text-gray-900'
           }`}
         >
-          <UserCheck className="w-4 h-4" />
+          <UserCheck className="w-5 h-5" />
           <span>Profile</span>
         </button>
 

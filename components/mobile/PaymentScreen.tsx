@@ -30,6 +30,15 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
     }, 1200);
   };
 
+  const computedEndTime = (() => {
+    const [hourStr, minStr] = bookingDetails.time.split(':');
+    const startHour = parseInt(hourStr, 10);
+    const endHour = (startHour + bookingDetails.duration) % 24;
+    const period = endHour >= 12 ? 'PM' : 'AM';
+    const displayHour = endHour > 12 ? endHour - 12 : endHour === 0 ? 12 : endHour;
+    return `${displayHour}:${minStr || '00'} ${period}`;
+  })();
+
   return (
     <div className="h-full flex flex-col justify-between bg-white relative overflow-y-auto no-scrollbar">
       
@@ -57,7 +66,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
           <div>
             <h4 className="font-bold text-gray-900 text-xs">{location.title}</h4>
             <p className="text-[11px] text-gray-500">
-              {bookingDetails.date} • {bookingDetails.time} AM - 12:00 PM
+              {bookingDetails.date} • {bookingDetails.time} AM - {computedEndTime}
             </p>
           </div>
         </div>

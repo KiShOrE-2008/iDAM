@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { X, ArrowRight, UserCheck, ShieldCheck, Car, Building2, Phone, CheckCircle2 } from 'lucide-react';
 import { Language } from '@/types';
+import { useAuth } from '@/context/AuthContext';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, lang }) => {
+  const { login: authLogin } = useAuth();
   const [role, setRole] = useState<'driver' | 'owner'>('driver');
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
@@ -35,6 +37,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, lang }) =
     setTimeout(() => {
       setIsLoading(false);
       setIsSuccess(true);
+      authLogin({
+        phone: phone ? `+91 ${phone}` : '+91 98765 43210',
+        role,
+      });
       setTimeout(() => {
         setIsSuccess(false);
         setStep('phone');

@@ -22,7 +22,7 @@ export const WebBookingModal: React.FC<WebBookingModalProps> = ({
   const router = useRouter();
   const [step, setStep] = useState<'details' | 'payment'>('details');
   const [vehicleType, setVehicleType] = useState<'car' | 'bike'>('car');
-  const [bookingDate, setBookingDate] = useState('2024-09-12');
+  const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
   const [startTime, setStartTime] = useState('10:00');
   const [duration, setDuration] = useState(2);
   const [vehicleNo, setVehicleNo] = useState('TN 59 AB 1234');
@@ -137,6 +137,7 @@ export const WebBookingModal: React.FC<WebBookingModalProps> = ({
                 <input
                   type="date"
                   value={bookingDate}
+                  min={new Date().toISOString().split('T')[0]}
                   onChange={(e) => setBookingDate(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-800 focus:ring-2 focus:ring-emerald-700 outline-none"
                 />
@@ -149,9 +150,14 @@ export const WebBookingModal: React.FC<WebBookingModalProps> = ({
                   onChange={(e) => setStartTime(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-800 focus:ring-2 focus:ring-emerald-700 outline-none"
                 >
-                  {['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'].map(t => (
-                    <option key={t} value={t}>{t} AM/PM</option>
-                  ))}
+                  {['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'].map(t => {
+                    const [h] = t.split(':').map(Number);
+                    const period = h >= 12 ? 'PM' : 'AM';
+                    const display = h > 12 ? h - 12 : h === 0 ? 12 : h;
+                    return (
+                      <option key={t} value={t}>{display}:00 {period}</option>
+                    );
+                  })}
                 </select>
               </div>
             </div>
