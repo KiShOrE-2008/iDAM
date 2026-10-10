@@ -5,6 +5,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { WebBookingModal } from '@/components/WebBookingModal';
 import { AuthModal } from '@/components/AuthModal';
+import { useRegisterModal } from '@/context/BackNavigationContext';
 import { ParkingLocation, Language, VehicleType } from '@/types';
 import { getParkingLocations } from '@/lib/parking/service';
 import { Search, MapPin, Car, Bike, Filter, Star, Clock, ShieldCheck, ChevronRight, Sparkles, Navigation } from 'lucide-react';
@@ -25,6 +26,10 @@ export default function ExplorePage() {
   const [selectedSpot, setSelectedSpot] = useState<ParkingLocation | null>(null);
   const [bookingSpot, setBookingSpot] = useState<ParkingLocation | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  // Register open modals with Back navigation stack
+  useRegisterModal(Boolean(bookingSpot), () => setBookingSpot(null), 'explore-booking-modal');
+  useRegisterModal(isAuthOpen, () => setIsAuthOpen(false), 'explore-auth-modal');
 
   useEffect(() => {
     async function loadData() {

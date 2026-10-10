@@ -3,6 +3,8 @@
 import React, { useState, useMemo } from 'react';
 import { ArrowLeft, Minus, Plus, Car, Bike, Zap, Sparkles, Tag, Check, ShieldCheck, Key, Shield } from 'lucide-react';
 import { ParkingLocation, Language } from '@/types';
+import { useAuth } from '@/context/AuthContext';
+import { getUserVehicles, getDefaultVehicle, Vehicle } from '@/lib/user/garageService';
 
 interface BookingScreenProps {
   location: ParkingLocation;
@@ -24,6 +26,9 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   onNext,
   lang
 }) => {
+  const { profile } = useAuth();
+  const [garageVehicles, setGarageVehicles] = useState<Vehicle[]>([]);
+
   const today = new Date();
   const dateOptions = useMemo(() => {
     return Array.from({ length: 4 }, (_, i) => {
@@ -39,8 +44,19 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   const [selectedDate, setSelectedDate] = useState(dateOptions[0].date);
   const [selectedTime, setSelectedTime] = useState('10:00 AM');
   const [duration, setDuration] = useState(2);
-  const [vehicleType, setVehicleType] = useState<'car' | 'bike' | 'suv' | 'ev'>('car');
-  const [vehicleNumber, setVehicleNumber] = useState('TN 59 AB 1234');
+  const [vehicleType, setVehicleType] = useState<'car' | 'bike' | 'suv' | 'ev'>((profile?.vehicleType as any) || 'car');
+  const [vehicleNumber, setVehicleNumber] = useState(profile?.vehicleNumber || 'TN 59 AB 1234');
+
+  React.useEffect(() => {
+    const list = getUserVehicles();
+    setGarageVehicles(list);
+    const def = getDefaultVehicle();
+    if (def) {
+      setVehicleNumber(def.plate);
+      const mappedType = def.type.toLowerCase() as 'car' | 'bike' | 'suv' | 'ev';
+      setVehicleType(mappedType);
+    }
+  }, []);
   
   // Value-added Add-ons
   const [addons, setAddons] = useState<{ evCharge: boolean; wash: boolean; valet: boolean; insurance: boolean }>({
@@ -100,7 +116,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col justify-between bg-slate-50 relative overflow-y-auto no-scrollbar animate-fade-in">
+    <div className="h-full flex flex-col justify-between bg-[#F8F8F5] text-[#14201D] relative overflow-y-auto no-scrollbar animate-fade-in">
       
       {/* Top Navigation Bar */}
       <div className="pt-3 px-4 pb-3 flex items-center space-x-3 bg-white border-b border-slate-200 sticky top-0 z-20 shadow-2xs">
@@ -152,10 +168,42 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
         </div>
 
         {/* License Plate Number Input */}
-        <div className="space-y-1.5 bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
-          <label className="text-xs font-black text-slate-900 block">
-            Vehicle Registration Plate
-          </label>
+        <div className="space-y-2 bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-black text-slate-900 block">
+              Vehicle Registration Plate
+            </label>
+            {garageVehicles.length > 0 && (
+              <span className="text-[10px] text-slate-400 font-bold uppercase">From Garage</span>
+            )}
+          </div>
+
+          {garageVehicles.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+              {garageVehicles.map((v) => {
+                const isSelected = vehicleNumber === v.plate;
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => {
+                      setVehicleNumber(v.plate);
+                      setVehicleType(v.type.toLowerCase() as any);
+                    }}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-black border transition-all shrink-0 flex items-center space-x-1 cursor-pointer ${
+                      isSelected
+                        ? 'bg-emerald-950 text-white border-emerald-700 shadow-2xs'
+                        : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                    }`}
+                  >
+                    <span>{v.plate}</span>
+                    <span className="opacity-75">({v.type})</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           <div className="flex items-center space-x-2">
             <span className="bg-amber-400 text-slate-950 font-black px-2 py-1 rounded-lg text-[10px] border border-amber-500 shrink-0">
               IND

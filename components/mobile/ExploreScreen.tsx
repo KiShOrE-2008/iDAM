@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, ChevronDown, User, MapPin, Car, Bike, ChevronRight, Home, BookOpen, UserCheck, Sparkles, Filter, Zap, ShieldCheck } from 'lucide-react';
 import { ParkingLocation, Language } from '@/types';
 import { MOCK_PARKING_LOCATIONS } from '@/lib/data/mockData';
+import { useAuth } from '@/context/AuthContext';
 import dynamic from 'next/dynamic';
 
 const RealMapView = dynamic(
@@ -32,6 +33,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
   onNavigateToBookings,
   activeTab = 'home'
 }) => {
+  const { isDemoMode } = useAuth();
   const [filter, setFilter] = useState<'near' | 'car' | 'bike' | 'ev'>('near');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<'default' | 'price_low'>('default');
@@ -72,17 +74,26 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
   const activeLoc = selectedLocation || filteredLocations[0] || baseLocations[0];
 
   return (
-    <div className="h-full flex flex-col justify-between bg-slate-50 relative overflow-hidden animate-fade-in">
+    <div className="h-full flex flex-col justify-between bg-[#F8F8F5] text-[#14201D] relative overflow-hidden animate-fade-in">
       
       {/* Top Header Bar */}
       <div className="pt-3 px-4 pb-2 bg-white border-b border-slate-200 shadow-2xs z-30 space-y-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-1.5 font-extrabold text-slate-900 text-sm cursor-pointer hover:opacity-80 transition-opacity">
-            <span className="flex items-center space-x-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Madurai Central</span>
-            </span>
-            <ChevronDown className="w-4 h-4 text-slate-500" />
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1.5 font-extrabold text-slate-900 text-sm cursor-pointer hover:opacity-80 transition-opacity">
+              <span className="flex items-center space-x-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Madurai Central</span>
+              </span>
+              <ChevronDown className="w-4 h-4 text-slate-500" />
+            </div>
+
+            {isDemoMode && (
+              <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black uppercase tracking-wider shadow-2xs">
+                <Sparkles className="w-2.5 h-2.5 text-amber-600" />
+                <span>Demo</span>
+              </span>
+            )}
           </div>
 
           {/* User Profile Avatar Button */}
@@ -253,18 +264,17 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
         
         {/* Home Tab */}
         <button
-          onClick={onNavigateToProfile}
           className={`flex flex-col items-center gap-0.5 transition-colors ${
             activeTab === 'home' ? 'text-emerald-900 font-black scale-105' : 'hover:text-slate-900'
           }`}
         >
-          <Home className="w-5 h-5" />
+          <Home className="w-5 h-5 text-emerald-700" />
           <span>Home</span>
         </button>
 
         {/* Bookings / Passes Tab */}
         <button
-          onClick={onNavigateToBookings ?? onNavigateToProfile}
+          onClick={onNavigateToBookings}
           className={`flex flex-col items-center gap-0.5 transition-colors ${
             activeTab === 'bookings' ? 'text-emerald-900 font-black scale-105' : 'hover:text-slate-900'
           }`}

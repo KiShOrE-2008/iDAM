@@ -15,6 +15,8 @@ interface SuccessPassScreenProps {
     total: number;
     vehicleNumber?: string;
     addons?: string[];
+    paymentId?: string;
+    paymentMethod?: string;
   };
   onReset: () => void;
   lang: Language;
@@ -26,7 +28,7 @@ export const SuccessPassScreen: React.FC<SuccessPassScreenProps> = ({
   onReset,
   lang
 }) => {
-  const passCode = 'IDM-82931';
+  const passCode = (bookingDetails as any)?.passCode || 'IDM-82931';
   const currentYear = new Date().getFullYear();
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -62,7 +64,7 @@ export const SuccessPassScreen: React.FC<SuccessPassScreenProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col justify-between bg-gradient-to-b from-emerald-50/80 via-slate-50 to-emerald-50/50 p-4 text-center relative overflow-y-auto no-scrollbar animate-fade-in">
+    <div className="h-full flex flex-col justify-between bg-[#F8F8F5] text-[#14201D] p-4 text-center relative overflow-y-auto no-scrollbar animate-fade-in">
       
       {/* Top Header */}
       <div className="pt-2 space-y-1">
@@ -103,7 +105,7 @@ export const SuccessPassScreen: React.FC<SuccessPassScreenProps> = ({
         <div className="bg-slate-900 p-3.5 rounded-2xl border-2 border-emerald-400/50 inline-block mx-auto relative shadow-inner">
           <div className="bg-white p-2 rounded-xl">
             <QRCodeSVG
-              value={`IDAM_PASS:${passCode}_${location.id}`}
+              value={bookingDetails && (bookingDetails as any).qrData ? (bookingDetails as any).qrData : `IDAM:v2:demo_${passCode.toLowerCase().replace('-', '_')}_${location.id}`}
               size={120}
               level="H"
               className="mx-auto"
@@ -139,6 +141,14 @@ export const SuccessPassScreen: React.FC<SuccessPassScreenProps> = ({
               </span>
             </div>
           )}
+
+          <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[11px]">
+            <span className="text-slate-500 font-semibold">Gateway</span>
+            <span className="bg-blue-50 text-blue-900 font-extrabold px-2 py-0.5 rounded text-[10px] flex items-center space-x-1">
+              <span>{bookingDetails.paymentMethod || 'Razorpay'}</span>
+              <span className="text-emerald-600">✓ Verified</span>
+            </span>
+          </div>
         </div>
 
         {/* Action Pills */}
@@ -206,6 +216,16 @@ export const SuccessPassScreen: React.FC<SuccessPassScreenProps> = ({
                 <span>Platform Service Fee</span>
                 <span className="font-bold text-slate-900">₹5</span>
               </div>
+              <div className="flex justify-between">
+                <span>Payment Gateway</span>
+                <span className="font-bold text-blue-900">{bookingDetails.paymentMethod || 'Razorpay'}</span>
+              </div>
+              {bookingDetails.paymentId && (
+                <div className="flex justify-between">
+                  <span>Transaction ID</span>
+                  <span className="font-mono text-[10px] font-bold text-slate-800">{bookingDetails.paymentId}</span>
+                </div>
+              )}
               <div className="flex justify-between border-t border-slate-100 pt-1 font-extrabold text-xs text-slate-900">
                 <span>Total Paid</span>
                 <span className="text-emerald-700">₹{bookingDetails.total}</span>

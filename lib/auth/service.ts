@@ -43,16 +43,18 @@ export async function upsertProfile(userId: string, data: Partial<UserProfile>):
   if (!isSupabaseConfigured || !supabase) return false;
 
   try {
+    const payload: Record<string, any> = {
+      id: userId,
+      updated_at: new Date().toISOString(),
+    };
+    if (data.name !== undefined) payload.full_name = data.name;
+    if (data.email !== undefined) payload.email = data.email;
+    if (data.phone !== undefined) payload.phone = data.phone;
+    if (data.role !== undefined) payload.role = data.role;
+
     const { error } = await supabase
       .from('profiles')
-      .upsert({
-        id: userId,
-        full_name: data.name || 'iDAM User',
-        email: data.email || '',
-        phone: data.phone || '',
-        role: data.role || 'driver',
-        updated_at: new Date().toISOString(),
-      });
+      .upsert(payload, { onConflict: 'id' });
 
     if (error) {
       console.error('Failed to upsert profile:', error);

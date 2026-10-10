@@ -2,28 +2,38 @@
 
 import React, { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
 import { Smartphone, Monitor } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
 import { HowItWorks } from '@/components/HowItWorks';
 import { WebExplorer } from '@/components/WebExplorer';
 import { SplashScreen } from '@/components/mobile/SplashScreen';
+import { AuthScreen } from '@/components/mobile/AuthScreen';
 import { ExploreScreen } from '@/components/mobile/ExploreScreen';
 import { ParkingDetailsScreen } from '@/components/mobile/ParkingDetailsScreen';
 import { BookingScreen } from '@/components/mobile/BookingScreen';
 import { PaymentScreen } from '@/components/mobile/PaymentScreen';
 import { SuccessPassScreen } from '@/components/mobile/SuccessPassScreen';
-import { ProfileDashboardScreen } from '@/components/mobile/ProfileDashboardScreen';
+import { MyPassesScreen } from '@/components/mobile/MyPassesScreen';
+import { MyAccountScreen } from '@/components/mobile/MyAccountScreen';
 import { SupportHubScreen } from '@/components/mobile/SupportHubScreen';
 import { MobileSimulator } from '@/components/mobile/MobileSimulator';
 import { OwnerModal } from '@/components/OwnerModal';
 import { WebBookingModal } from '@/components/web/WebBookingModal';
+import { FaqPreview } from '@/components/web/FaqPreview';
+import { CookieBanner } from '@/components/web/CookieBanner';
 import { Footer } from '@/components/Footer';
 import { Language, ParkingLocation } from '@/types';
 import { getParkingLocations } from '@/lib/parking/service';
+import { createBooking } from '@/lib/booking/service';
 import { MOCK_PARKING_LOCATIONS } from '@/lib/data/mockData';
 
+import { useBackNavigation, useRegisterModal } from '@/context/BackNavigationContext';
+import { useAuth } from '@/context/AuthContext';
+
 export default function Home() {
+  const { isAuthenticated } = useAuth();
   const [lang, setLang] = useState<Language>('en');
   const [isOwnerModalOpen, setIsOwnerModalOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -46,11 +56,61 @@ export default function Home() {
     addons: ['EV Fast Charge']
   });
 
+  const { registerBackHandler } = useBackNavigation();
+
+  // Register open modals with Back button stack so Back closes them first
+  useRegisterModal(isOwnerModalOpen, () => setIsOwnerModalOpen(false), 'owner-modal');
+  useRegisterModal(isBookingModalOpen, () => setIsBookingModalOpen(false), 'booking-modal');
+
   useEffect(() => {
     if (typeof window !== 'undefined' && Capacitor.isNativePlatform()) {
       setDemoViewMode('mobile_standalone');
     }
   }, []);
+
+  // Register Native Mobile Back Navigation Handler
+  useEffect(() => {
+    if (demoViewMode !== 'mobile_standalone') return;
+
+    return registerBackHandler(() => {
+      // Step transitions matching expected screen-back architecture:
+      if (nativeStep === 10) {
+        setNativeStep(9); // Support -> Account
+        return true;
+      }
+      if (nativeStep === 9) {
+        setNativeStep(3); // Account / Profile -> Explore / Home
+        return true;
+      }
+      if (nativeStep === 8) {
+        setNativeStep(3); // Passes -> Explore / Home
+        return true;
+      }
+      if (nativeStep === 7) {
+        setNativeStep(8); // Success Pass -> Passes
+        return true;
+      }
+      if (nativeStep === 6) {
+        setNativeStep(5); // Payment -> Booking
+        return true;
+      }
+      if (nativeStep === 5) {
+        setNativeStep(4); // Booking -> Parking Details
+        return true;
+      }
+      if (nativeStep === 4) {
+        setNativeStep(3); // Parking Details -> Explore
+        return true;
+      }
+      if (nativeStep === 2) {
+        setNativeStep(1); // Auth (Login/Signup) -> Splash
+        return true;
+      }
+      // nativeStep === 3 (Explore / Root Home) or 1 (Splash): User is on Root/Home screen!
+      // Return false to let BackNavigationContext show the "Exit iDAM?" confirmation dialog.
+      return false;
+    });
+  }, [demoViewMode, nativeStep, registerBackHandler]);
 
   useEffect(() => {
     async function loadData() {
@@ -63,100 +123,133 @@ export default function Home() {
     loadData();
   }, []);
 
-  // Standalone Full-Screen Mobile App View
+  // Standalone Full-Screen Mobile App View (Clean 100% Native View)
   if (demoViewMode === 'mobile_standalone') {
     return (
-      <div className="h-screen w-screen bg-slate-950 flex flex-col overflow-hidden font-sans select-none">
+      <div className="h-screen w-screen bg-white flex flex-col overflow-hidden font-sans select-none">
         
-        {/* Top Viewport Mode Switcher Banner */}
-        <div className="bg-slate-900 border-b border-slate-800 px-4 py-2 flex items-center justify-between text-xs text-slate-300 z-50">
-          <div className="flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="font-bold text-white">iDAM Mobile App Live Demo</span>
-          </div>
-
-          <button
-            onClick={() => setDemoViewMode('web')}
-            className="flex items-center space-x-1 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3 py-1 rounded-full text-[11px] font-extrabold transition-all"
-          >
-            <Monitor className="w-3.5 h-3.5" />
-            <span>Switch to Web Landing View</span>
-          </button>
-        </div>
-
-        {/* Mobile Viewport Container */}
-        <div className="flex-1 relative overflow-hidden bg-white max-w-[440px] mx-auto w-full border-x border-slate-800 shadow-2xl">
+        {/* Full-Screen Native Mobile Viewport */}
+        <div className="flex-1 relative overflow-hidden bg-white max-w-[440px] mx-auto w-full border-x border-slate-200 shadow-2xl">
           {nativeStep === 1 && (
-            <SplashScreen lang={lang} onNext={() => setNativeStep(2)} />
+            <SplashScreen 
+              lang={lang} 
+              onNext={() => setNativeStep(isAuthenticated ? 3 : 2)} 
+              onLanguageToggle={setLang}
+            />
           )}
 
           {nativeStep === 2 && (
-            <ExploreScreen
-              locations={locations.length > 0 ? locations : MOCK_PARKING_LOCATIONS}
-              selectedLocation={selectedLocation}
-              onSelectLocation={setSelectedLocation}
-              onNext={() => setNativeStep(3)}
+            <AuthScreen
               lang={lang}
-              onNavigateToProfile={() => setNativeStep(7)}
-              onNavigateToBookings={() => setNativeStep(7)}
+              onSuccess={() => setNativeStep(3)}
+              onSkipDemo={() => setNativeStep(3)}
             />
           )}
 
           {nativeStep === 3 && (
-            <ParkingDetailsScreen
-              location={selectedLocation}
-              onBack={() => setNativeStep(2)}
+            <ExploreScreen
+              locations={locations.length > 0 ? locations : MOCK_PARKING_LOCATIONS}
+              selectedLocation={selectedLocation}
+              onSelectLocation={setSelectedLocation}
               onNext={() => setNativeStep(4)}
               lang={lang}
+              onNavigateToBookings={() => setNativeStep(8)}
+              onNavigateToProfile={() => setNativeStep(9)}
             />
           )}
 
           {nativeStep === 4 && (
-            <BookingScreen
+            <ParkingDetailsScreen
               location={selectedLocation}
               onBack={() => setNativeStep(3)}
-              onNext={(details) => {
-                setBookingDetails({
-                  ...bookingDetails,
-                  ...details
-                });
-                setNativeStep(5);
-              }}
+              onNext={() => setNativeStep(5)}
               lang={lang}
             />
           )}
 
           {nativeStep === 5 && (
-            <PaymentScreen
+            <BookingScreen
               location={selectedLocation}
-              bookingDetails={bookingDetails}
               onBack={() => setNativeStep(4)}
-              onPaySuccess={() => setNativeStep(6)}
+              onNext={(details) => {
+                setBookingDetails({
+                  ...bookingDetails,
+                  ...details
+                });
+                setNativeStep(6);
+              }}
               lang={lang}
             />
           )}
 
           {nativeStep === 6 && (
-            <SuccessPassScreen
+            <PaymentScreen
               location={selectedLocation}
               bookingDetails={bookingDetails}
-              onReset={() => setNativeStep(7)}
+              onBack={() => setNativeStep(5)}
+              onPaySuccess={async (meta) => {
+                try {
+                  const booking = await createBooking(selectedLocation, {
+                    parkingLocationId: selectedLocation.id,
+                    vehicleType: 'car',
+                    bookingDate: bookingDetails.date,
+                    startTime: bookingDetails.time,
+                    durationHours: bookingDetails.duration,
+                    basePrice: bookingDetails.total,
+                    platformFee: 5,
+                    totalAmount: bookingDetails.total,
+                    paymentMethod: meta?.paymentMethod || 'Razorpay',
+                    paymentId: meta?.paymentId,
+                    vehicleNumber: bookingDetails.vehicleNumber
+                  });
+                  setBookingDetails((prev) => ({
+                    ...prev,
+                    ...meta,
+                    passCode: booking.passCode,
+                    qrData: booking.qrData
+                  } as any));
+                } catch (err) {
+                  console.warn('Booking creation error:', err);
+                }
+                setNativeStep(7);
+              }}
               lang={lang}
             />
           )}
 
           {nativeStep === 7 && (
-            <ProfileDashboardScreen
+            <SuccessPassScreen
+              location={selectedLocation}
+              bookingDetails={bookingDetails}
+              onReset={() => setNativeStep(8)}
               lang={lang}
-              onBack={() => setNativeStep(2)}
-              onNavigateToSupport={() => setNativeStep(8)}
             />
           )}
 
           {nativeStep === 8 && (
+            <MyPassesScreen
+              lang={lang}
+              onBack={() => setNativeStep(3)}
+              onNavigateToHome={() => setNativeStep(3)}
+              onNavigateToProfile={() => setNativeStep(9)}
+            />
+          )}
+
+          {nativeStep === 9 && (
+            <MyAccountScreen
+              lang={lang}
+              onBack={() => setNativeStep(3)}
+              onNavigateToHome={() => setNativeStep(3)}
+              onNavigateToPasses={() => setNativeStep(8)}
+              onNavigateToSupport={() => setNativeStep(10)}
+              onNavigateToAuth={() => setNativeStep(2)}
+            />
+          )}
+
+          {nativeStep === 10 && (
             <SupportHubScreen
               lang={lang}
-              onBack={() => setNativeStep(7)}
+              onBack={() => setNativeStep(9)}
             />
           )}
         </div>
@@ -221,6 +314,9 @@ export default function Home() {
           lang={lang}
           onOpenOwnerModal={() => setIsOwnerModalOpen(true)}
         />
+
+        {/* FAQ Preview Section */}
+        <FaqPreview lang={lang} />
       </main>
 
       {/* Footer */}
@@ -240,6 +336,9 @@ export default function Home() {
         onClose={() => setIsBookingModalOpen(false)}
         lang={lang}
       />
+
+      {/* Cookie & Storage Disclosure Banner */}
+      <CookieBanner />
 
     </div>
   );

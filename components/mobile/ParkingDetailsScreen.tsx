@@ -36,7 +36,7 @@ export const ParkingDetailsScreen: React.FC<ParkingDetailsScreenProps> = ({
   const occupancyPercent = Math.round(((spotCountTotal - spotCountAvailable) / spotCountTotal) * 100);
 
   return (
-    <div className="h-full flex flex-col justify-between bg-slate-50 relative overflow-y-auto no-scrollbar animate-fade-in">
+    <div className="h-full flex flex-col justify-between bg-[#F8F8F5] text-[#14201D] relative overflow-y-auto no-scrollbar animate-fade-in">
       
       {/* Cover Image Header */}
       <div className="relative h-44 bg-slate-900 shrink-0">

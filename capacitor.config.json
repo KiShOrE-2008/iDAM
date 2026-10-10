@@ -1,7 +1,7 @@
 {
   "appId": "com.idam.park",
   "appName": "iDAM",
-  "webDir": "out",
+  "webDir": "dist",
   "server": {
     "androidScheme": "https"
   }

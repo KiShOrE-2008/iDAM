@@ -1,4 +1,4 @@
-import { ParkingLocation } from '@/types';
+import type { ParkingLocation } from '../../types/index.ts';
 
 export const MOCK_PARKING_LOCATIONS: ParkingLocation[] = [
   {

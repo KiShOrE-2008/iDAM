@@ -78,7 +78,7 @@ const HELP_CATEGORIES = [
     questions: [
       {
         q: 'What payment methods are supported?',
-        a: 'IDAM supports all major Indian payment methods including UPI (GPay, PhonePe, Paytm), Net Banking, and Debit/Credit Cards. (Note: In demo environments, payments are simulated).'
+        a: 'IDAM integrates with Razorpay to support all major Indian payment methods including UPI (Google Pay, PhonePe, Paytm, CRED), Net Banking across 50+ banks, Credit/Debit Cards, and digital wallets. Transactions are secured with 256-bit SSL encryption.'
       },
       {
         q: 'How are parking fees calculated?',

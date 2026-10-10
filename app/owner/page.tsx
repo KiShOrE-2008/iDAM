@@ -8,14 +8,53 @@ import { MOCK_PARKING_LOCATIONS } from '@/lib/data/mockData';
 import { Language } from '@/types';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { Building2, PlusCircle, DollarSign, Users, Car, CheckCircle2, AlertCircle, Clock, ShieldCheck, QrCode, Lock } from 'lucide-react';
+import { Building2, PlusCircle, DollarSign, Users, Car, CheckCircle2, AlertCircle, Clock, ShieldCheck, QrCode, Lock, X } from 'lucide-react';
+import { PassVerificationResult, Booking } from '@/types';
+import { OwnerScannerScreen } from '@/components/mobile/owner/OwnerScannerScreen';
+import { ScanVerificationResultModal } from '@/components/mobile/owner/ScanVerificationResultModal';
+import { validateScannedPass, confirmBookingCheckIn } from '@/lib/parking/checkInService';
 
 export default function OwnerPortalPage() {
   const [lang, setLang] = useState<Language>('en');
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isDemoMode } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeSpace, setActiveSpace] = useState(MOCK_PARKING_LOCATIONS[0]);
   const [isSpaceOpen, setIsSpaceOpen] = useState(true);
+
+  // Scanner & Verification State
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<PassVerificationResult | null>(null);
+  const [isVerifyingScan, setIsVerifyingScan] = useState(false);
+
+  const handleScanResult = async (rawPayload: string) => {
+    if (isVerifyingScan) return;
+    setIsVerifyingScan(true);
+    try {
+      const res = await validateScannedPass({
+        rawScannedText: rawPayload,
+        ownerSpaceId: activeSpace.id,
+        isDemoMode
+      });
+      setVerificationResult(res);
+    } catch (e: any) {
+      setVerificationResult({
+        isValid: false,
+        statusCode: 'not_found',
+        message: e.message || 'Verification failed.'
+      });
+    } finally {
+      setIsVerifyingScan(false);
+    }
+  };
+
+  const handleConfirmCheckIn = async (b: Booking) => {
+    return await confirmBookingCheckIn({
+      bookingId: b.id,
+      passCode: b.passCode,
+      passTokenHash: b.passTokenHash,
+      isDemoMode
+    });
+  };
 
   const mockBookings = [
     { id: 'bk-101', code: 'IDM-82931', vehicle: 'TN 59 AB 1234', type: 'Car', time: '10:00 AM - 12:00 PM', amount: 85, status: 'Active' },
@@ -155,8 +194,11 @@ export default function OwnerPortalPage() {
               <p className="text-xs text-gray-500">Real-time digital pass verification for gate security</p>
             </div>
 
-            <button className="flex items-center space-x-1.5 bg-emerald-50 text-emerald-800 px-3.5 py-1.5 rounded-xl text-xs font-bold border border-emerald-200">
-              <QrCode className="w-3.5 h-3.5 text-emerald-700" />
+            <button
+              onClick={() => setIsScannerOpen(true)}
+              className="flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer"
+            >
+              <QrCode className="w-3.5 h-3.5" />
               <span>Scan Driver Pass</span>
             </button>
           </div>
@@ -209,6 +251,31 @@ export default function OwnerPortalPage() {
         lang={lang}
       />
 
+      {/* Scanner Dialog for Web / Tablet */}
+      {isScannerOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-slate-950 rounded-3xl max-w-sm w-full h-[650px] overflow-hidden shadow-2xl border border-slate-800 relative flex flex-col">
+            <OwnerScannerScreen
+              onBack={() => setIsScannerOpen(false)}
+              onScanResult={handleScanResult}
+              isProcessing={isVerifyingScan}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Verification Result Modal */}
+      {verificationResult && (
+        <ScanVerificationResultModal
+          result={verificationResult}
+          onClose={() => setVerificationResult(null)}
+          onScanAgain={() => {
+            setVerificationResult(null);
+            setIsScannerOpen(true);
+          }}
+          onConfirmCheckIn={handleConfirmCheckIn}
+        />
+      )}
     </div>
   );
 }

@@ -6,11 +6,24 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { QRCodeSVG } from 'qrcode.react';
 import confetti from 'canvas-confetti';
-import { CheckCircle2, MapPin, Calendar, Clock, Navigation, Share2, Printer, ArrowLeft, ShieldCheck } from 'lucide-react';
+import {
+  CheckCircle2,
+  MapPin,
+  Calendar,
+  Clock,
+  Navigation,
+  Share2,
+  Printer,
+  ArrowLeft,
+  ShieldCheck,
+  Copy,
+  Check
+} from 'lucide-react';
 import { Language } from '@/types';
 import { MOCK_PARKING_LOCATIONS } from '@/lib/data/mockData';
+import { getBookingByPassCode } from '@/lib/booking/service';
 
-// Mock pass registry — in production this would be fetched from the DB by passId
+// Mock pass registry — fallback for demonstration passes
 const MOCK_PASS_REGISTRY: Record<string, {
   locationIndex: number;
   date: string;
@@ -18,9 +31,10 @@ const MOCK_PASS_REGISTRY: Record<string, {
   vehicle: string;
   amount: string;
   payment: string;
+  paymentId?: string;
 }> = {
-  'IDM-82931': { locationIndex: 0, date: '12 Sep 2026', timeSlot: '10:00 AM - 12:00 PM', vehicle: 'TN 59 AB 1234', amount: '₹85', payment: 'UPI' },
-  'IDM-44120': { locationIndex: 1, date: '10 Sep 2026', timeSlot: '02:00 PM - 04:00 PM', vehicle: 'TN 59 C 5678', amount: '₹65', payment: 'UPI' },
+  'IDM-82931': { locationIndex: 0, date: '12 Sep 2026', timeSlot: '10:00 AM - 12:00 PM', vehicle: 'TN 59 AB 1234', amount: '₹85', payment: 'Razorpay', paymentId: 'pay_IDM82931DEMO' },
+  'IDM-44120': { locationIndex: 1, date: '10 Sep 2026', timeSlot: '02:00 PM - 04:00 PM', vehicle: 'TN 59 C 5678', amount: '₹65', payment: 'Razorpay', paymentId: 'pay_IDM44120DEMO' },
 };
 
 interface DigitalPassClientProps {
@@ -30,15 +44,38 @@ interface DigitalPassClientProps {
 export function DigitalPassClient({ passId }: DigitalPassClientProps) {
   const router = useRouter();
   const [lang, setLang] = useState<Language>('en');
+  const [copiedTxn, setCopiedTxn] = useState(false);
 
-  // Look up pass data by passId — fallback to first location if unknown pass
-  const passData = MOCK_PASS_REGISTRY[passId];
-  const location = MOCK_PARKING_LOCATIONS[passData?.locationIndex ?? 0];
-  const passDate = passData?.date ?? `${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`;
-  const passTimeSlot = passData?.timeSlot ?? '10:00 AM - 12:00 PM';
-  const passVehicle = passData?.vehicle ?? 'N/A';
-  const passAmount = passData?.amount ?? '₹0';
-  const passPayment = passData?.payment ?? 'UPI';
+  // Look up pass data from persistent local storage first, then fallback to mock registry
+  const dynamicBooking = getBookingByPassCode(passId);
+  const mockFallback = MOCK_PASS_REGISTRY[passId];
+
+  const location = dynamicBooking?.parkingLocation
+    || (mockFallback ? MOCK_PARKING_LOCATIONS[mockFallback.locationIndex] : MOCK_PARKING_LOCATIONS[0]);
+
+  const passDate = dynamicBooking?.bookingDate
+    || mockFallback?.date
+    || new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  const passTimeSlot = dynamicBooking
+    ? `${dynamicBooking.startTime} - ${dynamicBooking.endTime}`
+    : (mockFallback?.timeSlot ?? '10:00 AM - 12:00 PM');
+
+  const passVehicle = dynamicBooking?.vehicleNumber
+    || mockFallback?.vehicle
+    || 'TN 59 AB 1234';
+
+  const passAmount = dynamicBooking
+    ? `₹${dynamicBooking.totalAmount}`
+    : (mockFallback?.amount ?? '₹85');
+
+  const passPayment = dynamicBooking?.paymentMethod
+    || mockFallback?.payment
+    || 'Razorpay';
+
+  const passPaymentId = dynamicBooking?.paymentId
+    || mockFallback?.paymentId
+    || 'pay_rzp_mock_confirmed';
 
   useEffect(() => {
     try {
@@ -54,9 +91,17 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
 
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(
-      `🚗 My iDAM Parking Pass: ${passId}\n📍 Location: ${location.title}\n🕒 ${passDate} (${passTimeSlot})\nStatus: CONFIRMED`
+      `🚗 My iDAM Parking Pass: ${passId}\n📍 Location: ${location.title}\n🕒 ${passDate} (${passTimeSlot})\n💳 Payment: ${passPayment} (${passPaymentId})\nStatus: CONFIRMED`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
+  };
+
+  const handleCopyPaymentId = () => {
+    if (passPaymentId) {
+      navigator.clipboard?.writeText(passPaymentId);
+      setCopiedTxn(true);
+      setTimeout(() => setCopiedTxn(false), 2000);
+    }
   };
 
   const handlePrint = () => {
@@ -74,53 +119,57 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
         onOpenOwnerModal={() => {}}
       />
 
-      <div className="max-w-3xl mx-auto px-4 py-12 w-full flex-1 space-y-8">
+      <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12 w-full flex-1 space-y-6">
         
-        {/* Top Action Bar */}
+        {/* Top Back & Print Controls */}
         <div className="flex items-center justify-between">
           <button
-            onClick={() => router.push('/explore')}
-            className="flex items-center space-x-2 text-xs font-bold text-gray-700 bg-white border border-gray-200 px-4 py-2 rounded-xl shadow-2xs hover:bg-gray-50"
+            onClick={() => router.push('/')}
+            className="inline-flex items-center space-x-2 text-xs font-bold text-gray-500 hover:text-emerald-800 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Explorer</span>
+            <span>Back to Map Discovery</span>
           </button>
 
           <div className="flex items-center space-x-2">
             <button
-              onClick={handleShareWhatsApp}
-              className="flex items-center space-x-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl hover:bg-emerald-100"
+              onClick={handlePrint}
+              className="p-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs font-semibold flex items-center space-x-1.5 shadow-2xs transition-all"
             >
-              <Share2 className="w-3.5 h-3.5" />
-              <span>Share Pass</span>
+              <Printer className="w-4 h-4 text-gray-600" />
+              <span>Print Pass</span>
             </button>
             <button
-              onClick={handlePrint}
-              className="flex items-center space-x-1.5 text-xs font-bold text-gray-800 bg-white border border-gray-200 px-3.5 py-2 rounded-xl hover:bg-gray-50"
+              onClick={handleShareWhatsApp}
+              className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 text-xs font-semibold flex items-center space-x-1.5 shadow-2xs transition-all"
             >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Print Pass</span>
+              <Share2 className="w-4 h-4 text-emerald-700" />
+              <span>Share Pass</span>
             </button>
           </div>
         </div>
 
-        {/* Digital Ticket Container */}
-        <div className="bg-white rounded-3xl border border-gray-200 shadow-2xl overflow-hidden print:border-none print:shadow-none">
-          
-          {/* Header Banner */}
-          <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-950 p-6 sm:p-8 text-white text-center relative">
-            <div className="w-14 h-14 bg-emerald-500 text-slate-950 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-emerald-500/20">
-              <CheckCircle2 className="w-8 h-8 stroke-[3]" />
+        {/* Confirmed Banner */}
+        <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-900 text-white rounded-3xl p-6 shadow-xl flex items-center justify-between">
+          <div className="space-y-1">
+            <div className="inline-flex items-center space-x-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-3 py-1 rounded-full text-xs font-bold">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Booking Confirmed</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold">Parking Reservation Confirmed!</h1>
-            <p className="text-xs text-emerald-200 mt-1">Show this digital QR code to gate security at parking entry.</p>
-
-            <div className="mt-4 inline-block bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-mono font-bold px-4 py-1.5 rounded-full">
-              PASS ID: {passId}
-            </div>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight">Your Digital Pass is Ready</h1>
+            <p className="text-xs text-gray-300">Show this QR code at the entrance boom barrier</p>
           </div>
 
-          {/* Ticket Body */}
+          <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-xs flex items-center justify-center text-emerald-300 shrink-0 border border-white/10">
+            <ShieldCheck className="w-7 h-7" />
+          </div>
+        </div>
+
+        {/* Main Pass Card */}
+        <div className="bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden relative">
+          
+          <div className="h-2 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-700" />
+
           <div className="p-6 sm:p-8 space-y-6">
             
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center border-b border-gray-100 pb-8">
@@ -129,7 +178,16 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
               <div className="md:col-span-5 text-center">
                 <div className="bg-emerald-50/60 p-5 rounded-3xl border border-emerald-100 inline-block shadow-inner">
                   <QRCodeSVG
-                    value={`IDAM_VERIFY:${passId}_LOCATION:${location.id}`}
+                    value={dynamicBooking?.qrData || JSON.stringify({
+                      passId,
+                      location: location.title,
+                      date: passDate,
+                      time: passTimeSlot,
+                      amount: passAmount,
+                      vehicle: passVehicle,
+                      gateway: passPayment,
+                      paymentId: passPaymentId
+                    })}
                     size={160}
                     level="H"
                     className="mx-auto"
@@ -183,7 +241,25 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
                     <div>
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Amount Paid</label>
                       <div className="font-extrabold text-emerald-800 text-base mt-0.5">
-                        {passAmount} ({passPayment})
+                        {passAmount}
+                      </div>
+                      
+                      {/* Razorpay Gateway Badge */}
+                      <div className="flex items-center space-x-1.5 mt-1">
+                        <span className="text-[10px] font-extrabold px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 border border-blue-200">
+                          {passPayment}
+                        </span>
+                        {passPaymentId && (
+                          <button
+                            type="button"
+                            onClick={handleCopyPaymentId}
+                            className="text-[10px] font-mono text-gray-500 hover:text-gray-800 flex items-center space-x-0.5 bg-gray-100 px-1.5 py-0.2 rounded transition-colors"
+                            title="Click to copy transaction ID"
+                          >
+                            <span className="truncate max-w-[90px]">{passPaymentId}</span>
+                            {copiedTxn ? <Check className="w-2.5 h-2.5 text-emerald-600" /> : <Copy className="w-2.5 h-2.5" />}
+                          </button>
+                        )}
                       </div>
                     </div>
                 </div>

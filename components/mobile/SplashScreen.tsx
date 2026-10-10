@@ -8,20 +8,31 @@ import { TRANSLATIONS } from '@/lib/i18n/translations';
 interface SplashScreenProps {
   lang: Language;
   onNext: () => void;
+  onLanguageToggle?: (lang: Language) => void;
 }
 
-export const SplashScreen: React.FC<SplashScreenProps> = ({ lang, onNext }) => {
+export const SplashScreen: React.FC<SplashScreenProps> = ({ lang, onNext, onLanguageToggle }) => {
   const t = TRANSLATIONS[lang];
 
   return (
     <div className="h-full flex flex-col justify-between p-6 sm:p-8 bg-[#F8F8F5] text-slate-900 relative overflow-hidden select-none animate-fade-in">
       
-      {/* Top Subtle Brand Tag */}
-      <div className="pt-4 z-10 flex justify-center">
+      {/* Top Subtle Brand Tag & Language Switcher */}
+      <div className="pt-4 z-10 flex items-center justify-between">
         <div className="inline-flex items-center space-x-2 bg-white border border-slate-200 px-3.5 py-1.5 rounded-full text-xs font-black text-slate-800 shadow-2xs">
           <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
           <span>Madurai Smart Parking</span>
         </div>
+
+        {onLanguageToggle && (
+          <button
+            type="button"
+            onClick={() => onLanguageToggle(lang === 'en' ? 'ta' : 'en')}
+            className="bg-white border border-slate-200/90 hover:border-emerald-500/60 px-3 py-1.5 rounded-full text-[11px] font-black text-slate-700 hover:text-emerald-700 transition-all shadow-2xs active:scale-95 flex items-center space-x-1"
+          >
+            <span>{lang === 'en' ? 'தமிழ்' : 'English'}</span>
+          </button>
+        )}
       </div>
 
       {/* Center Warm Minimal iDAM Brand Hero */}

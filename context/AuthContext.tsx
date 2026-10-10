@@ -17,9 +17,11 @@ interface AuthContextType {
   isDemoMode: boolean;
 
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (data: { email: string; password: string; fullName: string; phone?: string }) => Promise<{ success: boolean; error?: string }>;
+  signUp: (data: { email: string; password: string; fullName: string; phone?: string }) => Promise<{ success: boolean; error?: string; message?: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
+  updatePassword: (password: string) => Promise<{ success: boolean; error?: string }>;
+  isPasswordRecovery: boolean;
 
   startDemo: (role: 'driver' | 'owner') => void;
   exitDemo: () => void;
@@ -53,6 +55,70 @@ const DEFAULT_MOCK_OWNER: UserProfile = {
   hourlyRateBike: 20,
 };
 
+interface LocalAccount {
+  id: string;
+  name: string;
+  email: string;
+  password?: string;
+  phone?: string;
+  role: 'driver' | 'owner';
+  vehicleNumber?: string;
+  vehicleType?: 'car' | 'bike';
+  createdAt: string;
+}
+
+const LOCAL_STORAGE_KEYS = {
+  ACCOUNTS: 'idam_local_accounts',
+  ACTIVE_USER: 'idam_active_user',
+  DEMO_MODE: 'idam_demo_mode',
+  DEMO_USER: 'idam_user',
+};
+
+const SEED_ACCOUNTS: LocalAccount[] = [
+  {
+    id: 'seed_driver_1',
+    name: 'Kishore Kumar',
+    email: 'kishore.k@example.com',
+    password: 'password123',
+    phone: '+91 98765 43210',
+    role: 'driver',
+    vehicleNumber: 'TN 59 AZ 8899',
+    vehicleType: 'car',
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'seed_owner_1',
+    name: 'Kishore (Meenakshi Parking)',
+    email: 'owner@meenakshiparking.com',
+    password: 'password123',
+    phone: '+91 98765 43210',
+    role: 'owner',
+    vehicleNumber: 'TN 59 AZ 8899',
+    vehicleType: 'car',
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+];
+
+function getLocalAccounts(): LocalAccount[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEYS.ACCOUNTS);
+    if (!raw) {
+      localStorage.setItem(LOCAL_STORAGE_KEYS.ACCOUNTS, JSON.stringify(SEED_ACCOUNTS));
+      return SEED_ACCOUNTS;
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : SEED_ACCOUNTS;
+  } catch (e) {
+    return SEED_ACCOUNTS;
+  }
+}
+
+function saveLocalAccounts(accounts: LocalAccount[]): void {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
+  } catch (e) {}
+}
+
 const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
@@ -66,6 +132,8 @@ const AuthContext = createContext<AuthContextType>({
   signUp: async () => ({ success: false }),
   signOut: async () => {},
   resetPassword: async () => ({ success: false }),
+  updatePassword: async () => ({ success: false }),
+  isPasswordRecovery: false,
   startDemo: () => {},
   exitDemo: () => {},
   refreshProfile: async () => {},
@@ -80,118 +148,288 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState<boolean>(false);
 
-  const isAuthenticated = isDemoMode || !!session;
+  const isAuthenticated = isDemoMode || !!session || !!profile;
 
   // Initialize Auth & Supabase Session listener
   useEffect(() => {
+    let isMounted = true;
+
     async function initAuth() {
-      // First check local Demo Mode state
+      // 1. Check if user was explicitly in Demo Mode
       try {
-        const demoStorage = localStorage.getItem('idam_demo_mode');
-        const demoUser = localStorage.getItem('idam_user');
+        const demoStorage = localStorage.getItem(LOCAL_STORAGE_KEYS.DEMO_MODE);
+        const demoUser = localStorage.getItem(LOCAL_STORAGE_KEYS.DEMO_USER);
         if (demoStorage === 'true' && demoUser) {
-          setIsDemoMode(true);
-          setProfile(JSON.parse(demoUser));
-          setIsLoading(false);
-          return;
-        }
-      } catch (e) {
-        // ignore
-      }
-
-      if (!isSupabaseConfigured || !supabase) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        setSession(currentSession);
-        setSupabaseUser(currentSession?.user || null);
-
-        if (currentSession?.user) {
-          const userProf = await fetchProfile(currentSession.user.id);
-          if (userProf) {
-            setProfile(userProf);
-          } else {
-            const fallbackProf: UserProfile = {
-              name: currentSession.user.user_metadata?.full_name || currentSession.user.email?.split('@')[0] || 'User',
-              email: currentSession.user.email || '',
-              phone: currentSession.user.user_metadata?.phone || '',
-              role: 'driver',
-            };
-            setProfile(fallbackProf);
+          if (isMounted) {
+            setIsDemoMode(true);
+            setProfile(JSON.parse(demoUser));
           }
         }
-      } catch (e) {
-        console.error('Error initializing auth session:', e);
-      } finally {
-        setIsLoading(false);
-      }
+      } catch (e) {}
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-        setSession(newSession);
-        setSupabaseUser(newSession?.user || null);
+      // 2. If Supabase is configured, check for real active session
+      if (isSupabaseConfigured && supabase) {
+        try {
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          if (isMounted) {
+            setSession(currentSession);
+            setSupabaseUser(currentSession?.user || null);
+          }
 
-        if (newSession?.user) {
-          setIsDemoMode(false);
-          try {
-            localStorage.removeItem('idam_demo_mode');
-          } catch (e) {}
-          const userProf = await fetchProfile(newSession.user.id);
-          setProfile(userProf || {
-            name: newSession.user.user_metadata?.full_name || newSession.user.email?.split('@')[0] || 'User',
-            email: newSession.user.email || '',
-            phone: newSession.user.user_metadata?.phone || '',
-            role: 'driver',
-          });
-        } else if (!isDemoMode) {
-          setProfile(null);
+          if (currentSession?.user) {
+            // Real Supabase session takes priority over demo mode
+            if (isMounted) {
+              setIsDemoMode(false);
+            }
+            try {
+              localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_MODE);
+              localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_USER);
+            } catch (e) {}
+
+            const userProf = await fetchProfile(currentSession.user.id);
+            if (isMounted) {
+              if (userProf) {
+                setProfile(userProf);
+              } else {
+                const fallbackProf: UserProfile = {
+                  name: currentSession.user.user_metadata?.full_name || currentSession.user.email?.split('@')[0] || 'User',
+                  email: currentSession.user.email || '',
+                  phone: currentSession.user.user_metadata?.phone || '',
+                  role: 'driver',
+                };
+                setProfile(fallbackProf);
+              }
+            }
+          } else {
+            // No real Supabase session: check if there is an active local account
+            const demoStorage = localStorage.getItem(LOCAL_STORAGE_KEYS.DEMO_MODE);
+            if (demoStorage !== 'true') {
+              const activeUserRaw = localStorage.getItem(LOCAL_STORAGE_KEYS.ACTIVE_USER);
+              if (activeUserRaw && isMounted) {
+                setProfile(JSON.parse(activeUserRaw));
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Error initializing auth session:', e);
+        } finally {
+          if (isMounted) setIsLoading(false);
         }
-      });
 
-      return () => {
-        subscription.unsubscribe();
-      };
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+          if (!isMounted) return;
+          setSession(newSession);
+          setSupabaseUser(newSession?.user || null);
+
+          if (event === 'PASSWORD_RECOVERY') {
+            setIsPasswordRecovery(true);
+          }
+
+          if (newSession?.user) {
+            setIsDemoMode(false);
+            try {
+              localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_MODE);
+              localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_USER);
+            } catch (e) {}
+
+            const userProf = await fetchProfile(newSession.user.id);
+            if (isMounted) {
+              setProfile(userProf || {
+                name: newSession.user.user_metadata?.full_name || newSession.user.email?.split('@')[0] || 'User',
+                email: newSession.user.email || '',
+                phone: newSession.user.user_metadata?.phone || '',
+                role: 'driver',
+              });
+            }
+          } else if (event === 'SIGNED_OUT') {
+            if (isMounted) {
+              setProfile(null);
+              setIsDemoMode(false);
+            }
+          }
+        });
+
+        return () => {
+          isMounted = false;
+          subscription.unsubscribe();
+        };
+      } else {
+        // Supabase not configured: fallback to local accounts / demo mode
+        try {
+          const demoStorage = localStorage.getItem(LOCAL_STORAGE_KEYS.DEMO_MODE);
+          const demoUser = localStorage.getItem(LOCAL_STORAGE_KEYS.DEMO_USER);
+          if (demoStorage === 'true' && demoUser) {
+            setIsDemoMode(true);
+            setProfile(JSON.parse(demoUser));
+          } else {
+            const activeUserRaw = localStorage.getItem(LOCAL_STORAGE_KEYS.ACTIVE_USER);
+            if (activeUserRaw) {
+              setProfile(JSON.parse(activeUserRaw));
+            }
+          }
+        } catch (e) {}
+        if (isMounted) setIsLoading(false);
+      }
     }
 
     initAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
+    if (!cleanEmail || !cleanPassword) {
+      return { success: false, error: 'Email and password are required.' };
+    }
+
     if (!isSupabaseConfigured || !supabase) {
-      startDemo('driver');
+      const accounts = getLocalAccounts();
+      const account = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
+
+      if (!account) {
+        return { 
+          success: false, 
+          error: 'No account found with this email. Please register your account above or use the Demo Fast Track.' 
+        };
+      }
+
+      if (account.password && account.password !== cleanPassword) {
+        return { 
+          success: false, 
+          error: 'Incorrect password. Please verify your credentials.' 
+        };
+      }
+
+      const activeProfile: UserProfile = {
+        name: account.name,
+        email: account.email,
+        phone: account.phone || '+91 98765 43210',
+        role: account.role || 'driver',
+        vehicleNumber: account.vehicleNumber || 'TN 59 AZ 8899',
+        vehicleType: account.vehicleType || 'car',
+      };
+
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEYS.ACTIVE_USER, JSON.stringify(activeProfile));
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_MODE);
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_USER);
+      } catch (e) {}
+
+      setProfile(activeProfile);
+      setIsDemoMode(false);
       return { success: true };
     }
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password: cleanPassword });
       if (error) {
         return { success: false, error: error.message };
       }
       setIsDemoMode(false);
-      try { localStorage.removeItem('idam_demo_mode'); } catch (e) {}
+      try { 
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_MODE);
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_USER);
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.ACTIVE_USER);
+      } catch (e) {}
+
+      if (data.user) {
+        setSession(data.session);
+        setSupabaseUser(data.user);
+        const userProf = await fetchProfile(data.user.id);
+        setProfile(userProf || {
+          name: data.user.user_metadata?.full_name || cleanEmail.split('@')[0],
+          email: data.user.email || cleanEmail,
+          phone: data.user.user_metadata?.phone || '',
+          role: 'driver',
+        });
+      }
       return { success: true };
     } catch (e: any) {
       return { success: false, error: e.message || 'Login failed' };
     }
   };
 
-  const signUp = async (data: { email: string; password: string; fullName: string; phone?: string }) => {
+  const signUp = async (data: { 
+    email: string; 
+    password: string; 
+    fullName: string; 
+    phone?: string 
+  }): Promise<{ success: boolean; error?: string; message?: string }> => {
+    const cleanEmail = data.email.trim().toLowerCase();
+    const cleanName = data.fullName.trim();
+    const cleanPassword = data.password.trim();
+    const cleanPhone = data.phone?.trim() || '';
+
+    if (!cleanName) {
+      return { success: false, error: 'Full name is required.' };
+    }
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      return { success: false, error: 'A valid email address is required.' };
+    }
+    if (!cleanPassword || cleanPassword.length < 6) {
+      return { success: false, error: 'Password must be at least 6 characters long.' };
+    }
+
     if (!isSupabaseConfigured || !supabase) {
-      startDemo('driver');
+      const accounts = getLocalAccounts();
+      const existing = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
+      if (existing) {
+        return { 
+          success: false, 
+          error: 'An account with this email already exists. Please switch to "Sign In" or use a different email.' 
+        };
+      }
+
+      const newAccount: LocalAccount = {
+        id: `usr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        name: cleanName,
+        email: cleanEmail,
+        password: cleanPassword,
+        phone: cleanPhone || '+91 98765 43210',
+        role: 'driver',
+        vehicleNumber: 'TN 59 AZ 8899',
+        vehicleType: 'car',
+        createdAt: new Date().toISOString(),
+      };
+
+      accounts.push(newAccount);
+      saveLocalAccounts(accounts);
+
+      const newProfile: UserProfile = {
+        name: newAccount.name,
+        email: newAccount.email,
+        phone: newAccount.phone || '+91 98765 43210',
+        role: newAccount.role,
+        vehicleNumber: newAccount.vehicleNumber,
+        vehicleType: newAccount.vehicleType,
+      };
+
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEYS.ACTIVE_USER, JSON.stringify(newProfile));
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_MODE);
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_USER);
+      } catch (e) {}
+
+      setProfile(newProfile);
+      setIsDemoMode(false);
       return { success: true };
     }
 
     try {
       const { data: signUpData, error } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
+        email: cleanEmail,
+        password: cleanPassword,
         options: {
           data: {
-            full_name: data.fullName,
-            phone: data.phone || '',
+            full_name: cleanName,
+            phone: cleanPhone,
           },
         },
       });
@@ -200,16 +438,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, error: error.message };
       }
 
+      // Check if user already exists (Supabase returns empty identities for duplicate email)
+      if (signUpData.user && signUpData.user.identities && signUpData.user.identities.length === 0) {
+        return {
+          success: false,
+          error: 'An account with this email already exists. Please sign in instead.',
+        };
+      }
+
       if (signUpData.user) {
         await upsertProfile(signUpData.user.id, {
-          name: data.fullName,
-          email: data.email,
-          phone: data.phone || '',
+          name: cleanName,
+          email: cleanEmail,
+          phone: cleanPhone,
           role: 'driver',
         });
       }
 
-      return { success: true };
+      if (signUpData.session) {
+        setSession(signUpData.session);
+        setSupabaseUser(signUpData.user);
+        setProfile({
+          name: cleanName,
+          email: cleanEmail,
+          phone: cleanPhone,
+          role: 'driver',
+        });
+        setIsDemoMode(false);
+      }
+
+      return { 
+        success: true,
+        message: signUpData.session 
+          ? 'Account created successfully!' 
+          : 'Account created! Please check your email for confirmation instructions.'
+      };
     } catch (e: any) {
       return { success: false, error: e.message || 'Registration failed' };
     }
@@ -217,6 +480,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     exitDemo();
+    try {
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.ACTIVE_USER);
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_MODE);
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_USER);
+    } catch (e) {}
     if (isSupabaseConfigured && supabase) {
       try {
         await supabase.auth.signOut();
@@ -227,6 +495,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSession(null);
     setSupabaseUser(null);
     setProfile(null);
+    setIsDemoMode(false);
   };
 
   const resetPassword = async (email: string) => {
@@ -235,7 +504,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${window.location.origin}/forgot-password`,
       });
       if (error) return { success: false, error: error.message };
       return { success: true };
@@ -244,24 +513,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updatePassword = async (password: string): Promise<{ success: boolean; error?: string }> => {
+    const clean = password.trim();
+    if (!clean || clean.length < 6) {
+      return { success: false, error: 'Password must be at least 6 characters long.' };
+    }
+    if (!isSupabaseConfigured || !supabase) {
+      const activeRaw = localStorage.getItem(LOCAL_STORAGE_KEYS.ACTIVE_USER);
+      if (activeRaw) {
+        try {
+          const user = JSON.parse(activeRaw);
+          const accounts = getLocalAccounts();
+          const target = accounts.find((a) => a.email.toLowerCase() === user.email.toLowerCase());
+          if (target) {
+            target.password = clean;
+            saveLocalAccounts(accounts);
+          }
+        } catch (e) {}
+      }
+      setIsPasswordRecovery(false);
+      return { success: true };
+    }
+    try {
+      const { error } = await supabase.auth.updateUser({ password: clean });
+      if (error) return { success: false, error: error.message };
+      setIsPasswordRecovery(false);
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'Failed to update password.' };
+    }
+  };
+
   const startDemo = (role: 'driver' | 'owner') => {
     const demoProfile = role === 'owner' ? DEFAULT_MOCK_OWNER : DEFAULT_MOCK_DRIVER;
     setIsDemoMode(true);
     setProfile(demoProfile);
     try {
-      localStorage.setItem('idam_demo_mode', 'true');
-      localStorage.setItem('idam_user', JSON.stringify(demoProfile));
+      localStorage.setItem(LOCAL_STORAGE_KEYS.DEMO_MODE, 'true');
+      localStorage.setItem(LOCAL_STORAGE_KEYS.DEMO_USER, JSON.stringify(demoProfile));
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.ACTIVE_USER);
     } catch (e) {}
   };
 
   const exitDemo = () => {
     setIsDemoMode(false);
     try {
-      localStorage.removeItem('idam_demo_mode');
-      localStorage.removeItem('idam_user');
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_MODE);
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_USER);
     } catch (e) {}
-    if (!session) {
-      setProfile(null);
+    if (session?.user) {
+      fetchProfile(session.user.id).then((prof) => {
+        if (prof) setProfile(prof);
+      });
+    } else {
+      const activeUserRaw = localStorage.getItem(LOCAL_STORAGE_KEYS.ACTIVE_USER);
+      if (activeUserRaw) {
+        try {
+          setProfile(JSON.parse(activeUserRaw));
+        } catch (e) {
+          setProfile(null);
+        }
+      } else {
+        setProfile(null);
+      }
     }
   };
 
@@ -273,8 +587,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = (userData?: Partial<UserProfile>) => {
-    const role = userData?.role || 'driver';
-    startDemo(role);
+    if (userData && (userData.name || userData.email || userData.phone)) {
+      const customProfile: UserProfile = {
+        name: userData.name || 'Driver User',
+        email: userData.email || 'user@idam.park',
+        phone: userData.phone || '+91 98765 43210',
+        role: userData.role || 'driver',
+        vehicleNumber: userData.vehicleNumber || 'TN 59 AZ 8899',
+        vehicleType: userData.vehicleType || 'car',
+      };
+      setProfile(customProfile);
+      setIsDemoMode(false);
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEYS.ACTIVE_USER, JSON.stringify(customProfile));
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_MODE);
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_USER);
+      } catch (e) {}
+    } else {
+      const role = userData?.role || 'driver';
+      startDemo(role);
+    }
   };
 
   const logout = () => {
@@ -285,7 +617,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isDemoMode) {
       startDemo(newRole);
     } else if (profile) {
-      setProfile({ ...profile, role: newRole });
+      const updatedProfile = { ...profile, role: newRole };
+      setProfile(updatedProfile);
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEYS.ACTIVE_USER, JSON.stringify(updatedProfile));
+      } catch (e) {}
     }
   };
 
@@ -304,6 +640,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signUp,
         signOut,
         resetPassword,
+        updatePassword,
+        isPasswordRecovery,
         startDemo,
         exitDemo,
         refreshProfile,

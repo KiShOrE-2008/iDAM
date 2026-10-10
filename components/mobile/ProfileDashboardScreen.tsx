@@ -3,19 +3,35 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { User, Car, Shield, FileText, ChevronRight, Download, Clock, CheckCircle, ArrowLeft, Star, TrendingUp, Home, BookOpen, UserCheck, Wallet, Plus, PlusCircle, Trash2, Zap, Settings, ShieldCheck, Building2, Sparkles, LogOut } from 'lucide-react';
-import { Language } from '@/types';
+import { Language, PassVerificationResult, Booking } from '@/types';
 import { useAuth } from '@/context/AuthContext';
+import { useRegisterModal } from '@/context/BackNavigationContext';
 import { OwnerDashboard } from './owner/OwnerDashboard';
+import { OwnerScannerScreen } from './owner/OwnerScannerScreen';
+import { CurrentlyParkedScreen } from './owner/CurrentlyParkedScreen';
+import { ScanVerificationResultModal } from './owner/ScanVerificationResultModal';
+import { validateScannedPass, confirmBookingCheckIn } from '@/lib/parking/checkInService';
+import {
+  Vehicle,
+  getUserVehicles,
+  addVehicle,
+  deleteVehicle,
+  setDefaultVehicle,
+  getWalletBalance,
+  topUpWallet
+} from '@/lib/user/garageService';
 
 interface ProfileDashboardScreenProps {
   lang: Language;
   onBack: () => void;
   onNavigateToSupport?: () => void;
+  onNavigateToAuth?: () => void;
 }
 
 export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
   onBack,
-  onNavigateToSupport
+  onNavigateToSupport,
+  onNavigateToAuth
 }) => {
   const { profile, signOut, switchRole, isDemoMode, exitDemo } = useAuth();
   const [localRole, setLocalRole] = useState<'driver' | 'owner'>(profile?.role || 'driver');
@@ -24,15 +40,31 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
   const [walletBalance, setWalletBalance] = useState(500);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
 
+  // Owner Workflow Sub-Views: 'dashboard' | 'scanner' | 'parked'
+  const [ownerSubView, setOwnerSubView] = useState<'dashboard' | 'scanner' | 'parked'>('dashboard');
+  const [verificationResult, setVerificationResult] = useState<PassVerificationResult | null>(null);
+  const [isVerifyingScan, setIsVerifyingScan] = useState<boolean>(false);
+
+  // Register Back handlers so Android Back closes modal or exits scanner
+  useRegisterModal(
+    ownerSubView !== 'dashboard',
+    () => setOwnerSubView('dashboard'),
+    'profile-scanner-parked-view'
+  );
+  useRegisterModal(
+    !!verificationResult,
+    () => setVerificationResult(null),
+    'profile-verify-modal'
+  );
+
   // Vehicle Garage State
-  const [vehicles, setVehicles] = useState([
-    { id: 'v1', plate: 'TN 59 AB 1234', type: 'Car', default: true },
-    { id: 'v2', plate: 'TN 59 C 5678', type: 'Bike', default: false }
-  ]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [newPlate, setNewPlate] = useState('');
   const [showAddVehicle, setShowAddVehicle] = useState(false);
 
   useEffect(() => {
+    setVehicles(getUserVehicles());
+    setWalletBalance(getWalletBalance());
     if (profile?.role) {
       setLocalRole(profile.role);
     }
@@ -41,16 +73,102 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
   const handleRoleToggle = (newRole: 'driver' | 'owner') => {
     setLocalRole(newRole);
     switchRole(newRole);
+    setOwnerSubView('dashboard');
   };
+
+  const handleScanResult = async (rawPayload: string) => {
+    if (isVerifyingScan) return;
+    setIsVerifyingScan(true);
+    try {
+      const res = await validateScannedPass({
+        rawScannedText: rawPayload,
+        ownerSpaceId: 'loc-1',
+        isDemoMode
+      });
+      setVerificationResult(res);
+    } catch (e: any) {
+      setVerificationResult({
+        isValid: false,
+        statusCode: 'not_found',
+        message: e.message || 'Verification failed.'
+      });
+    } finally {
+      setIsVerifyingScan(false);
+    }
+  };
+
+  const handleConfirmCheckIn = async (b: Booking) => {
+    return await confirmBookingCheckIn({
+      bookingId: b.id,
+      passCode: b.passCode,
+      passTokenHash: b.passTokenHash,
+      isDemoMode
+    });
+  };
+
+  // If in scanner sub-view, render OwnerScannerScreen
+  if (userRole === 'owner' && ownerSubView === 'scanner') {
+    return (
+      <div className="h-full flex flex-col relative">
+        <OwnerScannerScreen
+          onBack={() => {
+            setOwnerSubView('dashboard');
+            setVerificationResult(null);
+          }}
+          onScanResult={handleScanResult}
+          isProcessing={isVerifyingScan}
+        />
+        {verificationResult && (
+          <ScanVerificationResultModal
+            result={verificationResult}
+            onClose={() => setVerificationResult(null)}
+            onScanAgain={() => {
+              setVerificationResult(null);
+              setOwnerSubView('scanner');
+            }}
+            onConfirmCheckIn={handleConfirmCheckIn}
+            onViewCurrentlyParked={() => {
+              setVerificationResult(null);
+              setOwnerSubView('parked');
+            }}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // If in parked sub-view, render CurrentlyParkedScreen
+  if (userRole === 'owner' && ownerSubView === 'parked') {
+    return (
+      <div className="h-full flex flex-col relative">
+        <CurrentlyParkedScreen
+          onBack={() => setOwnerSubView('dashboard')}
+          onNavigateToScanner={() => setOwnerSubView('scanner')}
+          isDemoMode={isDemoMode}
+        />
+      </div>
+    );
+  }
 
   const handleAddVehicle = () => {
     if (!newPlate.trim()) return;
-    setVehicles([
-      ...vehicles,
-      { id: Date.now().toString(), plate: newPlate.toUpperCase(), type: 'Car', default: false }
-    ]);
+    const updated = addVehicle({
+      plate: newPlate,
+      type: 'Car'
+    });
+    setVehicles(updated);
     setNewPlate('');
     setShowAddVehicle(false);
+  };
+
+  const handleDeleteVehicle = (id: string) => {
+    const updated = deleteVehicle(id);
+    setVehicles(updated);
+  };
+
+  const handleSetDefault = (id: string) => {
+    const updated = setDefaultVehicle(id);
+    setVehicles(updated);
   };
 
   const mockPasses = [
@@ -120,7 +238,18 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
             </div>
 
             <button
-              onClick={() => signOut()}
+              onClick={async () => {
+                if (isDemoMode) {
+                  exitDemo();
+                } else {
+                  await signOut();
+                }
+                if (onNavigateToAuth) {
+                  onNavigateToAuth();
+                } else {
+                  onBack();
+                }
+              }}
               title="Sign Out"
               className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
             >
@@ -230,13 +359,35 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
                   <div key={v.id} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200/80">
                     <div className="flex items-center space-x-2">
                       <span className="bg-amber-400 text-slate-950 font-black px-1.5 py-0.5 rounded text-[10px]">IND</span>
-                      <span className="font-mono font-black text-slate-900">{v.plate}</span>
+                      <div>
+                        <span className="font-mono font-black text-slate-900 block">{v.plate}</span>
+                        <span className="text-[10px] text-slate-500 font-semibold">{v.type} {v.nickname ? `• ${v.nickname}` : ''}</span>
+                      </div>
                     </div>
-                    {v.default && (
-                      <span className="text-[10px] font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
-                        Primary
-                      </span>
-                    )}
+                    <div className="flex items-center space-x-1.5">
+                      {v.default ? (
+                        <span className="text-[10px] font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
+                          Primary
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSetDefault(v.id)}
+                          title="Set as default"
+                          className="p-1 rounded text-slate-400 hover:text-emerald-700"
+                        >
+                          <Star className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteVehicle(v.id)}
+                        title="Remove vehicle"
+                        className="p-1 rounded text-slate-400 hover:text-rose-600"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -275,7 +426,11 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
 
         {/* OWNER VIEW */}
         {userRole === 'owner' && (
-          <OwnerDashboard onNavigateToExplore={onBack} />
+          <OwnerDashboard
+            onNavigateToExplore={onBack}
+            onNavigateToScanner={() => setOwnerSubView('scanner')}
+            onNavigateToParked={() => setOwnerSubView('parked')}
+          />
         )}
 
         {/* Support Quick Access */}
@@ -301,24 +456,19 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
           <div className="bg-white rounded-3xl p-5 max-w-xs w-full space-y-3 shadow-2xl border border-slate-200 text-left animate-scale-in">
             <h4 className="font-black text-sm text-slate-900">Add Money to iDAM Wallet</h4>
             <div className="grid grid-cols-3 gap-2 text-xs font-black">
-              <button
-                onClick={() => { setWalletBalance(walletBalance + 200); setShowTopUpModal(false); }}
-                className="p-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-900 text-center"
-              >
-                +₹200
-              </button>
-              <button
-                onClick={() => { setWalletBalance(walletBalance + 500); setShowTopUpModal(false); }}
-                className="p-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-900 text-center"
-              >
-                +₹500
-              </button>
-              <button
-                onClick={() => { setWalletBalance(walletBalance + 1000); setShowTopUpModal(false); }}
-                className="p-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-900 text-center"
-              >
-                +₹1000
-              </button>
+              {[200, 500, 1000].map((amt) => (
+                <button
+                  key={amt}
+                  onClick={() => {
+                    const res = topUpWallet(amt);
+                    setWalletBalance(res.newBalance);
+                    setShowTopUpModal(false);
+                  }}
+                  className="p-2 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-900 border border-slate-200 rounded-xl text-slate-900 text-center transition-colors"
+                >
+                  +₹{amt}
+                </button>
+              ))}
             </div>
             <button
               onClick={() => setShowTopUpModal(false)}

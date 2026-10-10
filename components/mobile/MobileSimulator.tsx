@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Wifi, Signal, Battery, ChevronLeft, ChevronRight, RefreshCw, Smartphone, Maximize2, Sparkles, Layers } from 'lucide-react';
 import { ParkingLocation, Language } from '@/types';
 import { SplashScreen } from './SplashScreen';
+import { AuthScreen } from './AuthScreen';
 import { ExploreScreen } from './ExploreScreen';
 import { ParkingDetailsScreen } from './ParkingDetailsScreen';
 import { BookingScreen } from './BookingScreen';
@@ -12,6 +13,7 @@ import { SuccessPassScreen } from './SuccessPassScreen';
 import { ProfileDashboardScreen } from './ProfileDashboardScreen';
 import { SupportHubScreen } from './SupportHubScreen';
 import { MOCK_PARKING_LOCATIONS } from '@/lib/data/mockData';
+import { createBooking } from '@/lib/booking/service';
 
 interface MobileSimulatorProps {
   locations: ParkingLocation[];
@@ -43,13 +45,14 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ locations, lan
 
   const stepTitles = [
     '1. Splash Screen',
-    '2. Live Map',
-    '3. Spot Picker',
-    '4. Addons & Booking',
-    '5. Instant Pay',
-    '6. QR Pass',
-    '7. Profile & Garage',
-    '8. AI Support Chat'
+    '2. Sign In / Register',
+    '3. Live Map',
+    '4. Spot Picker',
+    '5. Addons & Booking',
+    '6. Instant Pay',
+    '7. QR Pass',
+    '8. Profile & Garage',
+    '9. AI Support Chat'
   ];
 
   return (
@@ -70,7 +73,7 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ locations, lan
             iDAM Mobile App Workflow
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 font-medium leading-relaxed">
-            Step through all 8 screens: Splash &rarr; Live Map &rarr; Spot Grid &rarr; Add-ons & Booking &rarr; Instant Pay &rarr; QR Pass &rarr; Garage & Passes &rarr; AI Support
+            Step through all 9 screens: Splash &rarr; Sign In / Register &rarr; Live Map &rarr; Spot Grid &rarr; Add-ons & Booking &rarr; Instant Pay &rarr; QR Pass &rarr; Garage & Passes &rarr; AI Support
           </p>
         </div>
 
@@ -124,73 +127,113 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ locations, lan
               )}
 
               {currentStep === 2 && (
-                <ExploreScreen
-                  locations={activeLocations}
-                  selectedLocation={currentLoc}
-                  onSelectLocation={setSelectedLocation}
-                  onNext={() => setCurrentStep(3)}
+                <AuthScreen
                   lang={lang}
-                  onNavigateToProfile={() => setCurrentStep(7)}
-                  onNavigateToBookings={() => setCurrentStep(7)}
-                  activeTab="home"
+                  onSuccess={() => setCurrentStep(3)}
+                  onSkipDemo={() => setCurrentStep(3)}
                 />
               )}
 
               {currentStep === 3 && (
-                <ParkingDetailsScreen
-                  location={currentLoc}
-                  onBack={() => setCurrentStep(2)}
+                <ExploreScreen
+                  locations={activeLocations}
+                  selectedLocation={currentLoc}
+                  onSelectLocation={setSelectedLocation}
                   onNext={() => setCurrentStep(4)}
                   lang={lang}
+                  onNavigateToProfile={() => setCurrentStep(8)}
+                  onNavigateToBookings={() => setCurrentStep(8)}
+                  activeTab="home"
                 />
               )}
 
               {currentStep === 4 && (
-                <BookingScreen
+                <ParkingDetailsScreen
                   location={currentLoc}
                   onBack={() => setCurrentStep(3)}
-                  onNext={(details) => {
-                    setBookingDetails({
-                      ...bookingDetails,
-                      ...details
-                    });
-                    setCurrentStep(5);
-                  }}
+                  onNext={() => setCurrentStep(5)}
                   lang={lang}
                 />
               )}
 
               {currentStep === 5 && (
-                <PaymentScreen
+                <BookingScreen
                   location={currentLoc}
-                  bookingDetails={bookingDetails}
                   onBack={() => setCurrentStep(4)}
-                  onPaySuccess={() => setCurrentStep(6)}
+                  onNext={(details) => {
+                    setBookingDetails({
+                      ...bookingDetails,
+                      ...details
+                    });
+                    setCurrentStep(6);
+                  }}
                   lang={lang}
                 />
               )}
 
               {currentStep === 6 && (
-                <SuccessPassScreen
+                <PaymentScreen
                   location={currentLoc}
                   bookingDetails={bookingDetails}
-                  onReset={() => setCurrentStep(7)}
+                  onBack={() => setCurrentStep(5)}
+                  onPaySuccess={async (meta) => {
+                    try {
+                      const booking = await createBooking(currentLoc, {
+                        parkingLocationId: currentLoc.id,
+                        vehicleType: 'car',
+                        bookingDate: bookingDetails.date,
+                        startTime: bookingDetails.time,
+                        durationHours: bookingDetails.duration,
+                        basePrice: bookingDetails.total,
+                        platformFee: 5,
+                        totalAmount: bookingDetails.total,
+                        paymentMethod: meta?.paymentMethod || 'Razorpay',
+                        paymentId: meta?.paymentId,
+                        vehicleNumber: bookingDetails.vehicleNumber
+                      });
+                      setBookingDetails(prev => ({
+                        ...prev,
+                        ...meta,
+                        passCode: booking.passCode,
+                        qrData: booking.qrData
+                      } as any));
+                    } catch (err) {
+                      console.warn('Booking creation err:', err);
+                      if (meta) {
+                        setBookingDetails(prev => ({
+                          ...prev,
+                          ...meta
+                        }));
+                      }
+                    }
+                    setCurrentStep(7);
+                  }}
                   lang={lang}
                 />
               )}
 
               {currentStep === 7 && (
-                <ProfileDashboardScreen
+                <SuccessPassScreen
+                  location={currentLoc}
+                  bookingDetails={bookingDetails}
+                  onReset={() => setCurrentStep(8)}
                   lang={lang}
-                  onBack={() => setCurrentStep(2)}
-                  onNavigateToSupport={() => setCurrentStep(8)}
                 />
               )}
 
               {currentStep === 8 && (
+                <ProfileDashboardScreen
+                  lang={lang}
+                  onBack={() => setCurrentStep(3)}
+                  onNavigateToSupport={() => setCurrentStep(9)}
+                  onNavigateToAuth={() => setCurrentStep(2)}
+                />
+              )}
+
+              {currentStep === 9 && (
                 <SupportHubScreen
                   lang={lang}
-                  onBack={() => setCurrentStep(7)}
+                  onBack={() => setCurrentStep(8)}
                 />
               )}
             </div>
@@ -216,12 +259,12 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ locations, lan
           </button>
 
           <span className="bg-slate-900 border border-slate-800 px-3 py-1 rounded-full text-emerald-400">
-            Screen {currentStep} of 8
+            Screen {currentStep} of {stepTitles.length}
           </span>
 
           <button
-            onClick={() => setCurrentStep(Math.min(8, currentStep + 1))}
-            disabled={currentStep === 8}
+            onClick={() => setCurrentStep(Math.min(stepTitles.length, currentStep + 1))}
+            disabled={currentStep === stepTitles.length}
             className="flex items-center space-x-1 hover:text-white disabled:opacity-30 transition-colors"
           >
             <span>Next Screen</span>

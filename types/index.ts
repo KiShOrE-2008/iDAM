@@ -32,12 +32,19 @@ export interface BookingRequest {
   basePrice: number;
   platformFee: number;
   totalAmount: number;
-  paymentMethod: 'UPI' | 'Card' | 'Net Banking';
+  paymentMethod: 'Razorpay' | 'UPI' | 'Card' | 'Net Banking' | string;
+  paymentId?: string;
+  razorpayOrderId?: string;
+  vehicleNumber?: string;
+  driverName?: string;
+  driverPhone?: string;
 }
 
 export interface Booking {
   id: string;
   passCode: string; // e.g. IDM-82931
+  passToken?: string;
+  passTokenHash?: string;
   parkingLocation: ParkingLocation;
   vehicleType: 'car' | 'bike';
   bookingDate: string;
@@ -49,9 +56,42 @@ export interface Booking {
   totalAmount: number;
   paymentMethod: string;
   paymentStatus: 'completed' | 'pending' | 'failed';
+  paymentId?: string;
+  razorpayOrderId?: string;
+  vehicleNumber?: string;
+  driverName?: string;
+  driverPhone?: string;
   status: 'confirmed' | 'active' | 'completed' | 'cancelled';
   qrData: string;
   createdAt: string;
+  checkInAt?: string;
+  checkOutAt?: string;
+  checkedInBy?: string;
+  checkedOutBy?: string;
+}
+
+export type PassValidationStatus =
+  | 'valid'
+  | 'already_active'
+  | 'already_completed'
+  | 'cancelled'
+  | 'expired'
+  | 'early_arrival'
+  | 'wrong_location'
+  | 'not_found'
+  | 'invalid_format';
+
+export interface PassVerificationResult {
+  isValid: boolean;
+  statusCode: PassValidationStatus;
+  message: string;
+  booking?: Booking;
+  rawPayload?: string;
+  passCode?: string;
+  locationTitle?: string;
+  vehicleNumber?: string;
+  checkInAt?: string;
+  checkOutAt?: string;
 }
 
 export interface SearchFilter {
@@ -59,6 +99,9 @@ export interface SearchFilter {
   vehicleType: VehicleType;
   maxPrice: number;
   sortBy: 'distance' | 'price' | 'rating';
+  latitude?: number;
+  longitude?: number;
+  radiusMeters?: number;
 }
 
 export interface UserProfile {

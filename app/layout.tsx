@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { CapacitorBackButtonHandler } from "@/components/shared/CapacitorBackButtonHandler";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -33,9 +34,11 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} antialiased`}>
         <AuthProvider>
+          <CapacitorBackButtonHandler />
           {children}
         </AuthProvider>
       </body>
     </html>
   );
 }
+

@@ -10,13 +10,27 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { Calendar, Clock, MapPin, QrCode, Search, CheckCircle2, ChevronRight, Lock } from 'lucide-react';
 
+import { getAllBookings } from '@/lib/booking/service';
+
 export default function MyBookingsPage() {
   const router = useRouter();
   const [lang, setLang] = useState<Language>('en');
   const { isLoggedIn } = useAuth();
   const [lookupCode, setLookupCode] = useState('');
 
-  const activeBookings = [
+  const dynamicBookings = getAllBookings().map(b => ({
+    id: b.id,
+    passCode: b.passCode,
+    location: b.parkingLocation,
+    date: b.bookingDate,
+    time: `${b.startTime} - ${b.endTime}`,
+    vehicle: b.vehicleNumber || 'TN 59 AB 1234',
+    amount: b.totalAmount,
+    status: (b.status || 'CONFIRMED').toUpperCase(),
+    paymentMethod: b.paymentMethod || 'Razorpay'
+  }));
+
+  const staticFallbacks = [
     {
       id: 'bk-1',
       passCode: 'IDM-82931',
@@ -25,7 +39,8 @@ export default function MyBookingsPage() {
       time: '10:00 AM - 12:00 PM',
       vehicle: 'TN 59 AB 1234',
       amount: 85,
-      status: 'CONFIRMED'
+      status: 'CONFIRMED',
+      paymentMethod: 'Razorpay'
     },
     {
       id: 'bk-2',
@@ -35,9 +50,12 @@ export default function MyBookingsPage() {
       time: '02:00 PM - 04:00 PM',
       vehicle: 'TN 59 AB 1234',
       amount: 65,
-      status: 'COMPLETED'
+      status: 'COMPLETED',
+      paymentMethod: 'Razorpay'
     }
   ];
+
+  const activeBookings = [...dynamicBookings, ...staticFallbacks.filter(s => !dynamicBookings.some(d => d.passCode === s.passCode))];
 
   if (!isLoggedIn) {
     return (
@@ -148,6 +166,9 @@ export default function MyBookingsPage() {
                       b.status === 'CONFIRMED' ? 'bg-emerald-100 text-emerald-900' : 'bg-gray-100 text-gray-700'
                     }`}>
                       {b.status}
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
+                      {b.paymentMethod || 'Razorpay'}
                     </span>
                   </div>
 
