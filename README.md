@@ -2,13 +2,13 @@
 
 <div align="center">
 
-```
-  ██╗██████╗  █████╗ ███╗   ███╗    |    இடம் தேடு. நிறுத்து. போ.
-  ██║██╔══██╗██╔══██╗████╗ ████║    |    "Find your space.
-  ██║██║  ██║███████║██╔████╔██║    |     Park before you arrive."
-  ██║██║  ██║██╔══██║██║╚██╔╝██║    |
-  ██║██████╔╝██║  ██║██║ ╚═╝ ██║    |    Smart Urban Parking Marketplace
-  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝    |    for High-Density India
+```text
+  _    ____       _      __  __      |    இடம் தேடு. நிறுத்து. போ.
+ (_)  |  _ \     / \    |  \/  |     |    "Find your space.
+  |   | | | |   / _ \   | |\/| |     |     Park before you arrive."
+  |   | |_| |  / ___ \  | |  | |     |
+ |_|  |____/  /_/   \_\ |_|  |_|     |    Smart Urban Parking Marketplace
+                                     |    for High-Density India
 ```
 
 [![Build Status](https://img.shields.io/badge/Build-Passing%20(Vite%20%2B%20Next.js)-059669?style=for-the-badge&logo=vite)](file:///run/media/kishore/kishore-project/GIT/park)
@@ -40,7 +40,7 @@ In high-density Tier-2 and Tier-3 Indian cities like Madurai, Coimbatore, and Ti
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│                                THE PROBLEM                                  │
+│                                THE PROBLEM                                   │
 ├──────────────────────────────────────┬───────────────────────────────────────┤
 │          FOR URBAN DRIVERS           │          FOR PROPERTY OWNERS          │
 ├──────────────────────────────────────┼───────────────────────────────────────┤
@@ -112,7 +112,7 @@ iDAM monetizes through transaction commissions and high-margin ancillary automot
 ├──────────────────────────────────────────────────────────────────────────────┤
 │ 1. Transaction Commission: 15% – 20% platform take-rate on each booking      │
 │ 2. Ancillary Add-ons: Margin on EV Charging, Valet, and Express Wash         │
-│ 3. Premium Host Listing SaaS: Monthly subscription for commercial complexes   │
+│ 3. Premium Host Listing SaaS: Monthly subscription for commercial complexes  │
 │ 4. Corporate Parking Passes: Reserved slots for hospital & hotel staff       │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -134,13 +134,13 @@ iDAM monetizes through transaction commissions and high-margin ancillary automot
 
 ```
   ┌─────────────────────────────────────────────────────────────────┐
-  │                   iDAM TECHNICAL ARCHITECTURE                    │
+  │                   iDAM TECHNICAL ARCHITECTURE                   │
   ├─────────────────────────────────────────────────────────────────┤
   │  Client Layer       │ Next.js 16 • React 19 • Vite • Capacitor 8│
-  │  Design System      │ Warm Minimal (#F8F8F5, #14201D, #059669)   │
+  │  Design System      │ Warm Minimal (#F8F8F5, #14201D, #059669)  │
   │  Spatial Engine     │ PostGIS Spatial Indexes (ST_DWithin)      │
   │  Security Engine    │ HMAC-SHA-256 Hashes • Supabase RLS        │
-  │  Concurrency Engine │ PostgreSQL GIST Temporal Exclusion Locks   │
+  │  Concurrency Engine │ PostgreSQL GIST Temporal Exclusion Locks  │
   │  Payment Gateway    │ Razorpay SDK (PCI-DSS Level 1 Compliant)  │
   └─────────────────────────────────────────────────────────────────┘
 ```

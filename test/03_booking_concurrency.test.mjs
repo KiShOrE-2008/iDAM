@@ -10,13 +10,13 @@ const testSchema = `booking_engine_test_${Date.now()}`;
 const hasPostgis = checkHasPostgis();
 
 function execute(sql) {
-  const fullSql = `SET search_path TO ${testSchema}, public;\n${sql}`;
+  const fullSql = `SET search_path TO ${testSchema}, public;\nSET timezone TO 'Asia/Kolkata';\n${sql}`;
   return execSync(`psql -d myapp -v ON_ERROR_STOP=1`, { input: fullSql, stdio: ['pipe', 'pipe', 'pipe'] }).toString();
 }
 
 function queryJson(sql) {
   const cleanSql = sql.trim().replace(/;+$/, '');
-  const jsonSql = `SET search_path TO ${testSchema}, public;\nSELECT json_agg(t) FROM (${cleanSql}) t;`;
+  const jsonSql = `SET search_path TO ${testSchema}, public;\nSET timezone TO 'Asia/Kolkata';\nSELECT json_agg(t) FROM (${cleanSql}) t;`;
   const res = execSync(`psql -d myapp -t -A -v ON_ERROR_STOP=1`, { input: jsonSql, stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
   if (!res || res === '') return [];
   const lines = res.split('\n').filter(l => !l.startsWith('WARNING:') && !l.startsWith('NOTICE:'));

@@ -71,7 +71,6 @@ BEGIN
      AND NEW.role IS DISTINCT FROM OLD.role
      AND auth.uid() IS NOT NULL
      AND auth.uid() = OLD.id
-     AND current_user NOT IN ('postgres', 'app_migrator')
      AND COALESCE(auth.jwt()->>'role', '') != 'service_role'
   THEN
     RAISE EXCEPTION 'Users cannot alter their own role directly.';
@@ -82,7 +81,6 @@ BEGIN
      AND NEW.owner_status IS DISTINCT FROM OLD.owner_status
      AND auth.uid() IS NOT NULL
      AND auth.uid() = OLD.id
-     AND current_user NOT IN ('postgres', 'app_migrator')
      AND COALESCE(auth.jwt()->>'role', '') != 'service_role'
   THEN
     IF NEW.owner_status NOT IN ('pending', 'none') THEN

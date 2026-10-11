@@ -21,7 +21,7 @@ for (const suite of testSuites) {
   console.log(`▶ RUNNING: ${suite.name}`);
   const startTime = Date.now();
   try {
-    execSync(`node ${suite.file}`, { stdio: 'inherit' });
+    execSync(`node --import tsx ${suite.file}`, { stdio: 'inherit' });
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(`  PASSED: ${suite.name} (${duration}s)\n`);
     results.push({ name: suite.name, status: 'PASSED', duration });

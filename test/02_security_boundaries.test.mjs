@@ -42,35 +42,27 @@ const setupSql = `
   ${getPostgisBootstrapSql()}
 `;
 
-function setSession(userId, role = 'authenticated') {
-  const sql = `
-    UPDATE ${testSchema}._current_test_session 
-    SET user_id = ${userId ? `'${userId}'::uuid` : 'NULL'}, 
-        role = '${role}';
-  `;
-  execSync(`psql -d myapp -c "${sql}"`);
+function execute(sql) {
+  const fullSql = `SET search_path TO ${testSchema}, public;\n${sql}`;
+  return execSync(`psql -d myapp -v ON_ERROR_STOP=1`, { input: fullSql, stdio: ['pipe', 'pipe', 'pipe'] }).toString();
 }
 
 function queryJson(sql) {
-  const wrapped = `SELECT json_agg(t) FROM (${sql}) t;`;
-  const res = execSync(`psql -d myapp -t -A -c "${wrapped}"`, {
-    env: { ...process.env, PGOPTIONS: `-c search_path=${testSchema},public` }
-  }).toString().trim();
+  const cleanSql = sql.trim().replace(/;+$/, '');
+  const jsonSql = `SET search_path TO ${testSchema}, public;\nSELECT json_agg(t) FROM (${cleanSql}) t;`;
+  const res = execSync(`psql -d myapp -t -A -v ON_ERROR_STOP=1`, { input: jsonSql, stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
   if (!res || res === '') return [];
-  try {
-    return JSON.parse(res);
-  } catch (err) {
-    console.error('Failed to parse JSON:', res);
-    return [];
-  }
+  const lines = res.split('\n').filter(l => !l.startsWith('WARNING:') && !l.startsWith('NOTICE:'));
+  const validJson = lines.find(l => l.startsWith('[') || l.startsWith('{'));
+  return validJson ? JSON.parse(validJson) : [];
 }
 
-function execute(sql) {
-  return execSync(`psql -d myapp -v ON_ERROR_STOP=1`, { 
-    input: sql, 
-    env: { ...process.env, PGOPTIONS: `-c search_path=${testSchema},public` },
-    stdio: ['pipe', 'pipe', 'pipe'] 
-  });
+function setSession(userId, role = 'authenticated') {
+  execute(`
+    UPDATE _current_test_session 
+    SET user_id = ${userId ? `'${userId}'::uuid` : 'NULL'}, 
+        role = '${role}';
+  `);
 }
 
 try {
