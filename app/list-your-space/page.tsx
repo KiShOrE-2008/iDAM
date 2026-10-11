@@ -126,9 +126,15 @@ export default function ListYourSpacePage() {
     if (isSupabaseConfigured && supabase && !isDemoMode) {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          // 1. Insert into public.parking_spaces
-          await supabase.from('parking_spaces').insert([{
+        if (!user) {
+          alert('You must be signed in to submit a parking space listing. Please sign in and try again.');
+          setIsSubmitting(false);
+          router.push('/login');
+          return;
+        }
+
+        // 1. Insert into public.parking_spaces
+          const { error: spaceErr } = await supabase.from('parking_spaces').insert([{
             owner_id: user.id,
             title: spaceTitle,
             address: address,
@@ -141,6 +147,13 @@ export default function ListYourSpacePage() {
             longitude: 78.1198,
             image_url: images[0] || 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a'
           }]);
+
+          if (spaceErr) {
+            console.error('Failed to insert space into database:', spaceErr);
+            alert(`Could not register space: ${spaceErr.message}`);
+            setIsSubmitting(false);
+            return;
+          }
 
           // 2. Also insert into parking_locations for backward compatibility
           await supabase.from('parking_locations').insert([{
@@ -161,12 +174,14 @@ export default function ListYourSpacePage() {
 
           // 3. Call apply_for_owner_role RPC
           await supabase.rpc('apply_for_owner_role', {
-            p_property_name: spaceTitle,
-            p_property_address: address
+            p_full_name: profile?.name || 'Space Owner',
+            p_phone: profile?.phone || ''
           });
-        }
-      } catch (e) {
-        console.warn('Supabase space insert failed, continuing with local transition:', e);
+        } catch (e: any) {
+        console.error('Supabase space insert exception:', e);
+        alert(`Failed to submit space: ${e.message || 'Network error'}`);
+        setIsSubmitting(false);
+        return;
       }
     }
 
@@ -178,7 +193,9 @@ export default function ListYourSpacePage() {
     setTimeout(() => {
       setIsSubmitting(false);
       setIsSubmitted(true);
-      switchRole('owner');
+      if (isDemoMode) {
+        switchRole('owner');
+      }
       setTimeout(() => {
         router.push('/');
       }, 1500);

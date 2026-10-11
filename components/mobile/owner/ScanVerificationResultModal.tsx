@@ -281,6 +281,11 @@ export const ScanVerificationResultModal: React.FC<ScanVerificationResultModalPr
                     This vehicle was already checked in. You can check it out from the <strong>Currently Parked</strong> screen when the driver leaves.
                   </p>
                 )}
+                {result.statusCode === 'unpaid' && (
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Payment is pending or incomplete for this reservation. The driver must complete payment before parking.
+                  </p>
+                )}
                 {result.statusCode === 'wrong_location' && (
                   <p className="text-[11px] text-slate-500 font-medium">
                     This pass was booked for a different parking garage or lot. The driver must park at their designated location.

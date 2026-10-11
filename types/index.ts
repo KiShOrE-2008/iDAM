@@ -78,6 +78,7 @@ export type PassValidationStatus =
   | 'expired'
   | 'early_arrival'
   | 'wrong_location'
+  | 'unpaid'
   | 'not_found'
   | 'invalid_format';
 
@@ -105,10 +106,12 @@ export interface SearchFilter {
 }
 
 export interface UserProfile {
+  id?: string;
   name: string;
   phone: string;
   email?: string;
   role: 'driver' | 'owner';
+  ownerStatus?: 'none' | 'pending' | 'approved' | 'rejected';
   vehicleNumber?: string;
   vehicleType?: 'car' | 'bike';
   // Owner info

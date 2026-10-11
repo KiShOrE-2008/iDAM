@@ -134,12 +134,13 @@ export async function parseScannedQrPayload(raw: string): Promise<ParsedPassPayl
   if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
     try {
       const parsed = JSON.parse(trimmed);
-      if (parsed.passCode) {
+      const code = parsed.passCode || parsed.passId;
+      if (code) {
         return {
           isValidFormat: true,
           type: 'legacy_composite',
-          passCode: parsed.passCode,
-          locationId: parsed.locationId,
+          passCode: String(code).trim().toUpperCase(),
+          locationId: parsed.locationId || parsed.location,
           rawPayload: trimmed
         };
       }

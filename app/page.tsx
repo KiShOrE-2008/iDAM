@@ -18,7 +18,6 @@ import { SuccessPassScreen } from '@/components/mobile/SuccessPassScreen';
 import { MyPassesScreen } from '@/components/mobile/MyPassesScreen';
 import { MyAccountScreen } from '@/components/mobile/MyAccountScreen';
 import { SupportHubScreen } from '@/components/mobile/SupportHubScreen';
-import { MobileSimulator } from '@/components/mobile/MobileSimulator';
 import { OwnerModal } from '@/components/OwnerModal';
 import { WebBookingModal } from '@/components/web/WebBookingModal';
 import { FaqPreview } from '@/components/web/FaqPreview';
@@ -301,12 +300,6 @@ export default function Home() {
             setSelectedBookingLocation(loc);
             setIsBookingModalOpen(true);
           }}
-        />
-
-        {/* Interactive Mobile Application Experience Simulator */}
-        <MobileSimulator
-          locations={locations}
-          lang={lang}
         />
 
         {/* How It Works & Owner Monetization Section */}

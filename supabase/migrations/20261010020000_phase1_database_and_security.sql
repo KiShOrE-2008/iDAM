@@ -66,16 +66,24 @@ CREATE TRIGGER on_auth_user_created
 CREATE OR REPLACE FUNCTION public.protect_profile_role()
 RETURNS TRIGGER AS $$
 BEGIN
-  IF (NEW.role IS DISTINCT FROM OLD.role) OR (NEW.owner_status IS DISTINCT FROM OLD.owner_status) THEN
-    IF auth.uid() = OLD.id AND (COALESCE(auth.jwt()->>'role', '') != 'service_role') THEN
-      NEW.role := OLD.role;
-      NEW.owner_status := OLD.owner_status;
+  IF (NEW.role IS DISTINCT FROM OLD.role) THEN
+    IF (COALESCE(auth.jwt()->>'role', '') != 'service_role') THEN
+      RAISE EXCEPTION 'Users cannot alter their own role directly.';
     END IF;
   END IF;
+
+  IF (NEW.owner_status IS DISTINCT FROM OLD.owner_status) THEN
+    IF (COALESCE(auth.jwt()->>'role', '') != 'service_role') THEN
+      IF NEW.owner_status NOT IN ('pending', 'none') THEN
+        RAISE EXCEPTION 'Users cannot approve their own owner status directly. Use apply_for_owner_role() RPC.';
+      END IF;
+    END IF;
+  END IF;
+
   NEW.updated_at := NOW();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 DROP TRIGGER IF EXISTS trg_protect_profile_role ON public.profiles;
 CREATE TRIGGER trg_protect_profile_role
@@ -218,6 +226,8 @@ ALTER TABLE public.bookings
   ADD COLUMN IF NOT EXISTS vehicle_type TEXT NOT NULL DEFAULT 'car',
   ADD COLUMN IF NOT EXISTS start_time TIMESTAMPTZ DEFAULT NOW(),
   ADD COLUMN IF NOT EXISTS end_time TIMESTAMPTZ DEFAULT NOW() + INTERVAL '2 hours',
+  ADD COLUMN IF NOT EXISTS start_timestamptz TIMESTAMPTZ DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS end_timestamptz TIMESTAMPTZ DEFAULT NOW() + INTERVAL '2 hours',
   ADD COLUMN IF NOT EXISTS duration_hours INT NOT NULL DEFAULT 2,
   ADD COLUMN IF NOT EXISTS hourly_rate NUMERIC(10,2) NOT NULL DEFAULT 40.00,
   ADD COLUMN IF NOT EXISTS base_price NUMERIC(10,2) NOT NULL DEFAULT 80.00,
@@ -261,10 +271,15 @@ CREATE TABLE IF NOT EXISTS public.payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   booking_id UUID NOT NULL REFERENCES public.bookings(id) ON DELETE CASCADE,
   amount NUMERIC(10,2) NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'INR',
   payment_method TEXT NOT NULL DEFAULT 'Razorpay',
   transaction_ref TEXT UNIQUE NOT NULL,
-  status TEXT NOT NULL DEFAULT 'success',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  razorpay_payment_id TEXT,
+  razorpay_order_id TEXT,
+  razorpay_signature TEXT,
+  status TEXT NOT NULL DEFAULT 'success' CHECK (status IN ('pending', 'completed', 'success', 'failed', 'refunded')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- =========================================================
@@ -408,12 +423,20 @@ BEGIN
 
   UPDATE public.bookings
   SET booking_status = 'cancelled',
+      status = 'cancelled',
+      payment_status = CASE WHEN payment_status = 'completed' THEN 'refunded' ELSE payment_status END,
       cancellation_reason = p_reason,
-      cancelled_at = NOW()
+      cancelled_at = NOW(),
+      updated_at = NOW()
   WHERE id = p_booking_id;
 
+  UPDATE public.payments
+  SET status = 'refunded',
+      updated_at = NOW()
+  WHERE booking_id = p_booking_id AND status IN ('success', 'completed');
+
   INSERT INTO public.booking_events (booking_id, event_type, actor_id, details)
-  VALUES (p_booking_id, 'cancelled', v_caller, jsonb_build_object('reason', p_reason));
+  VALUES (p_booking_id, 'cancelled', v_caller, jsonb_build_object('reason', p_reason, 'refunded', v_booking.payment_status = 'completed'));
 
   RETURN jsonb_build_object('success', TRUE, 'message', 'Booking cancelled successfully');
 END;
@@ -463,6 +486,9 @@ ALTER TABLE public.booking_events ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public profiles read" ON public.profiles;
 CREATE POLICY "Public profiles read" ON public.profiles FOR SELECT USING (TRUE);
 
+DROP POLICY IF EXISTS "Users insert own profile" ON public.profiles;
+CREATE POLICY "Users insert own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
+
 DROP POLICY IF EXISTS "Users update own profile" ON public.profiles;
 CREATE POLICY "Users update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
@@ -492,14 +518,26 @@ CREATE POLICY "Owners manage images" ON public.parking_images FOR ALL USING (
 );
 
 -- Bookings
+DROP POLICY IF EXISTS "Users can read own bookings" ON public.bookings;
+DROP POLICY IF EXISTS "Users can create bookings" ON public.bookings;
 DROP POLICY IF EXISTS "Drivers and owners view bookings" ON public.bookings;
 CREATE POLICY "Drivers and owners view bookings" ON public.bookings FOR SELECT USING (
   auth.uid() = driver_id 
+  OR auth.uid() = user_id
   OR EXISTS (SELECT 1 FROM public.parking_spaces s WHERE s.id = parking_space_id AND s.owner_id = auth.uid())
 );
 
 DROP POLICY IF EXISTS "Drivers insert bookings" ON public.bookings;
-CREATE POLICY "Drivers insert bookings" ON public.bookings FOR INSERT WITH CHECK (auth.uid() = driver_id);
+CREATE POLICY "Drivers insert bookings" ON public.bookings FOR INSERT WITH CHECK (
+  auth.uid() IS NOT NULL AND (auth.uid() = driver_id OR auth.uid() = user_id)
+);
+
+DROP POLICY IF EXISTS "Authorized users update bookings" ON public.bookings;
+CREATE POLICY "Authorized users update bookings" ON public.bookings FOR UPDATE USING (
+  auth.uid() = driver_id 
+  OR auth.uid() = user_id
+  OR EXISTS (SELECT 1 FROM public.parking_spaces s WHERE s.id = parking_space_id AND s.owner_id = auth.uid())
+);
 
 -- Payments
 DROP POLICY IF EXISTS "Drivers view own payments" ON public.payments;
@@ -527,3 +565,56 @@ CREATE POLICY "View booking events" ON public.booking_events FOR SELECT USING (
       AND (b.driver_id = auth.uid() OR s.owner_id = auth.uid())
   )
 );
+
+DROP POLICY IF EXISTS "Authorized owners and system insert booking events" ON public.booking_events;
+CREATE POLICY "Authorized owners and system insert booking events" ON public.booking_events FOR INSERT WITH CHECK (
+  auth.uid() IS NOT NULL AND (
+    EXISTS (
+      SELECT 1 FROM public.bookings b
+      JOIN public.parking_spaces s ON b.parking_space_id = s.id
+      WHERE b.id = booking_events.booking_id AND s.owner_id = auth.uid()
+    ) OR
+    (COALESCE(auth.jwt()->>'role', '') = 'service_role')
+  )
+);
+
+-- =========================================================
+-- FUNCTION PRIVILEGE SECURITY HARDENING
+-- =========================================================
+DO $$
+BEGIN
+  -- Revoke execution from PUBLIC on internal triggers
+  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'handle_new_user') THEN
+    REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'protect_profile_role') THEN
+    REVOKE EXECUTE ON FUNCTION public.protect_profile_role() FROM PUBLIC;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'update_parking_space_location') THEN
+    REVOKE EXECUTE ON FUNCTION public.update_parking_space_location() FROM PUBLIC;
+  END IF;
+
+  -- Revoke anonymous access to state transition functions if anon role exists
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    REVOKE EXECUTE ON FUNCTION public.confirm_booking_check_in(UUID, TEXT, TEXT) FROM anon;
+    REVOKE EXECUTE ON FUNCTION public.confirm_booking_check_out(UUID) FROM anon;
+    REVOKE EXECUTE ON FUNCTION public.cancel_booking(UUID, TEXT) FROM anon;
+    REVOKE EXECUTE ON FUNCTION public.apply_for_owner_role(TEXT, TEXT) FROM anon;
+    REVOKE EXECUTE ON FUNCTION public.create_verified_booking(UUID, TEXT, TIMESTAMPTZ, INT, TEXT, TEXT, TEXT, TEXT[], TEXT, TEXT, TEXT) FROM anon;
+    REVOKE EXECUTE ON FUNCTION public.create_payment_order(UUID, TEXT, INT, TEXT, TEXT[]) FROM anon;
+    REVOKE EXECUTE ON FUNCTION public.verify_razorpay_payment(UUID, TEXT, TEXT, TEXT, TEXT) FROM anon;
+    REVOKE EXECUTE ON FUNCTION public.record_payment_reconciliation(UUID, TEXT, NUMERIC, TEXT, TEXT, JSONB) FROM anon;
+  END IF;
+
+  -- Grant to authenticated users
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    GRANT EXECUTE ON FUNCTION public.confirm_booking_check_in(UUID, TEXT, TEXT) TO authenticated;
+    GRANT EXECUTE ON FUNCTION public.confirm_booking_check_out(UUID) TO authenticated;
+    GRANT EXECUTE ON FUNCTION public.cancel_booking(UUID, TEXT) TO authenticated;
+    GRANT EXECUTE ON FUNCTION public.apply_for_owner_role(TEXT, TEXT) TO authenticated;
+    GRANT EXECUTE ON FUNCTION public.create_verified_booking(UUID, TEXT, TIMESTAMPTZ, INT, TEXT, TEXT, TEXT, TEXT[], TEXT, TEXT, TEXT) TO authenticated;
+    GRANT EXECUTE ON FUNCTION public.create_payment_order(UUID, TEXT, INT, TEXT, TEXT[]) TO authenticated;
+    GRANT EXECUTE ON FUNCTION public.verify_razorpay_payment(UUID, TEXT, TEXT, TEXT, TEXT) TO authenticated;
+    GRANT EXECUTE ON FUNCTION public.record_payment_reconciliation(UUID, TEXT, NUMERIC, TEXT, TEXT, JSONB) TO authenticated;
+  END IF;
+END $$;

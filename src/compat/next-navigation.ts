@@ -1,4 +1,4 @@
-import { useNavigate, useLocation, useSearchParams as useRRSearchParams } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams as useRRSearchParams, useParams as useRRParams } from 'react-router-dom';
 
 export function useRouter() {
   const navigate = useNavigate();
@@ -22,6 +22,6 @@ export function useSearchParams() {
   return searchParams;
 }
 
-export function useParams() {
-  return {};
+export function useParams<T extends Record<string, string | undefined> = Record<string, string | undefined>>(): T {
+  return (useRRParams() || {}) as T;
 }

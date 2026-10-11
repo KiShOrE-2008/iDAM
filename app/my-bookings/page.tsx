@@ -10,27 +10,37 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { Calendar, Clock, MapPin, QrCode, Search, CheckCircle2, ChevronRight, Lock } from 'lucide-react';
 
-import { getAllBookings } from '@/lib/booking/service';
+import { getAllBookings, fetchUserBookings } from '@/lib/booking/service';
+import type { Booking } from '@/types';
 
 export default function MyBookingsPage() {
   const router = useRouter();
   const [lang, setLang] = useState<Language>('en');
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isDemoMode, user } = useAuth();
   const [lookupCode, setLookupCode] = useState('');
+  const [bookings, setBookings] = useState<Booking[]>(() => getAllBookings());
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const dynamicBookings = getAllBookings().map(b => ({
-    id: b.id,
-    passCode: b.passCode,
-    location: b.parkingLocation,
-    date: b.bookingDate,
-    time: `${b.startTime} - ${b.endTime}`,
-    vehicle: b.vehicleNumber || 'TN 59 AB 1234',
-    amount: b.totalAmount,
-    status: (b.status || 'CONFIRMED').toUpperCase(),
-    paymentMethod: b.paymentMethod || 'Razorpay'
-  }));
+  React.useEffect(() => {
+    let isMounted = true;
+    async function loadBookings() {
+      try {
+        const data = await fetchUserBookings(user?.id);
+        if (isMounted) {
+          setBookings(data);
+          setIsLoading(false);
+        }
+      } catch {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+    loadBookings();
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
 
-  const staticFallbacks = [
+  const staticDemoFallbacks = isDemoMode ? [
     {
       id: 'bk-1',
       passCode: 'IDM-82931',
@@ -53,9 +63,24 @@ export default function MyBookingsPage() {
       status: 'COMPLETED',
       paymentMethod: 'Razorpay'
     }
-  ];
+  ] : [];
 
-  const activeBookings = [...dynamicBookings, ...staticFallbacks.filter(s => !dynamicBookings.some(d => d.passCode === s.passCode))];
+  const dynamicBookings = bookings.map(b => ({
+    id: b.id,
+    passCode: b.passCode,
+    location: b.parkingLocation,
+    date: b.bookingDate,
+    time: `${b.startTime} - ${b.endTime}`,
+    vehicle: b.vehicleNumber || 'TN 59 AB 1234',
+    amount: b.totalAmount,
+    status: (b.status || 'CONFIRMED').toUpperCase(),
+    paymentMethod: b.paymentMethod || 'Razorpay'
+  }));
+
+  const activeBookings = [
+    ...dynamicBookings,
+    ...staticDemoFallbacks.filter(s => !dynamicBookings.some(d => d.passCode.toLowerCase() === s.passCode.toLowerCase()))
+  ];
 
   if (!isLoggedIn) {
     return (
@@ -147,57 +172,84 @@ export default function MyBookingsPage() {
 
         {/* Bookings List */}
         <div className="space-y-4">
-          {activeBookings.map((b) => (
-            <div
-              key={b.id}
-              onClick={() => router.push(`/pass/${b.passCode}`)}
-              className="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-            >
-              <div className="flex items-start space-x-4">
-                <img
-                  src={b.location.imageUrl}
-                  alt={b.location.title}
-                  className="w-16 h-16 rounded-2xl object-cover shrink-0"
-                />
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-mono font-extrabold text-gray-900 text-sm">{b.passCode}</span>
-                    <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
-                      b.status === 'CONFIRMED' ? 'bg-emerald-100 text-emerald-900' : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {b.status}
-                    </span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
-                      {b.paymentMethod || 'Razorpay'}
-                    </span>
-                  </div>
-
-                  <h4 className="font-bold text-gray-900 text-base">{b.location.title}</h4>
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                    <span className="flex items-center space-x-1">
-                      <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                      <span>{b.date}</span>
-                    </span>
-                    <span className="flex items-center space-x-1">
-                      <Clock className="w-3.5 h-3.5 text-gray-400" />
-                      <span>{b.time}</span>
-                    </span>
-                  </div>
-                </div>
+          {isLoading && activeBookings.length === 0 ? (
+            <div className="bg-white p-12 rounded-3xl border border-gray-200 shadow-sm text-center space-y-3">
+              <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
+              <p className="text-xs text-gray-500 font-medium">Loading your parking passes...</p>
+            </div>
+          ) : activeBookings.length === 0 ? (
+            <div className="bg-white p-12 rounded-3xl border border-gray-200 shadow-sm text-center space-y-4">
+              <div className="w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto shadow-inner">
+                <QrCode className="w-8 h-8" />
               </div>
-
-              <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100">
-                <div className="text-right">
-                  <div className="text-xs text-gray-400">Total Paid</div>
-                  <div className="text-base font-extrabold text-emerald-900">₹{b.amount}</div>
-                </div>
-
-                <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-900 flex items-center justify-center">
-                  <ChevronRight className="w-5 h-5" />
-                </div>
+              <div className="space-y-1">
+                <h3 className="text-xl font-extrabold text-gray-900">No Reservations Yet</h3>
+                <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                  You have not reserved any parking spots yet. Explore live slots near Meenakshi Amman Temple to get started.
+                </p>
+              </div>
+              <div className="pt-2">
+                <Link
+                  href="/explore"
+                  className="inline-flex items-center space-x-2 bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 px-6 rounded-2xl text-xs shadow-md transition-all"
+                >
+                  <span>Explore Parking Spaces</span>
+                </Link>
               </div>
             </div>
-          ))}
+          ) : (
+            activeBookings.map((b) => (
+              <div
+                key={b.id}
+                onClick={() => router.push(`/pass/${b.passCode}`)}
+                className="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+              >
+                <div className="flex items-start space-x-4">
+                  <img
+                    src={b.location.imageUrl}
+                    alt={b.location.title}
+                    className="w-16 h-16 rounded-2xl object-cover shrink-0"
+                  />
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-mono font-extrabold text-gray-900 text-sm">{b.passCode}</span>
+                      <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                        b.status === 'CONFIRMED' ? 'bg-emerald-100 text-emerald-900' : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {b.status}
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
+                        {b.paymentMethod || 'Razorpay'}
+                      </span>
+                    </div>
+
+                    <h4 className="font-bold text-gray-900 text-base">{b.location.title}</h4>
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                      <span className="flex items-center space-x-1">
+                        <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                        <span>{b.date}</span>
+                      </span>
+                      <span className="flex items-center space-x-1">
+                        <Clock className="w-3.5 h-3.5 text-gray-400" />
+                        <span>{b.time}</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">Total Paid</div>
+                    <div className="text-base font-extrabold text-emerald-900">₹{b.amount}</div>
+                  </div>
+
+                  <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-900 flex items-center justify-center">
+                    <ChevronRight className="w-5 h-5" />
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
       </div>

@@ -1,8 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Building2, MapPin, DollarSign, Camera, CheckCircle } from 'lucide-react';
+import { X, Building2, MapPin, DollarSign, Camera, CheckCircle, AlertCircle } from 'lucide-react';
 import { Language } from '@/types';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 interface OwnerModalProps {
   isOpen: boolean;
@@ -11,7 +14,11 @@ interface OwnerModalProps {
 }
 
 export const OwnerModal: React.FC<OwnerModalProps> = ({ isOpen, onClose, lang }) => {
+  const router = useRouter();
+  const { isLoggedIn, isDemoMode, profile } = useAuth();
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     address: '',
@@ -24,8 +31,81 @@ export const OwnerModal: React.FC<OwnerModalProps> = ({ isOpen, onClose, lang })
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
+    setIsSubmitting(true);
+
+    if (!isLoggedIn && !isDemoMode) {
+      setIsSubmitting(false);
+      setErrorMessage('Please sign in or create an account to register your parking space.');
+      return;
+    }
+
+    if (isSupabaseConfigured && supabase && !isDemoMode) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setIsSubmitting(false);
+          setErrorMessage('User session expired. Please sign in again.');
+          return;
+        }
+
+        const spotsTotal = Number(formData.totalSpots) || 10;
+        const carCap = Math.max(1, Math.floor(spotsTotal * 0.7));
+        const bikeCap = Math.max(1, spotsTotal - carCap);
+
+        const { error: spaceErr } = await supabase.from('parking_spaces').insert([{
+          owner_id: user.id,
+          title: formData.title,
+          address: formData.address,
+          price_per_hour_car: Number(formData.hourlyRateCar) || 30,
+          price_per_hour_bike: Number(formData.hourlyRateBike) || 15,
+          car_capacity: carCap,
+          bike_capacity: bikeCap,
+          status: 'pending_review',
+          latitude: 9.9195,
+          longitude: 78.1198,
+          image_url: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&q=80&w=800'
+        }]);
+
+        if (spaceErr) {
+          setIsSubmitting(false);
+          setErrorMessage(`Database registration failed: ${spaceErr.message}`);
+          return;
+        }
+
+        // Backward compatibility insert
+        await supabase.from('parking_locations').insert([{
+          owner_id: user.id,
+          title: formData.title,
+          address: formData.address,
+          hourly_rate_car: Number(formData.hourlyRateCar) || 30,
+          hourly_rate_bike: Number(formData.hourlyRateBike) || 15,
+          total_spots: spotsTotal,
+          available_spots: spotsTotal,
+          car_capacity: carCap,
+          bike_capacity: bikeCap,
+          operating_hours: formData.operatingHours,
+          latitude: 9.9195,
+          longitude: 78.1198,
+          status: 'pending_review'
+        }]);
+
+        // Submit owner role application
+        await supabase.rpc('apply_for_owner_role', {
+          p_full_name: profile?.name || user.user_metadata?.full_name || 'Space Owner',
+          p_phone: formData.ownerPhone
+        });
+
+      } catch (err: any) {
+        setIsSubmitting(false);
+        setErrorMessage(err.message || 'An unexpected error occurred. Please try again.');
+        return;
+      }
+    }
+
+    setIsSubmitting(false);
     setSubmitted(true);
     setTimeout(() => {
       setSubmitted(false);
@@ -140,11 +220,25 @@ export const OwnerModal: React.FC<OwnerModalProps> = ({ isOpen, onClose, lang })
               </div>
             </div>
 
+            {errorMessage && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-start space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
             <button
               type="submit"
-              className="w-full bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 rounded-2xl text-sm shadow-md transition-all mt-4"
+              disabled={isSubmitting}
+              className={`w-full bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 rounded-2xl text-sm shadow-md transition-all mt-4 cursor-pointer flex items-center justify-center space-x-2 ${
+                isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+              }`}
             >
-              Submit Space for Review &rarr;
+              {isSubmitting ? (
+                <span>Registering Space...</span>
+              ) : (
+                <span>Submit Space for Review &rarr;</span>
+              )}
             </button>
           </form>
         )}

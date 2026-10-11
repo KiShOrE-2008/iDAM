@@ -19,11 +19,13 @@ import {
   Copy,
   Check
 } from 'lucide-react';
-import { Language } from '@/types';
+import { Language, Booking } from '@/types';
 import { MOCK_PARKING_LOCATIONS } from '@/lib/data/mockData';
-import { getBookingByPassCode } from '@/lib/booking/service';
+import { getBookingByPassCode, fetchBookingByPassCode } from '@/lib/booking/service';
+import { formatSecureQrPayload } from '@/lib/parking/passSecurity';
+import { useAuth } from '@/context/AuthContext';
 
-// Mock pass registry — fallback for demonstration passes
+// Mock pass registry — fallback strictly for demonstration passes in demo mode
 const MOCK_PASS_REGISTRY: Record<string, {
   locationIndex: number;
   date: string;
@@ -43,51 +45,79 @@ interface DigitalPassClientProps {
 
 export function DigitalPassClient({ passId }: DigitalPassClientProps) {
   const router = useRouter();
+  const { isDemoMode } = useAuth();
   const [lang, setLang] = useState<Language>('en');
   const [copiedTxn, setCopiedTxn] = useState(false);
+  const [booking, setBooking] = useState<Booking | null>(() => getBookingByPassCode(passId));
+  const [isLoading, setIsLoading] = useState<boolean>(!booking && !MOCK_PASS_REGISTRY[passId]);
 
-  // Look up pass data from persistent local storage first, then fallback to mock registry
-  const dynamicBooking = getBookingByPassCode(passId);
-  const mockFallback = MOCK_PASS_REGISTRY[passId];
+  useEffect(() => {
+    let isMounted = true;
+    async function loadBooking() {
+      try {
+        const dbBooking = await fetchBookingByPassCode(passId);
+        if (isMounted) {
+          if (dbBooking) {
+            setBooking(dbBooking);
+          }
+          setIsLoading(false);
+        }
+      } catch (err) {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+    loadBooking();
+    return () => {
+      isMounted = false;
+    };
+  }, [passId]);
 
-  const location = dynamicBooking?.parkingLocation
+  const mockFallback = (isDemoMode || !booking) ? MOCK_PASS_REGISTRY[passId] : undefined;
+  const isNotFound = !isLoading && !booking && !mockFallback;
+
+  const location = booking?.parkingLocation
     || (mockFallback ? MOCK_PARKING_LOCATIONS[mockFallback.locationIndex] : MOCK_PARKING_LOCATIONS[0]);
 
-  const passDate = dynamicBooking?.bookingDate
+  const passDate = booking?.bookingDate
     || mockFallback?.date
     || new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
-  const passTimeSlot = dynamicBooking
-    ? `${dynamicBooking.startTime} - ${dynamicBooking.endTime}`
+  const passTimeSlot = booking
+    ? `${booking.startTime} - ${booking.endTime}`
     : (mockFallback?.timeSlot ?? '10:00 AM - 12:00 PM');
 
-  const passVehicle = dynamicBooking?.vehicleNumber
+  const passVehicle = booking?.vehicleNumber
     || mockFallback?.vehicle
     || 'TN 59 AB 1234';
 
-  const passAmount = dynamicBooking
-    ? `₹${dynamicBooking.totalAmount}`
+  const passAmount = booking
+    ? `₹${booking.totalAmount}`
     : (mockFallback?.amount ?? '₹85');
 
-  const passPayment = dynamicBooking?.paymentMethod
+  const passPayment = booking?.paymentMethod
     || mockFallback?.payment
     || 'Razorpay';
 
-  const passPaymentId = dynamicBooking?.paymentId
+  const passPaymentId = booking?.paymentId
     || mockFallback?.paymentId
     || 'pay_rzp_mock_confirmed';
 
+  const qrPayload = booking?.qrData
+    || (booking?.passToken ? formatSecureQrPayload(booking.passToken) : formatSecureQrPayload(passId));
+
   useEffect(() => {
-    try {
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.35 }
-      });
-    } catch (e) {
-      // ignore
+    if (booking || mockFallback) {
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.35 }
+        });
+      } catch (e) {
+        // ignore
+      }
     }
-  }, []);
+  }, [booking, mockFallback]);
 
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(
@@ -108,6 +138,54 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
     window.print();
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-between font-sans">
+        <Navbar lang={lang} onLanguageToggle={setLang} activeView="web" onViewChange={() => {}} onOpenOwnerModal={() => {}} />
+        <main className="max-w-md mx-auto px-4 py-20 text-center space-y-4 flex-1 flex flex-col items-center justify-center">
+          <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
+          <h2 className="text-lg font-bold text-gray-800">Loading your digital pass...</h2>
+          <p className="text-xs text-gray-500">Retrieving confirmed booking records</p>
+        </main>
+        <Footer lang={lang} />
+      </div>
+    );
+  }
+
+  if (isNotFound) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-between font-sans">
+        <Navbar lang={lang} onLanguageToggle={setLang} activeView="web" onViewChange={() => {}} onOpenOwnerModal={() => {}} />
+        <main className="max-w-md mx-auto px-4 py-16 text-center space-y-6 flex-1 flex flex-col items-center justify-center">
+          <div className="w-16 h-16 rounded-3xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto shadow-inner">
+            <ShieldCheck className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-extrabold text-gray-900">Pass Not Found</h1>
+            <p className="text-sm text-gray-600">
+              No active or valid parking pass found for reference <span className="font-mono font-bold text-gray-800">{passId}</span>.
+            </p>
+          </div>
+          <div className="flex items-center space-x-3 w-full pt-2">
+            <button
+              onClick={() => router.push('/my-bookings')}
+              className="flex-1 bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 px-6 rounded-2xl text-xs shadow-md transition-all text-center cursor-pointer"
+            >
+              My Bookings
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className="flex-1 bg-white hover:bg-gray-50 text-gray-800 font-bold py-3.5 px-6 rounded-2xl text-xs border border-gray-200 shadow-2xs transition-all text-center cursor-pointer"
+            >
+              Explore Map
+            </button>
+          </div>
+        </main>
+        <Footer lang={lang} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-between font-sans">
       
@@ -125,7 +203,7 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
         <div className="flex items-center justify-between">
           <button
             onClick={() => router.push('/')}
-            className="inline-flex items-center space-x-2 text-xs font-bold text-gray-500 hover:text-emerald-800 transition-colors"
+            className="inline-flex items-center space-x-2 text-xs font-bold text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Map Discovery</span>
@@ -134,14 +212,14 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
           <div className="flex items-center space-x-2">
             <button
               onClick={handlePrint}
-              className="p-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs font-semibold flex items-center space-x-1.5 shadow-2xs transition-all"
+              className="p-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs font-semibold flex items-center space-x-1.5 shadow-2xs transition-all cursor-pointer"
             >
               <Printer className="w-4 h-4 text-gray-600" />
               <span>Print Pass</span>
             </button>
             <button
               onClick={handleShareWhatsApp}
-              className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 text-xs font-semibold flex items-center space-x-1.5 shadow-2xs transition-all"
+              className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 text-xs font-semibold flex items-center space-x-1.5 shadow-2xs transition-all cursor-pointer"
             >
               <Share2 className="w-4 h-4 text-emerald-700" />
               <span>Share Pass</span>
@@ -178,16 +256,7 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
               <div className="md:col-span-5 text-center">
                 <div className="bg-emerald-50/60 p-5 rounded-3xl border border-emerald-100 inline-block shadow-inner">
                   <QRCodeSVG
-                    value={dynamicBooking?.qrData || JSON.stringify({
-                      passId,
-                      location: location.title,
-                      date: passDate,
-                      time: passTimeSlot,
-                      amount: passAmount,
-                      vehicle: passVehicle,
-                      gateway: passPayment,
-                      paymentId: passPaymentId
-                    })}
+                    value={qrPayload}
                     size={160}
                     level="H"
                     className="mx-auto"

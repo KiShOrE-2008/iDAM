@@ -117,18 +117,28 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
     }
   };
 
+  const handlePrimaryPayClick = () => {
+    if (hasRealKey) {
+      handleLaunchOfficialPopup();
+    } else {
+      handleSimulatePayment(activeTab);
+    }
+  };
+
   const handleSimulatePayment = (methodUsed: string) => {
     setIsProcessing(true);
-    const mockPaymentId = generateMockPaymentId();
+    const mockPaymentId = generateMockPaymentId(true);
+    const mockOrderId = `demo_order_${Math.random().toString(36).substring(2, 11)}`;
 
     setTimeout(() => {
       const result: RazorpaySuccessResult = {
         razorpay_payment_id: mockPaymentId,
-        razorpay_order_id: `order_${Math.random().toString(36).substring(2, 11)}`,
-        razorpay_signature: `sig_${Math.random().toString(36).substring(2, 15)}`,
+        razorpay_order_id: mockOrderId,
+        razorpay_signature: `sig_demo_${Math.random().toString(36).substring(2, 15)}`,
         amount,
         paymentMethod: 'Razorpay',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        isSandbox: true
       };
 
       setIsProcessing(false);
@@ -485,9 +495,9 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
           
           <button
             type="button"
-            onClick={() => handleSimulatePayment(activeTab)}
+            onClick={handlePrimaryPayClick}
             disabled={isProcessing}
-            className="w-full bg-blue-700 hover:bg-blue-800 text-white font-black py-3.5 rounded-2xl shadow-lg text-sm transition-all flex items-center justify-center space-x-2 disabled:opacity-75"
+            className="w-full bg-blue-700 hover:bg-blue-800 text-white font-black py-3.5 rounded-2xl shadow-lg text-sm transition-all flex items-center justify-center space-x-2 disabled:opacity-75 cursor-pointer"
           >
             {isProcessing ? (
               <>
@@ -501,6 +511,17 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
               </>
             )}
           </button>
+
+          {hasRealKey && (
+            <button
+              type="button"
+              onClick={() => handleSimulatePayment(activeTab)}
+              disabled={isProcessing}
+              className="text-[11px] text-slate-500 hover:text-blue-700 font-semibold underline text-center cursor-pointer transition-colors"
+            >
+              Test with Instant Sandbox Simulation
+            </button>
+          )}
 
           <div className="flex items-center justify-center space-x-2 text-[10px] text-slate-500 font-semibold">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />

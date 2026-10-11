@@ -289,6 +289,7 @@ export async function validateScannedPass(params: {
             WRONG_LOCATION: 'wrong_location',
             EXPIRED: 'expired',
             EARLY_ARRIVAL: 'early_arrival',
+            UNPAID: 'unpaid',
             NOT_FOUND: 'not_found'
           };
           return {
@@ -345,6 +346,17 @@ export async function validateScannedPass(params: {
       message: 'This pass belongs to a different parking location',
       locationTitle: matched.parkingLocation?.title,
       booking: undefined, // Never reveal another location's driver details
+      rawPayload: rawScannedText
+    };
+  }
+
+  // Check Payment Status
+  if (matched.paymentStatus && matched.paymentStatus !== 'completed') {
+    return {
+      isValid: false,
+      statusCode: 'unpaid',
+      message: 'Payment is pending or incomplete for this pass',
+      booking: matched,
       rawPayload: rawScannedText
     };
   }

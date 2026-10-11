@@ -59,7 +59,6 @@ interface LocalAccount {
   id: string;
   name: string;
   email: string;
-  password?: string;
   phone?: string;
   role: 'driver' | 'owner';
   vehicleNumber?: string;
@@ -79,7 +78,6 @@ const SEED_ACCOUNTS: LocalAccount[] = [
     id: 'seed_driver_1',
     name: 'Kishore Kumar',
     email: 'kishore.k@example.com',
-    password: 'password123',
     phone: '+91 98765 43210',
     role: 'driver',
     vehicleNumber: 'TN 59 AZ 8899',
@@ -90,7 +88,6 @@ const SEED_ACCOUNTS: LocalAccount[] = [
     id: 'seed_owner_1',
     name: 'Kishore (Meenakshi Parking)',
     email: 'owner@meenakshiparking.com',
-    password: 'password123',
     phone: '+91 98765 43210',
     role: 'owner',
     vehicleNumber: 'TN 59 AZ 8899',
@@ -194,6 +191,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setProfile(userProf);
               } else {
                 const fallbackProf: UserProfile = {
+                  id: currentSession.user.id,
                   name: currentSession.user.user_metadata?.full_name || currentSession.user.email?.split('@')[0] || 'User',
                   email: currentSession.user.email || '',
                   phone: currentSession.user.user_metadata?.phone || '',
@@ -300,13 +298,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
 
-      if (account.password && account.password !== cleanPassword) {
-        return { 
-          success: false, 
-          error: 'Incorrect password. Please verify your credentials.' 
-        };
-      }
-
       const activeProfile: UserProfile = {
         name: account.name,
         email: account.email,
@@ -391,7 +382,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: `usr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
         name: cleanName,
         email: cleanEmail,
-        password: cleanPassword,
         phone: cleanPhone || '+91 98765 43210',
         role: 'driver',
         vehicleNumber: 'TN 59 AZ 8899',
@@ -519,18 +509,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, error: 'Password must be at least 6 characters long.' };
     }
     if (!isSupabaseConfigured || !supabase) {
-      const activeRaw = localStorage.getItem(LOCAL_STORAGE_KEYS.ACTIVE_USER);
-      if (activeRaw) {
-        try {
-          const user = JSON.parse(activeRaw);
-          const accounts = getLocalAccounts();
-          const target = accounts.find((a) => a.email.toLowerCase() === user.email.toLowerCase());
-          if (target) {
-            target.password = clean;
-            saveLocalAccounts(accounts);
-          }
-        } catch (e) {}
-      }
       setIsPasswordRecovery(false);
       return { success: true };
     }
@@ -616,6 +594,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const switchRole = (newRole: 'driver' | 'owner') => {
     if (isDemoMode) {
       startDemo(newRole);
+    } else if (supabaseUser) {
+      // In authenticated production mode, verify role in profile
+      if (profile && profile.role === newRole) {
+        setProfile({ ...profile, role: newRole });
+      } else if (newRole === 'owner') {
+        // Driver attempting to switch without server-side owner approval
+        console.warn('Cannot switch to owner role: database owner approval required.');
+      } else if (profile) {
+        setProfile({ ...profile, role: newRole });
+      }
     } else if (profile) {
       const updatedProfile = { ...profile, role: newRole };
       setProfile(updatedProfile);
