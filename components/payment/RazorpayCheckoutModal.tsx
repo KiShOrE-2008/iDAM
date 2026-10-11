@@ -92,6 +92,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
   };
 
   const handleLaunchOfficialPopup = async () => {
+    if (isProcessing) return;
     setIsProcessing(true);
     try {
       const res = await openOfficialRazorpayCheckout({
@@ -118,6 +119,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
   };
 
   const handlePrimaryPayClick = () => {
+    if (isProcessing) return;
     if (hasRealKey) {
       handleLaunchOfficialPopup();
     } else {
@@ -126,6 +128,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
   };
 
   const handleSimulatePayment = (methodUsed: string) => {
+    if (isProcessing) return;
     setIsProcessing(true);
     const mockPaymentId = generateMockPaymentId(true);
     const mockOrderId = `demo_order_${Math.random().toString(36).substring(2, 11)}`;

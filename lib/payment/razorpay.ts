@@ -6,6 +6,7 @@
 
 import { RazorpayOptions, RazorpayPaymentSuccessResponse } from '@/types/razorpay';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { withTimeout } from '@/lib/utils/timeout';
 
 export interface RazorpayCheckoutParams {
   amount: number; // in INR (Rupees)
@@ -142,13 +143,17 @@ export async function createServerPaymentOrder(params: {
 }): Promise<PaymentOrderResult> {
   if (isSupabaseConfigured && supabase && !params.isDemoMode) {
     try {
-      const { data, error } = await supabase.rpc('create_payment_order', {
-        p_space_id: params.spaceId,
-        p_vehicle_type: params.vehicleType === 'bike' ? 'bike' : 'car',
-        p_duration_hours: params.durationHours,
-        p_vehicle_number: params.vehicleNumber,
-        p_addons: params.addons || []
-      });
+      const { data, error } = await withTimeout(
+        supabase.rpc('create_payment_order', {
+          p_space_id: params.spaceId,
+          p_vehicle_type: params.vehicleType === 'bike' ? 'bike' : 'car',
+          p_duration_hours: params.durationHours,
+          p_vehicle_number: params.vehicleNumber,
+          p_addons: params.addons || []
+        }),
+        10000,
+        'Payment order creation timed out'
+      );
 
       if (!error && data?.success && data?.order_id) {
         return {
@@ -185,12 +190,16 @@ export async function verifyPaymentOnServer(
 ): Promise<{ success: boolean; message?: string }> {
   if (isSupabaseConfigured && supabase && !result.isSandbox) {
     try {
-      const { data, error } = await supabase.rpc('verify_razorpay_payment', {
-        p_booking_id: bookingId,
-        p_order_id: result.razorpay_order_id || '',
-        p_payment_id: result.razorpay_payment_id,
-        p_signature: result.razorpay_signature || ''
-      });
+      const { data, error } = await withTimeout(
+        supabase.rpc('verify_razorpay_payment', {
+          p_booking_id: bookingId,
+          p_order_id: result.razorpay_order_id || '',
+          p_payment_id: result.razorpay_payment_id,
+          p_signature: result.razorpay_signature || ''
+        }),
+        10000,
+        'Payment verification timed out'
+      );
 
       if (!error && data?.success) {
         return { success: true };

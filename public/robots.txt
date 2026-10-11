@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /pass/
+Disallow: /my-bookings
+Disallow: /owner
+Disallow: /dashboard
+
+Sitemap: https://idam.app/sitemap.xml

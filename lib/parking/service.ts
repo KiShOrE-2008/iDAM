@@ -1,6 +1,7 @@
 import type { ParkingLocation, SearchFilter, Booking } from '../../types/index.ts';
 import { MOCK_PARKING_LOCATIONS } from '../data/mockData.ts';
 import { supabase, isSupabaseConfigured } from '../supabase.ts';
+import { withTimeout } from '../utils/timeout.ts';
 
 function mapDbRowToParkingLocation(item: any): ParkingLocation {
   return {
@@ -32,34 +33,46 @@ function mapDbRowToParkingLocation(item: any): ParkingLocation {
 export async function getParkingLocations(filter?: Partial<SearchFilter>): Promise<ParkingLocation[]> {
   if (isSupabaseConfigured && supabase) {
     try {
-      // 1. If coordinates are provided, call PostGIS nearby_parking RPC
+      // 1. If coordinates are provided, call PostGIS nearby_parking RPC with timeout
       if (filter?.latitude && filter?.longitude) {
-        const { data: rpcData, error: rpcError } = await supabase.rpc('nearby_parking', {
-          p_latitude: filter.latitude,
-          p_longitude: filter.longitude,
-          p_radius_meters: filter.radiusMeters || 5000,
-          p_vehicle_type: filter.vehicleType || 'all',
-          p_max_price: filter.maxPrice || null
-        });
+        const { data: rpcData, error: rpcError } = await withTimeout(
+          supabase.rpc('nearby_parking', {
+            p_latitude: filter.latitude,
+            p_longitude: filter.longitude,
+            p_radius_meters: filter.radiusMeters || 5000,
+            p_vehicle_type: filter.vehicleType || 'all',
+            p_max_price: filter.maxPrice || null
+          }),
+          8000,
+          'Nearby parking search timed out'
+        );
 
         if (!rpcError && rpcData && rpcData.length > 0) {
           return rpcData.map(mapDbRowToParkingLocation);
         }
       }
 
-      // 2. Direct query on parking_spaces or parking_locations
-      const { data: spacesData, error: spacesError } = await supabase
-        .from('parking_spaces')
-        .select('*')
-        .eq('status', 'active');
+      // 2. Direct query on parking_spaces or parking_locations with timeout
+      const { data: spacesData, error: spacesError } = await withTimeout(
+        supabase
+          .from('parking_spaces')
+          .select('*')
+          .eq('status', 'active'),
+        8000,
+        'Parking spaces query timed out'
+      );
 
       if (!spacesError && spacesData && spacesData.length > 0) {
         return spacesData.map(mapDbRowToParkingLocation);
       }
 
-      const { data: locsData, error: locsError } = await supabase
-        .from('parking_locations')
-        .select('*');
+      const { data: locsData, error: locsError } = await withTimeout(
+        supabase
+          .from('parking_locations')
+          .select('*'),
+        8000,
+        'Parking locations query timed out'
+      );
 
       if (!locsError && locsData && locsData.length > 0) {
         return locsData.map(mapDbRowToParkingLocation);

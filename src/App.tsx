@@ -35,51 +35,59 @@ import AccessibilityPage from '@/app/accessibility/page';
 import SecurityPage from '@/app/security/page';
 import PrivacyRequestsPage from '@/app/privacy-requests/page';
 import { DigitalPassClient } from '@/components/web/DigitalPassClient';
+import { NotFoundPage } from '@/components/web/NotFoundPage';
+import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
+import { NetworkStatus } from '@/components/shared/NetworkStatus';
 import { useParams } from 'react-router-dom';
 
 function PassRouteWrapper() {
   const { id } = useParams<{ id: string }>();
-  return <DigitalPassClient passId={id || 'IDM-82931'} />;
+  return <DigitalPassClient passId={id || ''} />;
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BackNavigationProvider>
-        <CapacitorBackButtonHandler />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/explore" element={<ExplorePage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/my-bookings" element={<MyBookingsPage />} />
-          <Route path="/list-your-space" element={<ListYourSpacePage />} />
-          <Route path="/pass/:id" element={<PassRouteWrapper />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/owner" element={<OwnerPage />} />
-          <Route path="/owners" element={<OwnersPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/features" element={<FeaturesPage />} />
-          <Route path="/how-it-works" element={<HowItWorksPage />} />
-          <Route path="/faq" element={<FaqPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/help" element={<HelpPage />} />
-          <Route path="/report-issue" element={<ReportIssuePage />} />
-          <Route path="/terms" element={<TermsPage />} />
-          <Route path="/privacy" element={<PrivacyPolicyPage />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-          <Route path="/cancellation-refund" element={<CancellationRefundPage />} />
-          <Route path="/refund-policy" element={<CancellationRefundPage />} />
-          <Route path="/account-deletion" element={<AccountDeletionPage />} />
-          <Route path="/cookie-policy" element={<CookiePolicyPage />} />
-          <Route path="/accessibility" element={<AccessibilityPage />} />
-          <Route path="/security" element={<SecurityPage />} />
-          <Route path="/privacy-requests" element={<PrivacyRequestsPage />} />
-          <Route path="/owner-policy" element={<OwnerPolicyPage />} />
-          <Route path="/user-rules" element={<UserRulesPage />} />
-        </Routes>
-      </BackNavigationProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <BackNavigationProvider>
+          <CapacitorBackButtonHandler />
+          <NetworkStatus />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/explore" element={<ExplorePage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/my-bookings" element={<MyBookingsPage />} />
+            <Route path="/list-your-space" element={<ListYourSpacePage />} />
+            <Route path="/pass/:id" element={<PassRouteWrapper />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/owner" element={<OwnerPage />} />
+            <Route path="/owners" element={<OwnersPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/features" element={<FeaturesPage />} />
+            <Route path="/how-it-works" element={<HowItWorksPage />} />
+            <Route path="/faq" element={<FaqPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/help" element={<HelpPage />} />
+            <Route path="/report-issue" element={<ReportIssuePage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+            <Route path="/cancellation-refund" element={<CancellationRefundPage />} />
+            <Route path="/refund-policy" element={<CancellationRefundPage />} />
+            <Route path="/account-deletion" element={<AccountDeletionPage />} />
+            <Route path="/cookie-policy" element={<CookiePolicyPage />} />
+            <Route path="/accessibility" element={<AccessibilityPage />} />
+            <Route path="/security" element={<SecurityPage />} />
+            <Route path="/privacy-requests" element={<PrivacyRequestsPage />} />
+            <Route path="/owner-policy" element={<OwnerPolicyPage />} />
+            <Route path="/user-rules" element={<UserRulesPage />} />
+            {/* Catch-all 404 Route */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </BackNavigationProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

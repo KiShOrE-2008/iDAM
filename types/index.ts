@@ -137,3 +137,30 @@ export interface ParkingInvoice {
   paymentMethod: string;
   vehicleNumber: string;
 }
+
+export type ErrorCategory =
+  | 'NETWORK_UNAVAILABLE'
+  | 'REQUEST_TIMEOUT'
+  | 'VALIDATION_FAILED'
+  | 'UNAUTHORIZED'
+  | 'FORBIDDEN'
+  | 'NOT_FOUND'
+  | 'BOOKING_CONFLICT'
+  | 'RATE_LIMITED'
+  | 'SERVER_ERROR'
+  | 'SERVICE_UNAVAILABLE'
+  | 'UNKNOWN';
+
+export interface AppError {
+  category: ErrorCategory;
+  statusCode?: number;
+  title: string;
+  message: string;
+  technicalDetails?: string;
+  correlationId?: string;
+  actionLabel?: string;
+  onRetry?: () => void | Promise<void>;
+  fallbackUrl?: string;
+}
+
+export type RequestState = 'idle' | 'loading' | 'success' | 'empty' | 'error';
