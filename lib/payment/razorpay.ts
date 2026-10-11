@@ -141,7 +141,18 @@ export async function createServerPaymentOrder(params: {
   addons?: string[];
   isDemoMode?: boolean;
 }): Promise<PaymentOrderResult> {
-  if (isSupabaseConfigured && supabase && !params.isDemoMode) {
+  if (!params.isDemoMode) {
+    if (!isSupabaseConfigured || !supabase) {
+      return {
+        success: false,
+        orderId: '',
+        amount: 0,
+        amountPaise: 0,
+        currency: 'INR',
+        error: 'Database service is not configured for production payments.'
+      };
+    }
+
     try {
       const { data, error } = await withTimeout(
         supabase.rpc('create_payment_order', {
@@ -155,21 +166,37 @@ export async function createServerPaymentOrder(params: {
         'Payment order creation timed out'
       );
 
-      if (!error && data?.success && data?.order_id) {
+      if (error || !data?.success || !data?.order_id) {
         return {
-          success: true,
-          orderId: data.order_id,
-          amount: data.amount,
-          amountPaise: data.amount_paise,
-          currency: data.currency || 'INR'
+          success: false,
+          orderId: '',
+          amount: 0,
+          amountPaise: 0,
+          currency: 'INR',
+          error: data?.message || data?.error || error?.message || 'Failed to create payment order on server'
         };
       }
+
+      return {
+        success: true,
+        orderId: data.order_id,
+        amount: data.amount,
+        amountPaise: data.amount_paise,
+        currency: data.currency || 'INR'
+      };
     } catch (err: any) {
-      console.warn('Server payment order creation error, using fallback:', err);
+      return {
+        success: false,
+        orderId: '',
+        amount: 0,
+        amountPaise: 0,
+        currency: 'INR',
+        error: err?.message || 'Payment order creation request failed'
+      };
     }
   }
 
-  // Fallback / Demo sandbox order
+  // Explicit demo sandbox order
   const orderId = generateMockOrderId(true);
   const estAmount = params.vehicleType === 'bike' ? 20 * params.durationHours + 5 : 40 * params.durationHours + 5;
   return {
@@ -188,7 +215,14 @@ export async function verifyPaymentOnServer(
   bookingId: string,
   result: RazorpaySuccessResult
 ): Promise<{ success: boolean; message?: string }> {
-  if (isSupabaseConfigured && supabase && !result.isSandbox) {
+  if (!result.isSandbox) {
+    if (!isSupabaseConfigured || !supabase) {
+      return {
+        success: false,
+        message: 'Server payment verification is not configured. Cannot verify production payment.'
+      };
+    }
+
     try {
       const { data, error } = await withTimeout(
         supabase.rpc('verify_razorpay_payment', {
@@ -204,13 +238,14 @@ export async function verifyPaymentOnServer(
       if (!error && data?.success) {
         return { success: true };
       }
-      return { success: false, message: data?.message || error?.message || 'Verification failed' };
+      return { success: false, message: data?.message || data?.error || error?.message || 'Verification failed' };
     } catch (err: any) {
       return { success: false, message: err?.message || 'Verification call failed' };
     }
   }
 
-  return { success: true };
+  // Demo / sandbox mock payment verification
+  return { success: true, message: 'Sandbox payment verified.' };
 }
 
 /**

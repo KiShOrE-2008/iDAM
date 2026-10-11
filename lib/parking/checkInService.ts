@@ -280,6 +280,12 @@ export async function validateScannedPass(params: {
 
       if (error) {
         console.error('Supabase RPC verify_parking_pass error:', error);
+        return {
+          isValid: false,
+          statusCode: 'not_found',
+          message: error.message || 'Pass verification rejected by server',
+          rawPayload: rawScannedText
+        };
       } else if (data) {
         if (!data.is_valid) {
           const statusMap: Record<string, PassValidationStatus> = {
@@ -308,9 +314,24 @@ export async function validateScannedPass(params: {
           rawPayload: rawScannedText
         };
       }
-    } catch (err) {
-      console.warn('Supabase verification failed, falling back to local verification:', err);
+    } catch (err: any) {
+      return {
+        isValid: false,
+        statusCode: 'not_found',
+        message: err?.message || 'Pass verification request failed',
+        rawPayload: rawScannedText
+      };
     }
+  }
+
+  // In production mode, never allow local demo bookings to masquerade as valid passes
+  if (!isDemoMode) {
+    return {
+      isValid: false,
+      statusCode: 'not_found',
+      message: 'Production database verification is required',
+      rawPayload: rawScannedText
+    };
   }
 
   // Local / Demo Mode verification
@@ -446,9 +467,21 @@ export async function confirmBookingCheckIn(params: {
             checkInAt: data.check_in_at || nowIso
           };
         }
+
+        return {
+          success: false,
+          message: data?.message || 'Check-in rejected by server.'
+        };
       } catch (err: any) {
-        console.warn('Supabase check-in failed, falling back to local store:', err);
+        return {
+          success: false,
+          message: err?.message || 'Check-in request failed on server.'
+        };
       }
+    }
+
+    if (!isDemoMode) {
+      return { success: false, message: 'Database service is not configured for production check-in.' };
     }
 
     // Local / Demo Mode atomic update
@@ -519,9 +552,21 @@ export async function confirmBookingCheckOut(params: {
             checkOutAt: data.check_out_at || nowIso
           };
         }
+
+        return {
+          success: false,
+          message: data?.message || 'Check-out rejected by server.'
+        };
       } catch (err: any) {
-        console.warn('Supabase check-out failed, falling back to local store:', err);
+        return {
+          success: false,
+          message: err?.message || 'Check-out request failed on server.'
+        };
       }
+    }
+
+    if (!isDemoMode) {
+      return { success: false, message: 'Database service is not configured for production check-out.' };
     }
 
     // Local / Demo Mode atomic update

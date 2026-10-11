@@ -146,68 +146,88 @@ export async function createBooking(
     createdAt: new Date().toISOString()
   };
 
-  // Save to LocalStorage for persistent pass access across sessions
-  saveBookingLocally(bookingData);
-
   const isDemo = options?.isDemoMode !== undefined
     ? options.isDemoMode
     : (getStorage()?.getItem('idam_demo_mode') === 'true' || Boolean(request.paymentId?.startsWith('demo_pay_') || request.paymentId?.startsWith('mock_')));
 
-  if (isSupabaseConfigured && supabase && !isDemo) {
-    try {
-      // Attempt atomic booking creation RPC first
-      const { data: rpcData, error: rpcError } = await supabase.rpc('create_verified_booking', {
-        p_space_id: location.id,
-        p_vehicle_type: request.vehicleType === 'bike' ? 'bike' : 'car',
-        p_start_time: startTimeIso,
-        p_duration_hours: request.durationHours,
-        p_vehicle_number: request.vehicleNumber,
-        p_driver_name: request.driverName || 'Driver',
-        p_driver_phone: request.driverPhone || '',
-        p_addons: [],
-        p_pass_token_hash: passTokenHash,
-        p_pass_code: passCode,
-        p_payment_ref: request.paymentId || null
-      });
+  if (!isDemo) {
+    if (!isSupabaseConfigured || !supabase) {
+      throw new Error('Database connection is required for production bookings.');
+    }
 
-      if (!rpcError && rpcData?.success && rpcData?.booking_id) {
-        bookingData.id = rpcData.booking_id;
-        saveBookingLocally(bookingData);
-      } else {
-        // Fallback to direct insert if RPC not deployed yet
-        const { data: userData } = await supabase.auth.getUser();
-        const userId = userData?.user?.id;
-        await supabase.from('bookings').insert([{
-          pass_code: passCode,
-          pass_token_hash: passTokenHash,
-          parking_space_id: location.id,
-          parking_location_id: location.id,
-          driver_id: userId,
-          user_id: userId,
-          vehicle_type: request.vehicleType,
-          vehicle_number: request.vehicleNumber,
-          driver_name: request.driverName || 'Driver',
-          driver_phone: request.driverPhone || '',
-          booking_date: dateStr,
-          start_time: startTimeIso,
-          duration_hours: request.durationHours,
-          end_time: endDate.toISOString(),
-          base_price: bookingData.basePrice,
-          platform_fee: bookingData.platformFee,
-          total_amount: bookingData.totalAmount,
-          payment_method: request.paymentMethod || 'Razorpay',
-          payment_status: 'completed',
-          payment_id: request.paymentId,
-          booking_status: 'confirmed',
-          status: 'confirmed',
-          qr_data: secureQrData
-        }]);
+    // Attempt atomic booking creation RPC
+    const { data: rpcData, error: rpcError } = await supabase.rpc('create_verified_booking', {
+      p_space_id: location.id,
+      p_vehicle_type: request.vehicleType === 'bike' ? 'bike' : 'car',
+      p_start_time: startTimeIso,
+      p_duration_hours: request.durationHours,
+      p_vehicle_number: request.vehicleNumber,
+      p_driver_name: request.driverName || 'Driver',
+      p_driver_phone: request.driverPhone || '',
+      p_addons: [],
+      p_pass_token_hash: passTokenHash,
+      p_pass_code: passCode,
+      p_payment_ref: request.paymentId || null
+    });
+
+    if (rpcData && !rpcData.success) {
+      throw new Error(rpcData.message || rpcData.error || 'Booking rejected: Selected space has no available capacity or slot is invalid.');
+    }
+
+    if (!rpcError && rpcData?.success && rpcData?.booking_id) {
+      bookingData.id = rpcData.booking_id;
+      saveBookingLocally(bookingData);
+      return bookingData;
+    }
+
+    // Only fallback to direct table insert if RPC is missing (code 42883)
+    if (rpcError && rpcError.code === '42883') {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData?.user?.id;
+      const { data: insertData, error: insertError } = await supabase.from('bookings').insert([{
+        pass_code: passCode,
+        pass_token_hash: passTokenHash,
+        parking_space_id: location.id,
+        parking_location_id: location.id,
+        driver_id: userId,
+        user_id: userId,
+        vehicle_type: request.vehicleType,
+        vehicle_number: request.vehicleNumber,
+        driver_name: request.driverName || 'Driver',
+        driver_phone: request.driverPhone || '',
+        booking_date: dateStr,
+        start_time: startTimeIso,
+        duration_hours: request.durationHours,
+        end_time: endDate.toISOString(),
+        base_price: bookingData.basePrice,
+        platform_fee: bookingData.platformFee,
+        total_amount: bookingData.totalAmount,
+        payment_method: request.paymentMethod || 'Razorpay',
+        payment_status: 'completed',
+        payment_id: request.paymentId,
+        booking_status: 'confirmed',
+        status: 'confirmed',
+        qr_data: secureQrData
+      }]).select().single();
+
+      if (insertError) {
+        throw new Error(insertError.message || 'Failed to save booking to database.');
       }
-    } catch (err) {
-      console.warn('Supabase booking insert failed, saved locally:', err);
+
+      if (insertData?.id) {
+        bookingData.id = insertData.id;
+      }
+      saveBookingLocally(bookingData);
+      return bookingData;
+    }
+
+    if (rpcError) {
+      throw new Error(rpcError.message || 'Booking creation RPC error.');
     }
   }
 
+  // Demo mode: persist locally and return
+  saveBookingLocally(bookingData);
   return bookingData;
 }
 

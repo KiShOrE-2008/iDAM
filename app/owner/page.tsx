@@ -25,6 +25,7 @@ export default function OwnerPortalPage() {
   const [dbBookings, setDbBookings] = useState<any[]>([]);
   const [isSpaceOpen, setIsSpaceOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Scanner & Verification State
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -36,13 +37,19 @@ export default function OwnerPortalPage() {
     async function loadOwnerData() {
       if (!isSupabaseConfigured || !supabase || isDemoMode || !profile?.id) return;
       setIsLoading(true);
+      setErrorMsg(null);
       try {
         const { data: spacesData, error: spacesErr } = await supabase
           .from('parking_spaces')
           .select('*')
           .eq('owner_id', profile.id);
 
-        if (!spacesErr && spacesData && spacesData.length > 0) {
+        if (spacesErr) {
+          if (isMounted) setErrorMsg(spacesErr.message || 'Failed to load spaces from database.');
+          return;
+        }
+
+        if (spacesData && spacesData.length > 0) {
           const mappedSpaces: ParkingLocation[] = spacesData.map((s: any) => ({
             id: s.id,
             title: s.title,
@@ -66,19 +73,22 @@ export default function OwnerPortalPage() {
             setActiveSpace(mappedSpaces[0]);
             setIsSpaceOpen(spacesData[0].status === 'active');
 
-            const { data: bData } = await supabase
+            const { data: bData, error: bErr } = await supabase
               .from('bookings')
               .select('*')
               .eq('parking_space_id', mappedSpaces[0].id)
               .order('created_at', { ascending: false });
 
-            if (bData && isMounted) {
+            if (bErr && isMounted) {
+              setErrorMsg(bErr.message || 'Failed to load space bookings.');
+            } else if (bData && isMounted) {
               setDbBookings(bData);
             }
           }
         }
-      } catch (e) {
+      } catch (e: any) {
         console.warn('Error loading owner data from database:', e);
+        if (isMounted) setErrorMsg(e?.message || 'Database connection error.');
       } finally {
         if (isMounted) setIsLoading(false);
       }
@@ -133,12 +143,18 @@ export default function OwnerPortalPage() {
     setIsSpaceOpen(nextState);
     if (!isDemoMode && isSupabaseConfigured && supabase && activeSpace?.id) {
       try {
-        await supabase
+        const { error } = await supabase
           .from('parking_spaces')
           .update({ status: nextState ? 'active' : 'paused' })
           .eq('id', activeSpace.id);
-      } catch (e) {
-        console.warn('Failed to update space status:', e);
+
+        if (error) {
+          setIsSpaceOpen(!nextState); // Revert on DB error
+          setErrorMsg(error.message || 'Failed to update space status in database.');
+        }
+      } catch (e: any) {
+        setIsSpaceOpen(!nextState); // Revert on network exception
+        setErrorMsg(e?.message || 'Failed to update space status.');
       }
     }
   };
@@ -150,26 +166,26 @@ export default function OwnerPortalPage() {
     { id: 'bk-104', code: 'IDM-55321', vehicle: 'TN 59 K 1122', type: 'Car', time: '08:00 AM - 09:30 AM', amount: 65, status: 'Completed' },
   ];
 
-  const isUsingDb = !isDemoMode && dbBookings.length > 0;
-
   const todayStr = new Date().toISOString().split('T')[0];
-  const todayBookings = isUsingDb 
+
+  // In production mode, always derive authoritative metrics strictly from database bookings; never fall back silently to mock data
+  const todayBookings = !isDemoMode
     ? dbBookings.filter(b => b.booking_date === todayStr || (b.start_time && String(b.start_time).startsWith(todayStr)))
     : [];
 
-  const todayEarnings = isUsingDb
+  const todayEarnings = !isDemoMode
     ? todayBookings.filter(b => b.payment_status === 'completed').reduce((sum, b) => sum + Number(b.total_amount || 0), 0)
     : 1240;
 
-  const activeOccupancy = isUsingDb
-    ? dbBookings.filter(b => b.booking_status === 'active').length
+  const activeOccupancy = !isDemoMode
+    ? dbBookings.filter(b => b.booking_status === 'active' || b.status === 'active').length
     : 23;
 
   const totalCapacity = activeSpace.totalSpots || 35;
   const availableSpots = Math.max(0, totalCapacity - activeOccupancy);
-  const totalBookingsCount = isUsingDb ? todayBookings.length : 28;
+  const totalBookingsCount = !isDemoMode ? todayBookings.length : 28;
 
-  const displayBookings = isUsingDb
+  const displayBookings = !isDemoMode
     ? dbBookings.map(b => ({
         id: b.id,
         code: b.pass_code,
@@ -177,7 +193,7 @@ export default function OwnerPortalPage() {
         type: b.vehicle_type ? (b.vehicle_type.charAt(0).toUpperCase() + b.vehicle_type.slice(1)) : 'Car',
         time: b.start_time && b.end_time ? `${String(b.start_time).slice(11, 16) || '10:00'} - ${String(b.end_time).slice(11, 16) || '12:00'}` : '10:00 AM - 12:00 PM',
         amount: Number(b.total_amount || 0),
-        status: b.booking_status ? (b.booking_status.charAt(0).toUpperCase() + b.booking_status.slice(1)) : 'Confirmed'
+        status: (b.booking_status || b.status) ? ((b.booking_status || b.status).charAt(0).toUpperCase() + (b.booking_status || b.status).slice(1)) : 'Confirmed'
       }))
     : mockBookings;
 
@@ -306,6 +322,22 @@ export default function OwnerPortalPage() {
           </div>
         </div>
 
+        {/* Database Error Alert Banner */}
+        {errorMsg && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-5 py-3.5 rounded-2xl flex items-center justify-between text-xs font-semibold shadow-xs">
+            <div className="flex items-center space-x-2.5">
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+            <button
+              onClick={() => setErrorMsg(null)}
+              className="text-red-400 hover:text-red-700 p-1 rounded-lg transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Analytics Cards Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-2xs space-y-2">
@@ -314,7 +346,7 @@ export default function OwnerPortalPage() {
               <DollarSign className="w-4 h-4 text-emerald-700" />
             </div>
             <div className="text-2xl font-extrabold text-gray-900">₹{todayEarnings.toLocaleString('en-IN')}</div>
-            <div className="text-[11px] text-emerald-700 font-semibold">{isUsingDb ? 'Verified Supabase transactions' : '+18% vs yesterday'}</div>
+            <div className="text-[11px] text-emerald-700 font-semibold">{!isDemoMode ? 'Verified Supabase transactions' : '+18% vs yesterday'}</div>
           </div>
 
           <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-2xs space-y-2">
@@ -332,7 +364,7 @@ export default function OwnerPortalPage() {
               <Users className="w-4 h-4 text-purple-600" />
             </div>
             <div className="text-2xl font-extrabold text-gray-900">{totalBookingsCount}</div>
-            <div className="text-[11px] text-gray-500 font-semibold">{isUsingDb ? 'Today’s reservations' : 'Average duration: 2.2 hrs'}</div>
+            <div className="text-[11px] text-gray-500 font-semibold">{!isDemoMode ? 'Today’s reservations' : 'Average duration: 2.2 hrs'}</div>
           </div>
 
           <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-2xs space-y-2">
@@ -375,26 +407,34 @@ export default function OwnerPortalPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 font-medium">
-                {displayBookings.map((b) => (
-                  <tr key={b.id} className="hover:bg-gray-50/80">
-                    <td className="py-3 font-mono font-bold text-gray-900">{b.code}</td>
-                    <td className="py-3 font-mono font-bold text-emerald-950">{b.vehicle}</td>
-                    <td className="py-3 text-gray-600">{b.type}</td>
-                    <td className="py-3 text-gray-700">{b.time}</td>
-                    <td className="py-3 font-bold text-gray-900">₹{b.amount}</td>
-                    <td className="py-3 text-right">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
-                        b.status === 'Active'
-                          ? 'bg-emerald-100 text-emerald-900'
-                          : b.status === 'Upcoming'
-                          ? 'bg-blue-100 text-blue-900'
-                          : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {b.status}
-                      </span>
+                {displayBookings.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-10 text-center text-gray-400 font-semibold text-xs">
+                      No reservations recorded for this space yet. Incoming driver bookings will appear here in real time.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  displayBookings.map((b) => (
+                    <tr key={b.id} className="hover:bg-gray-50/80">
+                      <td className="py-3 font-mono font-bold text-gray-900">{b.code}</td>
+                      <td className="py-3 font-mono font-bold text-emerald-950">{b.vehicle}</td>
+                      <td className="py-3 text-gray-600">{b.type}</td>
+                      <td className="py-3 text-gray-700">{b.time}</td>
+                      <td className="py-3 font-bold text-gray-900">₹{b.amount}</td>
+                      <td className="py-3 text-right">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
+                          b.status === 'Active'
+                            ? 'bg-emerald-100 text-emerald-900'
+                            : b.status === 'Upcoming'
+                            ? 'bg-blue-100 text-blue-900'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {b.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
