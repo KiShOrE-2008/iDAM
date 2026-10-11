@@ -48,6 +48,18 @@ jobs:
       - name: Setup PostgreSQL client tools
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
+      - name: Diagnose PostgreSQL and run security phase
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 5432
+          PGUSER: postgres
+          PGDATABASE: myapp
+        run: |
+          set -euxo pipefail
+          psql -c "SELECT version();"
+          psql -c "SELECT current_user, current_database();"
+          node --import tsx test/02_security_boundaries.test.mjs
+
       - name: Run Full Database Integration & Security Test Suite
         env:
           PGHOST: 127.0.0.1

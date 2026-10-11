@@ -9,6 +9,18 @@ console.log('=== PHASE 2: AUTOMATED SECURITY BOUNDARY VERIFICATION ===\n');
 const testSchema = 'security_test_' + Date.now();
 const hasPostgis = checkHasPostgis();
 
+const isSuperuser = (() => {
+  try {
+    const res = execSync(`psql -d myapp -t -A -c "SELECT current_setting('is_superuser');"`, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: process.env
+    }).toString().trim();
+    return res === 'on';
+  } catch {
+    return false;
+  }
+})();
+
 // Setup schema and test accounts
 const setupSql = `
   CREATE SCHEMA IF NOT EXISTS ${testSchema};
@@ -39,22 +51,40 @@ const setupSql = `
     SELECT jsonb_build_object('role', COALESCE(role, 'anon')) FROM ${testSchema}._current_test_session LIMIT 1;
   $$ LANGUAGE sql STABLE;
 
+  DO $$
+  BEGIN
+    IF current_setting('is_superuser') = 'on' THEN
+      IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'test_authenticated_role') THEN
+        CREATE ROLE test_authenticated_role NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
+      END IF;
+    END IF;
+  END $$;
+
   ${getPostgisBootstrapSql()}
 `;
 
+let runAsTestUser = false;
+
 function execute(sql) {
-  const fullSql = `SET search_path TO ${testSchema}, public;\n${sql}`;
-  return execSync(`psql -d myapp -v ON_ERROR_STOP=1`, { input: fullSql, stdio: ['pipe', 'pipe', 'pipe'] }).toString();
+  const roleCmd = (runAsTestUser && isSuperuser) ? 'SET ROLE test_authenticated_role;\n' : '';
+  const fullSql = `SET search_path TO ${testSchema}, public;\n${roleCmd}${sql}`;
+  return execSync(`psql -d myapp -v ON_ERROR_STOP=1`, { input: fullSql, stdio: ['pipe', 'pipe', 'pipe'], env: process.env }).toString();
 }
 
 function queryJson(sql) {
   const cleanSql = sql.trim().replace(/;+$/, '');
-  const jsonSql = `SET search_path TO ${testSchema}, public;\nSELECT json_agg(t) FROM (${cleanSql}) t;`;
-  const res = execSync(`psql -d myapp -t -A -v ON_ERROR_STOP=1`, { input: jsonSql, stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
+  const roleCmd = (runAsTestUser && isSuperuser) ? 'SET ROLE test_authenticated_role;\n' : '';
+  const jsonSql = `SET search_path TO ${testSchema}, public;\n${roleCmd}SELECT json_agg(t) FROM (${cleanSql}) t;`;
+  const res = execSync(`psql -d myapp -t -A -v ON_ERROR_STOP=1`, { input: jsonSql, stdio: ['pipe', 'pipe', 'pipe'], env: process.env }).toString().trim();
   if (!res || res === '') return [];
   const lines = res.split('\n').filter(l => !l.startsWith('WARNING:') && !l.startsWith('NOTICE:'));
   const validJson = lines.find(l => l.startsWith('[') || l.startsWith('{'));
   return validJson ? JSON.parse(validJson) : [];
+}
+
+function logResult(label, result) {
+  console.log(`${label}:`, JSON.stringify(result, null, 2));
+  return result;
 }
 
 function setSession(userId, role = 'authenticated') {
@@ -66,7 +96,7 @@ function setSession(userId, role = 'authenticated') {
 }
 
 try {
-  execSync(`psql -d myapp -v ON_ERROR_STOP=1`, { input: setupSql, stdio: ['pipe', 'pipe', 'pipe'] });
+  execSync(`psql -d myapp -v ON_ERROR_STOP=1`, { input: setupSql, stdio: ['pipe', 'pipe', 'pipe'], env: process.env });
 
   // Apply schema
   const migrationDir = path.resolve(process.cwd(), 'supabase/migrations');
@@ -76,7 +106,7 @@ try {
     let rawSql = fs.readFileSync(path.join(migrationDir, file), 'utf8');
     let sql = prepareMigrationSql(rawSql, testSchema, hasPostgis);
     const fullSql = `SET search_path TO ${testSchema}, public;\n${sql}`;
-    execSync(`psql -d myapp -v ON_ERROR_STOP=1`, { input: fullSql, stdio: ['pipe', 'pipe', 'pipe'] });
+    execSync(`psql -d myapp -v ON_ERROR_STOP=1`, { input: fullSql, stdio: ['pipe', 'pipe', 'pipe'], env: process.env });
   }
 
   console.log('✅ Migrations applied cleanly in test schema.\n');
@@ -146,10 +176,34 @@ try {
   `);
   console.log('✅ Baseline test entities created.');
 
+  // If running as superuser (e.g. CI as postgres), grant permissions to test_authenticated_role
+  // and activate SET ROLE so that PostgreSQL strictly enforces RLS policies instead of bypassing them.
+  if (isSuperuser) {
+    execute(`
+      DO $$
+      BEGIN
+        GRANT USAGE ON SCHEMA ${testSchema} TO test_authenticated_role;
+        GRANT ALL ON ALL TABLES IN SCHEMA ${testSchema} TO test_authenticated_role;
+        GRANT ALL ON ALL SEQUENCES IN SCHEMA ${testSchema} TO test_authenticated_role;
+        GRANT ALL ON ALL ROUTINES IN SCHEMA ${testSchema} TO test_authenticated_role;
+        GRANT USAGE ON SCHEMA auth TO test_authenticated_role;
+        GRANT ALL ON ALL TABLES IN SCHEMA auth TO test_authenticated_role;
+        GRANT ALL ON ALL ROUTINES IN SCHEMA auth TO test_authenticated_role;
+        GRANT test_authenticated_role TO CURRENT_USER;
+      END $$;
+    `);
+    runAsTestUser = true;
+    console.log('🔒 Superuser detected: RLS test role activated with SET ROLE test_authenticated_role');
+  }
+
   // TEST 1: Anonymous user invokes check-in -> REJECTED
   console.log('\nTest 1: Anonymous user invokes check-in RPC');
   setSession(null, 'anon');
-  const res1 = queryJson(`SELECT confirm_booking_check_in('${bookingAId}'::uuid, 'token_hash_alice', 'IDM-11111') AS r`)[0].r;
+  console.log('Auth context Test 1:', queryJson(`SELECT auth.uid() AS uid, auth.jwt()->>'role' AS jwt_role`));
+  const res1 = logResult(
+    'Test 1 result',
+    queryJson(`SELECT confirm_booking_check_in('${bookingAId}'::uuid, 'token_hash_alice', 'IDM-11111') AS r`)[0].r
+  );
   assert.strictEqual(res1.success, false, 'Anonymous check-in must fail');
   assert.strictEqual(res1.code, 'UNAUTHENTICATED', 'Must return UNAUTHENTICATED error');
   console.log('  ✅ PASSED: Anonymous check-in rejected with UNAUTHENTICATED');
@@ -157,7 +211,22 @@ try {
   // TEST 2: Driver Alice tries to check in her own or Bob's booking -> REJECTED
   console.log('\nTest 2: Driver invokes check-in RPC (drivers are not owners)');
   setSession(aliceId);
-  const res2 = queryJson(`SELECT confirm_booking_check_in('${bookingAId}'::uuid, 'token_hash_alice', 'IDM-11111') AS r`)[0].r;
+  console.log('Auth context Test 2:', queryJson(`SELECT auth.uid() AS uid, auth.jwt()->>'role' AS jwt_role`));
+  console.log('Booking & Space verification before Test 2:', queryJson(`
+    SELECT
+      b.id AS booking_id,
+      b.parking_space_id,
+      s.owner_id,
+      auth.uid() AS current_user_id
+    FROM bookings b
+    JOIN parking_spaces s
+      ON s.id = b.parking_space_id
+    WHERE b.id = '${bookingAId}'
+  `));
+  const res2 = logResult(
+    'Test 2 result',
+    queryJson(`SELECT confirm_booking_check_in('${bookingAId}'::uuid, 'token_hash_alice', 'IDM-11111') AS r`)[0].r
+  );
   assert.strictEqual(res2.success, false, 'Driver check-in must fail');
   assert.strictEqual(res2.code, 'UNAUTHORIZED', 'Driver must not have space operator permission');
   console.log('  ✅ PASSED: Driver check-in rejected with UNAUTHORIZED');
@@ -165,7 +234,10 @@ try {
   // TEST 3: Dave (owner of Space D) checks in booking for Carol's Space C -> REJECTED
   console.log('\nTest 3: Unrelated owner Dave checks in booking for Carol Space C');
   setSession(daveId);
-  const res3 = queryJson(`SELECT confirm_booking_check_in('${bookingAId}'::uuid, 'token_hash_alice', 'IDM-11111') AS r`)[0].r;
+  const res3 = logResult(
+    'Test 3 result',
+    queryJson(`SELECT confirm_booking_check_in('${bookingAId}'::uuid, 'token_hash_alice', 'IDM-11111') AS r`)[0].r
+  );
   assert.strictEqual(res3.success, false, 'Unrelated owner check-in must fail');
   assert.ok(['UNAUTHORIZED', 'NOT_FOUND'].includes(res3.code), `Expected rejection error, got ${res3.code}`);
   console.log(`  ✅ PASSED: Unrelated space owner check-in rejected with ${res3.code}`);
@@ -173,7 +245,10 @@ try {
   // TEST 4: Anonymous or driver calls check-out with arbitrary ID -> REJECTED
   console.log('\nTest 4: Driver / unauthenticated calls check-out RPC');
   setSession(bobId);
-  const res4 = queryJson(`SELECT confirm_booking_check_out('${bookingAId}'::uuid) AS r`)[0].r;
+  const res4 = logResult(
+    'Test 4 result',
+    queryJson(`SELECT confirm_booking_check_out('${bookingAId}'::uuid) AS r`)[0].r
+  );
   assert.strictEqual(res4.success, false, 'Arbitrary check-out must fail');
   assert.ok(['UNAUTHORIZED', 'NOT_FOUND'].includes(res4.code), `Expected rejection error, got ${res4.code}`);
   console.log(`  ✅ PASSED: Arbitrary user check-out rejected with ${res4.code}`);
@@ -228,8 +303,10 @@ try {
   // TEST 9: Carol verifies and checks in Alice booking with token hash -> SUCCEEDS
   console.log('\nTest 9: Carol verifies and checks in Alice booking');
   setSession(carolId);
-  const res9 = queryJson(`SELECT confirm_booking_check_in('${bookingAId}'::uuid, 'token_hash_alice', 'IDM-11111') AS r`)[0].r;
-  console.log('Test 9 result:', JSON.stringify(res9, null, 2));
+  const res9 = logResult(
+    'Test 9 result',
+    queryJson(`SELECT confirm_booking_check_in('${bookingAId}'::uuid, 'token_hash_alice', 'IDM-11111') AS r`)[0].r
+  );
   assert.strictEqual(res9.success, true, 'Authorized owner check-in must succeed');
   assert.strictEqual(res9.booking_id, bookingAId);
   console.log('  ✅ PASSED: Authorized check-in confirmed and audit logged');

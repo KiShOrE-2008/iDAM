@@ -21,14 +21,30 @@ for (const suite of testSuites) {
   console.log(`▶ RUNNING: ${suite.name}`);
   const startTime = Date.now();
   try {
-    execSync(`node --import tsx ${suite.file}`, { stdio: 'inherit' });
+    execSync(`node --import tsx ${suite.file}`, {
+      stdio: 'inherit',
+      env: process.env
+    });
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(`  PASSED: ${suite.name} (${duration}s)\n`);
     results.push({ name: suite.name, status: 'PASSED', duration });
     passedCount++;
   } catch (err) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-    console.error(`  FAILED: ${suite.name} (${duration}s)\n`);
+    console.error(`  FAILED: ${suite.name} (${duration}s)`);
+    if (err?.status !== undefined) {
+      console.error(`  Exit status: ${err.status}`);
+    }
+    if (err?.stderr) {
+      console.error('  stderr:');
+      console.error(err.stderr.toString());
+    }
+    if (err?.stdout) {
+      console.error('  stdout:');
+      console.error(err.stdout.toString());
+    }
+    console.error(err?.stack || err);
+    console.error('');
     results.push({ name: suite.name, status: 'FAILED', duration });
     failedCount++;
   }
