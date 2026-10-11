@@ -66,17 +66,27 @@ CREATE TRIGGER on_auth_user_created
 CREATE OR REPLACE FUNCTION public.protect_profile_role()
 RETURNS TRIGGER AS $$
 BEGIN
-  IF (NEW.role IS DISTINCT FROM OLD.role) THEN
-    IF (COALESCE(auth.jwt()->>'role', '') != 'service_role') THEN
-      RAISE EXCEPTION 'Users cannot alter their own role directly.';
-    END IF;
+  -- Prevent role escalation only when an authenticated user attempts to change their own role
+  IF TG_OP = 'UPDATE'
+     AND NEW.role IS DISTINCT FROM OLD.role
+     AND auth.uid() IS NOT NULL
+     AND auth.uid() = OLD.id
+     AND current_user NOT IN ('postgres', 'app_migrator')
+     AND COALESCE(auth.jwt()->>'role', '') != 'service_role'
+  THEN
+    RAISE EXCEPTION 'Users cannot alter their own role directly.';
   END IF;
 
-  IF (NEW.owner_status IS DISTINCT FROM OLD.owner_status) THEN
-    IF (COALESCE(auth.jwt()->>'role', '') != 'service_role') THEN
-      IF NEW.owner_status NOT IN ('pending', 'none') THEN
-        RAISE EXCEPTION 'Users cannot approve their own owner status directly. Use apply_for_owner_role() RPC.';
-      END IF;
+  -- Prevent unauthorized owner status elevation by authenticated user on their own profile
+  IF TG_OP = 'UPDATE'
+     AND NEW.owner_status IS DISTINCT FROM OLD.owner_status
+     AND auth.uid() IS NOT NULL
+     AND auth.uid() = OLD.id
+     AND current_user NOT IN ('postgres', 'app_migrator')
+     AND COALESCE(auth.jwt()->>'role', '') != 'service_role'
+  THEN
+    IF NEW.owner_status NOT IN ('pending', 'none') THEN
+      RAISE EXCEPTION 'Users cannot approve their own owner status directly. Use apply_for_owner_role() RPC.';
     END IF;
   END IF;
 

@@ -1,10 +1,12 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { checkHasPostgis, getPostgisBootstrapSql, prepareMigrationSql } from './test_db_helper.mjs';
 
 console.log('=== TESTING FRESH DATABASE MIGRATION EXECUTION ON POSTGRESQL ===\n');
 
 const testSchema = 'disposable_migration_test_' + Date.now();
+const hasPostgis = checkHasPostgis();
 
 // 1. Setup isolated test environment in myapp database
 const setupSql = `
@@ -28,18 +30,7 @@ const setupSql = `
     SELECT '{"role": "authenticated"}'::jsonb;
   $$ LANGUAGE sql STABLE;
 
-  -- PostGIS Mock for local testing
-  DO $$ 
-  BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'geography') THEN
-      CREATE DOMAIN public.geography AS text;
-    END IF;
-  END $$;
-
-  CREATE OR REPLACE FUNCTION public.ST_SetSRID(pt text, srid int) RETURNS text AS $$ SELECT pt; $$ LANGUAGE sql;
-  CREATE OR REPLACE FUNCTION public.ST_MakePoint(x float8, y float8) RETURNS text AS $$ SELECT x || ',' || y; $$ LANGUAGE sql;
-  CREATE OR REPLACE FUNCTION public.ST_Distance(g1 text, g2 text) RETURNS float8 AS $$ SELECT 0.0::float8; $$ LANGUAGE sql;
-  CREATE OR REPLACE FUNCTION public.ST_DWithin(g1 text, g2 text, r float8) RETURNS boolean AS $$ SELECT true; $$ LANGUAGE sql;
+  ${getPostgisBootstrapSql()}
 `;
 
 try {
@@ -55,16 +46,8 @@ try {
 
   for (const file of migrationFiles) {
     console.log(`▶ Executing migration: ${file}...`);
-    let sql = fs.readFileSync(path.join(migrationDir, file), 'utf8');
-
-    // Replace extension creations and postgis types since postgis is not installed locally
-    sql = sql.replace(/CREATE EXTENSION IF NOT EXISTS postgis;/gi, '-- CREATE EXTENSION IF NOT EXISTS postgis;');
-    sql = sql.replace(/\bGEOGRAPHY\b(\([^\)]+\))?/gi, 'TEXT');
-    sql = sql.replace(/::geography/gi, '::text');
-    sql = sql.replace(/CREATE INDEX [^;]+USING GIST[^;]+;/gi, '-- GIST index omitted in mock postgis test');
-
-    // Redirect public. to testSchema. for completely isolated execution
-    sql = sql.replace(/public\./g, `${testSchema}.`);
+    let rawSql = fs.readFileSync(path.join(migrationDir, file), 'utf8');
+    let sql = prepareMigrationSql(rawSql, testSchema, hasPostgis);
 
     // Prefix search_path
     const fullSql = `SET search_path TO ${testSchema}, public;\n${sql}`;
@@ -84,12 +67,8 @@ try {
   console.log('=== VERIFYING RE-APPLICATION IDEMPOTENCY (ROUND 2) ===\n');
   for (const file of migrationFiles) {
     console.log(`▶ Re-executing migration: ${file}...`);
-    let sql = fs.readFileSync(path.join(migrationDir, file), 'utf8');
-    sql = sql.replace(/CREATE EXTENSION IF NOT EXISTS postgis;/gi, '-- CREATE EXTENSION IF NOT EXISTS postgis;');
-    sql = sql.replace(/\bGEOGRAPHY\b(\([^\)]+\))?/gi, 'TEXT');
-    sql = sql.replace(/::geography/gi, '::text');
-    sql = sql.replace(/CREATE INDEX [^;]+USING GIST[^;]+;/gi, '-- GIST index omitted in mock postgis test');
-    sql = sql.replace(/public\./g, `${testSchema}.`);
+    let rawSql = fs.readFileSync(path.join(migrationDir, file), 'utf8');
+    let sql = prepareMigrationSql(rawSql, testSchema, hasPostgis);
     const fullSql = `SET search_path TO ${testSchema}, public;\n${sql}`;
 
     try {
@@ -107,12 +86,8 @@ try {
   // Verify single-file schema.sql on separate fresh schema
   console.log('=== VERIFYING CANONICAL supabase/schema.sql ON FRESH SCHEMA ===\n');
   const schemaSqlPath = path.resolve(process.cwd(), 'supabase/schema.sql');
-  let singleSchemaSql = fs.readFileSync(schemaSqlPath, 'utf8');
-  singleSchemaSql = singleSchemaSql.replace(/CREATE EXTENSION IF NOT EXISTS postgis;/gi, '-- CREATE EXTENSION IF NOT EXISTS postgis;');
-  singleSchemaSql = singleSchemaSql.replace(/\bGEOGRAPHY\b(\([^\)]+\))?/gi, 'TEXT');
-  singleSchemaSql = singleSchemaSql.replace(/::geography/gi, '::text');
-  singleSchemaSql = singleSchemaSql.replace(/CREATE INDEX [^;]+USING GIST[^;]+;/gi, '-- GIST index omitted in mock postgis test');
-  singleSchemaSql = singleSchemaSql.replace(/public\./g, `${testSchema}_canon.`);
+  let rawSingleSchemaSql = fs.readFileSync(schemaSqlPath, 'utf8');
+  let singleSchemaSql = prepareMigrationSql(rawSingleSchemaSql, `${testSchema}_canon`, hasPostgis);
 
   execSync(`psql -d myapp -c "CREATE SCHEMA IF NOT EXISTS ${testSchema}_canon;"`);
   const canonSql = `SET search_path TO ${testSchema}_canon, public;\n${singleSchemaSql}`;
@@ -123,29 +98,17 @@ try {
   console.log('=== VERIFYING UPGRADE SAFETY: schema.sql ON PRE-EXISTING OLD SCHEMA ===\n');
   const upgradeSchema = `${testSchema}_upgrade`;
   execSync(`psql -d myapp -c "CREATE SCHEMA IF NOT EXISTS ${upgradeSchema};"`);
-  let initSchemaSql = fs.readFileSync(path.join(migrationDir, '20260912000000_initial_schema.sql'), 'utf8');
-  initSchemaSql = initSchemaSql.replace(/CREATE EXTENSION IF NOT EXISTS postgis;/gi, '-- CREATE EXTENSION IF NOT EXISTS postgis;');
-  initSchemaSql = initSchemaSql.replace(/\bGEOGRAPHY\b(\([^\)]+\))?/gi, 'TEXT');
-  initSchemaSql = initSchemaSql.replace(/::geography/gi, '::text');
-  initSchemaSql = initSchemaSql.replace(/CREATE INDEX [^;]+USING GIST[^;]+;/gi, '-- GIST index omitted in mock postgis test');
-  initSchemaSql = initSchemaSql.replace(/public\./g, `${upgradeSchema}.`);
+  let rawInitSchemaSql = fs.readFileSync(path.join(migrationDir, '20260912000000_initial_schema.sql'), 'utf8');
+  let initSchemaSql = prepareMigrationSql(rawInitSchemaSql, upgradeSchema, hasPostgis);
   execSync(`psql -d myapp -v ON_ERROR_STOP=1`, { input: `SET search_path TO ${upgradeSchema}, public;\n${initSchemaSql}`, stdio: ['pipe', 'pipe', 'pipe'] });
 
-  let phase1Sql = fs.readFileSync(path.join(migrationDir, '20261010020000_phase1_database_and_security.sql'), 'utf8');
-  phase1Sql = phase1Sql.replace(/CREATE EXTENSION IF NOT EXISTS postgis;/gi, '-- CREATE EXTENSION IF NOT EXISTS postgis;');
-  phase1Sql = phase1Sql.replace(/\bGEOGRAPHY\b(\([^\)]+\))?/gi, 'TEXT');
-  phase1Sql = phase1Sql.replace(/::geography/gi, '::text');
-  phase1Sql = phase1Sql.replace(/CREATE INDEX [^;]+USING GIST[^;]+;/gi, '-- GIST index omitted in mock postgis test');
-  phase1Sql = phase1Sql.replace(/public\./g, `${upgradeSchema}.`);
+  let rawPhase1Sql = fs.readFileSync(path.join(migrationDir, '20261010020000_phase1_database_and_security.sql'), 'utf8');
+  let phase1Sql = prepareMigrationSql(rawPhase1Sql, upgradeSchema, hasPostgis);
   execSync(`psql -d myapp -v ON_ERROR_STOP=1`, { input: `SET search_path TO ${upgradeSchema}, public;\n${phase1Sql}`, stdio: ['pipe', 'pipe', 'pipe'] });
   console.log('✅ Pre-existing old initial schema & Phase 1 migration applied (with legacy nearby_parking).');
 
-  let upgradeSchemaSql = fs.readFileSync(schemaSqlPath, 'utf8');
-  upgradeSchemaSql = upgradeSchemaSql.replace(/CREATE EXTENSION IF NOT EXISTS postgis;/gi, '-- CREATE EXTENSION IF NOT EXISTS postgis;');
-  upgradeSchemaSql = upgradeSchemaSql.replace(/\bGEOGRAPHY\b(\([^\)]+\))?/gi, 'TEXT');
-  upgradeSchemaSql = upgradeSchemaSql.replace(/::geography/gi, '::text');
-  upgradeSchemaSql = upgradeSchemaSql.replace(/CREATE INDEX [^;]+USING GIST[^;]+;/gi, '-- GIST index omitted in mock postgis test');
-  upgradeSchemaSql = upgradeSchemaSql.replace(/public\./g, `${upgradeSchema}.`);
+  let rawUpgradeSchemaSql = fs.readFileSync(schemaSqlPath, 'utf8');
+  let upgradeSchemaSql = prepareMigrationSql(rawUpgradeSchemaSql, upgradeSchema, hasPostgis);
   execSync(`psql -d myapp -v ON_ERROR_STOP=1`, { input: `SET search_path TO ${upgradeSchema}, public;\n${upgradeSchemaSql}`, stdio: ['pipe', 'pipe', 'pipe'] });
   console.log('✅ supabase/schema.sql APPLIED SUCCESSFULLY ON TOP OF PRE-EXISTING SCHEMA (UPGRADE SAFE)!\n');
   execSync(`psql -d myapp -c "DROP SCHEMA IF EXISTS ${upgradeSchema} CASCADE;"`);

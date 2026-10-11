@@ -9,6 +9,7 @@
 
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS btree_gist;
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
 
 -- 1. Ensure parking_locations has all required fields & compatibility
 ALTER TABLE IF EXISTS public.parking_locations
@@ -352,7 +353,7 @@ CREATE OR REPLACE FUNCTION public.create_payment_order(
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = pg_catalog, public
 AS $$
 DECLARE
   v_driver_id UUID := auth.uid();
@@ -375,7 +376,7 @@ BEGIN
   v_amount_paise := ROUND(v_amount_inr * 100);
 
   -- Deterministic server order ID
-  v_order_id := 'order_idam_' || encode(gen_random_bytes(10), 'hex');
+  v_order_id := 'order_idam_' || encode(public.gen_random_bytes(10), 'hex');
 
   RETURN jsonb_build_object(
     'success', TRUE,

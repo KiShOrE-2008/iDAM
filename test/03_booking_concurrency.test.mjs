@@ -2,10 +2,12 @@ import { execSync } from 'child_process';
 import assert from 'assert';
 import fs from 'fs';
 import path from 'path';
+import { checkHasPostgis, getPostgisBootstrapSql, prepareMigrationSql } from './test_db_helper.mjs';
 
 console.log('=== PHASE 3: AUTOMATED BOOKING ENGINE & CONCURRENCY VERIFICATION ===\n');
 
 const testSchema = `booking_engine_test_${Date.now()}`;
+const hasPostgis = checkHasPostgis();
 
 function execute(sql) {
   const fullSql = `SET search_path TO ${testSchema}, public;\n${sql}`;
@@ -48,17 +50,7 @@ try {
       SELECT jsonb_build_object('role', COALESCE(role, 'anon')) FROM ${testSchema}._current_test_session LIMIT 1;
     $$ LANGUAGE sql STABLE;
 
-    DO $$ 
-    BEGIN
-      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'geography') THEN
-        CREATE DOMAIN geography AS text;
-      END IF;
-    END $$;
-
-    CREATE OR REPLACE FUNCTION ST_SetSRID(pt text, srid int) RETURNS text AS $$ SELECT pt; $$ LANGUAGE sql;
-    CREATE OR REPLACE FUNCTION ST_MakePoint(x float8, y float8) RETURNS text AS $$ SELECT x || ',' || y; $$ LANGUAGE sql;
-    CREATE OR REPLACE FUNCTION ST_Distance(g1 text, g2 text) RETURNS float8 AS $$ SELECT 0.0::float8; $$ LANGUAGE sql;
-    CREATE OR REPLACE FUNCTION ST_DWithin(g1 text, g2 text, r float8) RETURNS boolean AS $$ SELECT true; $$ LANGUAGE sql;
+    ${getPostgisBootstrapSql()}
   `);
 
   function setSession(userId, role = 'authenticated') {
@@ -74,12 +66,8 @@ try {
   const migrationFiles = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
 
   for (const file of migrationFiles) {
-    let sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
-    sql = sql.replace(/CREATE EXTENSION IF NOT EXISTS postgis;/gi, '-- CREATE EXTENSION IF NOT EXISTS postgis;');
-    sql = sql.replace(/\bGEOGRAPHY\b(\([^\)]+\))?/gi, 'TEXT');
-    sql = sql.replace(/::geography/gi, '::text');
-    sql = sql.replace(/CREATE INDEX [^;]+USING GIST[^;]+;/gi, '-- GIST index omitted in mock postgis test');
-    sql = sql.replace(/public\./g, `${testSchema}.`);
+    let rawSql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+    let sql = prepareMigrationSql(rawSql, testSchema, hasPostgis);
     const fullSql = `SET search_path TO ${testSchema}, public;\n${sql}`;
     execSync(`psql -d myapp -v ON_ERROR_STOP=1`, { input: fullSql, stdio: ['pipe', 'pipe', 'pipe'] });
   }
