@@ -73,14 +73,14 @@ export async function upsertProfile(userId: string, data: Partial<UserProfile>):
  * Submits an official Space Owner application to the database.
  * Sets owner_status to 'pending_review' via server-controlled RPC.
  */
-export async function applyForOwnerRole(fullName: string, phone: string): Promise<{ success: boolean; message: string }> {
+export async function applyForOwnerRole(propertyName: string, propertyAddress: string): Promise<{ success: boolean; message: string }> {
   if (!isSupabaseConfigured || !supabase) {
     return { success: true, message: 'Application submitted (Demo mode)' };
   }
   try {
     const { data, error } = await supabase.rpc('apply_for_owner_role', {
-      p_full_name: fullName,
-      p_phone: phone,
+      p_property_name: propertyName,
+      p_property_address: propertyAddress,
     });
     if (error) {
       return { success: false, message: error.message };

@@ -2,7 +2,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { loginUrlReturningTo } from '@/lib/auth/redirect';
 import { MapPin, ArrowRight, User, LayoutDashboard, LogOut, ChevronDown, Ticket, RefreshCw, Menu, X, HelpCircle, Building2, Compass } from 'lucide-react';
 import { Language } from '@/types';
 import { TRANSLATIONS } from '@/lib/i18n/translations';
@@ -23,6 +24,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenOwnerModal,
 }) => {
   const router = useRouter();
+  const pathname = usePathname();
   const t = TRANSLATIONS[lang];
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -197,7 +199,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           ) : (
             <div className="hidden sm:flex items-center space-x-2">
               <Link
-                href="/login"
+                href={loginUrlReturningTo(pathname)}
                 className="text-xs font-black text-slate-800 hover:text-emerald-800 px-3 py-2 transition-colors whitespace-nowrap"
               >
                 Sign In
@@ -290,7 +292,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {!isLoggedIn && (
             <div className="pt-2 border-t border-slate-100 flex items-center space-x-2">
               <Link
-                href="/login"
+                href={loginUrlReturningTo(pathname)}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="flex-1 py-2.5 text-center bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-black transition-colors"
               >

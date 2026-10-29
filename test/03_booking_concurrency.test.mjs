@@ -61,6 +61,15 @@ try {
     `);
   }
 
+  // Confirms a booking the way the trusted backend (payment webhook) does
+  function markPaid(bookingId, paymentRef) {
+    const r = queryJson(`
+      SELECT record_payment_reconciliation('${bookingId}'::uuid, '${paymentRef}',
+        (SELECT total_amount FROM bookings WHERE id = '${bookingId}'), 'Razorpay', 'success') AS r;
+    `)[0].r;
+    assert.strictEqual(r.success, true, `Reconciliation for ${bookingId} must succeed`);
+  }
+
   // Apply migrations to test schema
   const migrationsDir = path.resolve('supabase/migrations');
   const migrationFiles = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
@@ -98,14 +107,15 @@ try {
 
   // Seed a parking space with LIMITED capacity (car_capacity = 2) for testing capacity bounds
   const spaceId = '55555555-5555-5555-5555-555555555555';
-  setSession(ownerId);
+  // Seeded as an approved, live listing by the iDAM admin (no JWT)
+  setSession(null, 'anon');
   execute(`
     INSERT INTO parking_spaces (
       id, owner_id, title, address, latitude, longitude,
-      price_per_hour_car, price_per_hour_bike, car_capacity, bike_capacity, status
+      price_per_hour_car, price_per_hour_bike, car_capacity, bike_capacity, status, is_approved
     ) VALUES (
       '${spaceId}', '${ownerId}', 'Tight Spot Plaza', '42 Madurai Main Road', 9.9250, 78.1150,
-      50.00, 25.00, 2, 2, 'active'
+      50.00, 25.00, 2, 2, 'active', TRUE
     ) ON CONFLICT (id) DO NOTHING;
   `);
 
@@ -149,8 +159,13 @@ try {
   assert.ok(stored1.parking_location_id === spaceId || stored1.parking_location_id === null, 'parking_location_id must be valid or null');
   assert.strictEqual(stored1.driver_id, driver1Id, 'driver_id must match authenticated caller');
   assert.strictEqual(stored1.user_id, driver1Id, 'user_id must match authenticated caller');
-  assert.strictEqual(stored1.booking_status, 'confirmed', 'booking_status must be confirmed');
-  assert.strictEqual(stored1.status, 'confirmed', 'status must be confirmed');
+  // A client-supplied payment ref no longer confirms a booking; it stays pending until paid
+  assert.strictEqual(stored1.booking_status, 'pending', 'booking_status must be pending until payment is verified');
+  assert.strictEqual(stored1.status, 'pending', 'status must be pending until payment is verified');
+  markPaid(res1.booking_id, 'pay_1');
+  const paid1 = queryJson(`SELECT booking_status, payment_status FROM bookings WHERE id = '${res1.booking_id}'`)[0];
+  assert.strictEqual(paid1.booking_status, 'confirmed', 'booking_status must be confirmed after server reconciliation');
+  assert.strictEqual(paid1.payment_status, 'completed', 'payment_status must be completed after server reconciliation');
   assert.strictEqual(stored1.vehicle_number, 'TN 59 AB 1001', 'vehicle_number must be saved');
   assert.ok(stored1.booking_date.includes('2026-10-15'), 'booking_date must match 2026-10-15');
   assert.ok(stored1.start_time.includes('10:00'), 'start_time must match 10:00');
@@ -190,6 +205,7 @@ try {
   `)[0].r;
 
   assert.strictEqual(res2.success, true, 'Booking 2 must succeed (capacity is 2)');
+  markPaid(res2.booking_id, 'pay_2');
   console.log('  ✅ 2nd overlapping booking permitted (capacity reached 2 / 2)');
 
   // Driver 3 attempts to book overlapping window: 11:30 to 12:30 -> MUST BE REJECTED (capacity = 2 full!)

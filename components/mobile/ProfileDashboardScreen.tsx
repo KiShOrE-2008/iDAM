@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { User, Car, Shield, FileText, ChevronRight, Download, Clock, CheckCircle, ArrowLeft, Star, TrendingUp, Home, BookOpen, UserCheck, Wallet, Plus, PlusCircle, Trash2, Zap, Settings, ShieldCheck, Building2, Sparkles, LogOut } from 'lucide-react';
-import { Language, PassVerificationResult, Booking } from '@/types';
+import { Language, PassVerificationResult, Booking, CheckInCredentials } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { useRegisterModal } from '@/context/BackNavigationContext';
 import { OwnerDashboard } from './owner/OwnerDashboard';
@@ -11,6 +11,7 @@ import { OwnerScannerScreen } from './owner/OwnerScannerScreen';
 import { CurrentlyParkedScreen } from './owner/CurrentlyParkedScreen';
 import { ScanVerificationResultModal } from './owner/ScanVerificationResultModal';
 import { validateScannedPass, confirmBookingCheckIn } from '@/lib/parking/checkInService';
+import { DEMO_OWNER_SPACE_ID } from '@/lib/owner/service';
 import {
   Vehicle,
   getUserVehicles,
@@ -97,11 +98,14 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
     }
   };
 
-  const handleConfirmCheckIn = async (b: Booking) => {
+  // Credentials come from what was presented at the gate (scanned QR, or code + plate),
+  // never from the booking row, so a copied pass code alone cannot check a car in
+  const handleConfirmCheckIn = async (b: Booking, credentials: CheckInCredentials) => {
     return await confirmBookingCheckIn({
       bookingId: b.id,
-      passCode: b.passCode,
-      passTokenHash: b.passTokenHash,
+      passCode: credentials.passCode,
+      passTokenHash: credentials.tokenHash,
+      plateLast4: credentials.plateLast4,
       isDemoMode
     });
   };
@@ -142,6 +146,7 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
     return (
       <div className="h-full flex flex-col relative">
         <CurrentlyParkedScreen
+          spaceId={DEMO_OWNER_SPACE_ID}
           onBack={() => setOwnerSubView('dashboard')}
           onNavigateToScanner={() => setOwnerSubView('scanner')}
           isDemoMode={isDemoMode}
@@ -427,6 +432,7 @@ export const ProfileDashboardScreen: React.FC<ProfileDashboardScreenProps> = ({
         {/* OWNER VIEW */}
         {userRole === 'owner' && (
           <OwnerDashboard
+            spaceId={DEMO_OWNER_SPACE_ID}
             onNavigateToExplore={onBack}
             onNavigateToScanner={() => setOwnerSubView('scanner')}
             onNavigateToParked={() => setOwnerSubView('parked')}

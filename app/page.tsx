@@ -23,16 +23,17 @@ import { WebBookingModal } from '@/components/web/WebBookingModal';
 import { FaqPreview } from '@/components/web/FaqPreview';
 import { CookieBanner } from '@/components/web/CookieBanner';
 import { Footer } from '@/components/Footer';
-import { Language, ParkingLocation } from '@/types';
+import { Booking, BookingRequest, Language, ParkingLocation } from '@/types';
 import { getParkingLocations } from '@/lib/parking/service';
 import { createBooking } from '@/lib/booking/service';
+import { bookAndPay, checkoutErrorMessage } from '@/lib/payment/checkout';
 import { MOCK_PARKING_LOCATIONS } from '@/lib/data/mockData';
 
 import { useBackNavigation, useRegisterModal } from '@/context/BackNavigationContext';
 import { useAuth } from '@/context/AuthContext';
 
 export default function Home() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, profile } = useAuth();
   const [lang, setLang] = useState<Language>('en');
   const [isOwnerModalOpen, setIsOwnerModalOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -45,8 +46,19 @@ export default function Home() {
 
   // Native Mobile Flow State
   const [nativeStep, setNativeStep] = useState<number>(1);
+  const [resumeStepAfterAuth, setResumeStepAfterAuth] = useState<number | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<ParkingLocation>(MOCK_PARKING_LOCATIONS[0]);
-  const [bookingDetails, setBookingDetails] = useState({
+  const [bookingDetails, setBookingDetails] = useState<{
+    date: string;
+    time: string;
+    bookingDate?: string;
+    startTime?: string;
+    vehicleType?: 'car' | 'bike';
+    duration: number;
+    total: number;
+    vehicleNumber?: string;
+    addons?: string[];
+  }>({
     date: '12 Sep',
     time: '10:00 AM',
     duration: 2,
@@ -54,6 +66,35 @@ export default function Home() {
     vehicleNumber: 'TN 59 AB 1234',
     addons: ['EV Fast Charge']
   });
+
+  const nativeBookingRequest = (meta?: { paymentId?: string; paymentMethod?: string }): BookingRequest => ({
+    parkingLocationId: selectedLocation.id,
+    vehicleType: bookingDetails.vehicleType || 'car',
+    bookingDate: bookingDetails.bookingDate || new Date().toISOString().split('T')[0],
+    startTime: bookingDetails.startTime || '10:00',
+    durationHours: bookingDetails.duration,
+    basePrice: bookingDetails.total,
+    platformFee: 5,
+    totalAmount: bookingDetails.total,
+    paymentMethod: meta?.paymentMethod || 'Razorpay',
+    paymentId: meta?.paymentId,
+    vehicleNumber: bookingDetails.vehicleNumber,
+    driverName: profile?.name,
+    driverPhone: profile?.phone,
+    addons: bookingDetails.addons
+  });
+
+  // Only called once a booking really exists (demo pass, or server-created booking)
+  const showNativePass = (booking: Booking, meta?: { paymentId?: string; paymentMethod?: string }) => {
+    setBookingDetails((prev) => ({
+      ...prev,
+      ...meta,
+      total: booking.totalAmount,
+      passCode: booking.passCode,
+      qrData: booking.qrData
+    } as any));
+    setNativeStep(7);
+  };
 
   const { registerBackHandler } = useBackNavigation();
 
@@ -140,7 +181,11 @@ export default function Home() {
           {nativeStep === 2 && (
             <AuthScreen
               lang={lang}
-              onSuccess={() => setNativeStep(3)}
+              onSuccess={() => {
+                // Back to the payment step if sign-in was needed to finish a booking
+                setNativeStep(resumeStepAfterAuth ?? 3);
+                setResumeStepAfterAuth(null);
+              }}
               onSkipDemo={() => setNativeStep(3)}
             />
           )}
@@ -187,30 +232,29 @@ export default function Home() {
               bookingDetails={bookingDetails}
               onBack={() => setNativeStep(5)}
               onPaySuccess={async (meta) => {
+                // Demo mode only: simulated payment, local demo pass
                 try {
-                  const booking = await createBooking(selectedLocation, {
-                    parkingLocationId: selectedLocation.id,
-                    vehicleType: 'car',
-                    bookingDate: bookingDetails.date,
-                    startTime: bookingDetails.time,
-                    durationHours: bookingDetails.duration,
-                    basePrice: bookingDetails.total,
-                    platformFee: 5,
-                    totalAmount: bookingDetails.total,
-                    paymentMethod: meta?.paymentMethod || 'Razorpay',
-                    paymentId: meta?.paymentId,
-                    vehicleNumber: bookingDetails.vehicleNumber
-                  });
-                  setBookingDetails((prev) => ({
-                    ...prev,
-                    ...meta,
-                    passCode: booking.passCode,
-                    qrData: booking.qrData
-                  } as any));
+                  const booking = await createBooking(selectedLocation, nativeBookingRequest(meta), { isDemoMode: true });
+                  showNativePass(booking, meta);
                 } catch (err) {
                   console.warn('Booking creation error:', err);
+                  window.alert(checkoutErrorMessage(err) || 'Booking failed. Please try again.');
                 }
-                setNativeStep(7);
+              }}
+              onRequireSignIn={() => {
+                setResumeStepAfterAuth(6);
+                setNativeStep(2);
+              }}
+              onLivePay={async () => {
+                const { booking, confirmed } = await bookAndPay(selectedLocation, nativeBookingRequest(), {
+                  name: profile?.name,
+                  email: profile?.email,
+                  phone: profile?.phone
+                });
+                if (!confirmed) {
+                  window.alert('Payment received. We are confirming it with Razorpay; your pass in My Passes will activate within a minute or two.');
+                }
+                showNativePass(booking, { paymentId: booking.paymentId, paymentMethod: 'Razorpay' });
               }}
               lang={lang}
             />

@@ -131,6 +131,14 @@ try {
   assert(bookRes1.length > 0 && bookRes1[0].result.success === true);
   const booking1Id = bookRes1[0].result.booking_id;
 
+  // Payment is confirmed by the trusted backend path, never by the client's payment ref
+  const paidRes1 = queryJson(`
+    SELECT ${testSchema}.record_payment_reconciliation(
+      '${booking1Id}'::UUID, '${paymentRef1}', ${bookRes1[0].result.total_amount}, 'Razorpay', 'success'
+    ) as result;
+  `);
+  assert(paidRes1.length > 0 && paidRes1[0].result.success === true, 'Server reconciliation must confirm booking 1');
+
   // TEST 1: Owner A validates pass for Space A successfully
   console.log('Test 1: Owner A validates pass for Space A successfully...');
   setSession(ownerAId, 'authenticated');
@@ -186,8 +194,20 @@ try {
     ) as result;
   `);
   assert(forgedCheckInRes.length > 0 && forgedCheckInRes[0].result.success === false);
-  assert.strictEqual(forgedCheckInRes[0].result.code, 'INVALID_TOKEN');
+  // A wrong token falls back to the pass-code route, which also needs the vehicle plate
+  assert.strictEqual(forgedCheckInRes[0].result.code, 'PLATE_REQUIRED');
   console.log('  PASSED: Check-in with spoofed token hash rejected.\n');
+
+  // TEST 4b: A pass code seen in a URL / printout is not enough without the right plate
+  console.log('Test 4b: Typed pass code needs the matching vehicle plate...');
+  const typedCode = (plate) => queryJson(`
+    SELECT ${testSchema}.confirm_booking_check_in('${booking1Id}'::UUID, NULL, '${passCode1}', ${plate === null ? 'NULL' : `'${plate}'`}) as result;
+  `)[0].result;
+  assert.strictEqual(typedCode(null).code, 'PLATE_REQUIRED', 'Code alone must not check a car in');
+  assert.strictEqual(typedCode('99').code, 'PLATE_REQUIRED', 'Fewer than 4 characters must be rejected');
+  assert.strictEqual(typedCode('9999').code, 'PLATE_MISMATCH', 'Wrong plate must be rejected');
+  assert.strictEqual(queryJson(`SELECT booking_status FROM ${testSchema}.bookings WHERE id = '${booking1Id}'`)[0].booking_status, 'confirmed');
+  console.log('  PASSED: Pass code without the right plate cannot check a car in.\n');
 
   // TEST 5: Owner A confirms valid check-in
   console.log('Test 5: Owner A confirms check-in transition (confirmed -> active)...');
@@ -312,6 +332,67 @@ try {
   assert(verifyCompletedRes.length > 0 && verifyCompletedRes[0].result.is_valid === false);
   assert.strictEqual(verifyCompletedRes[0].result.code, 'ALREADY_COMPLETED');
   console.log('  PASSED: Completed pass scan indicates ALREADY_COMPLETED.\n');
+
+  // TEST 12: a booking that crosses midnight is valid at the gate, whatever the wall-clock time
+  // the suite runs at. Pick a UTC offset where local time is ~23:30 right now, then book
+  // 23:00 -> 01:00 local. Storing only TIME-of-day used to make this pass "EXPIRED".
+  console.log('Test 12: Overnight booking (crosses midnight) is accepted at the gate...');
+  const offsetMin = queryJson(`
+    SELECT (((1410 - (EXTRACT(HOUR FROM NOW() AT TIME ZONE 'UTC') * 60
+                    + EXTRACT(MINUTE FROM NOW() AT TIME ZONE 'UTC'))::INT) % 1440 + 1440 + 720) % 1440) - 720 AS m
+  `)[0].m;
+  const sign = offsetMin < 0 ? '-' : '+';
+  const abs = Math.abs(offsetMin);
+  const tzSql = `SET TIME ZONE INTERVAL '${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}' HOUR TO MINUTE;`;
+  function queryJsonInTz(sql) {
+    const out = execSync(`psql -d myapp -t -A -v ON_ERROR_STOP=1`, {
+      input: `SET search_path TO ${testSchema}, public;\n${tzSql}\n${sql}`,
+      stdio: ['pipe', 'pipe', 'pipe']
+    }).toString();
+    return JSON.parse(out.split('\n').find(l => l.startsWith('{')));
+  }
+
+  const rawToken12 = crypto.randomBytes(16).toString('hex');
+  const tokenHash12 = crypto.createHash('sha256').update(rawToken12).digest('hex');
+  setSession(driverId, 'authenticated');
+  const overnight = queryJsonInTz(`
+    SELECT ${testSchema}.create_verified_booking(
+      '${spaceAId}'::UUID, 'car', NOW() - INTERVAL '30 minutes', 2, 'TN 59 NI 0012', 'Driver Dave', '9876543210',
+      ARRAY[]::TEXT[], '${tokenHash12}', 'IDM-88812', NULL
+    )::TEXT;
+  `);
+  assert.strictEqual(overnight.success, true, 'Overnight booking must be created');
+  const stored12 = queryJson(`
+    SELECT start_time::TEXT AS st, end_time::TEXT AS et,
+           EXTRACT(EPOCH FROM end_timestamptz - start_timestamptz) / 3600 AS hours
+    FROM ${testSchema}.bookings WHERE id = '${overnight.booking_id}'
+  `)[0];
+  assert.ok(stored12.et < stored12.st, `Fixture must cross midnight in local time (got ${stored12.st} -> ${stored12.et})`);
+  assert.strictEqual(Number(stored12.hours), 2, 'Absolute window must span the full 2 hours');
+  queryJson(`
+    SELECT ${testSchema}.record_payment_reconciliation(
+      '${overnight.booking_id}'::UUID, 'pay_test_overnight', ${overnight.total_amount}, 'Razorpay', 'success'
+    ) as result;
+  `);
+  setSession(ownerAId, 'authenticated');
+  const overnightScan = queryJsonInTz(`
+    SELECT ${testSchema}.verify_parking_pass('${tokenHash12}', 'IDM-88812', '${spaceAId}'::UUID)::TEXT;
+  `);
+  assert.strictEqual(overnightScan.code, 'VALID', `Overnight pass must be valid, got ${overnightScan.code}`);
+  console.log('  PASSED: Overnight booking validated at the gate.\n');
+
+  // TEST 13: Typed pass code + correct plate (any spacing / case) checks the car in
+  console.log('Test 13: Pass code with the matching plate checks the vehicle in...');
+  const plateCheckIn = queryJson(`
+    SELECT ${testSchema}.confirm_booking_check_in('${overnight.booking_id}'::UUID, NULL, 'idm-88812', 'ni 0012') as result;
+  `)[0].result;
+  assert.strictEqual(plateCheckIn.success, true, `Expected check-in, got ${JSON.stringify(plateCheckIn)}`);
+  const credential = queryJson(`
+    SELECT details->>'credential' AS c FROM ${testSchema}.booking_events
+    WHERE booking_id = '${overnight.booking_id}' AND event_type = 'checked_in'
+  `)[0].c;
+  assert.strictEqual(credential, 'pass_code_and_plate', 'Audit log must record how the pass was verified');
+  console.log('  PASSED: Code + plate check-in works and is recorded in the audit log.\n');
 
   console.log('================================================================');
   console.log('ALL PHASE 5 QR PASSES & OPERATIONS TESTS PASSED!');

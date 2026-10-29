@@ -110,3 +110,16 @@ html, body {
   animation: floatSubtle 3s ease-in-out infinite;
 }
 
+
+/* Printing (e.g. the parking pass): keep banner colours and QR contrast, use small margins */
+@media print {
+  @page {
+    margin: 12mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

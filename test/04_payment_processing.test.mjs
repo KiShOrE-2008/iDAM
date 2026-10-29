@@ -8,6 +8,7 @@ import { checkHasPostgis, getPostgisBootstrapSql, prepareMigrationSql } from './
 console.log('=== PHASE 4: AUTOMATED PAYMENT PROCESSING & RECONCILIATION VERIFICATION ===\n');
 
 const testSchema = `payments_test_${Date.now()}`;
+let createdVaultStub = false;
 const hasPostgis = checkHasPostgis();
 
 function execute(sql) {
@@ -139,83 +140,71 @@ try {
   assert.strictEqual(unauthOrderRes[0].result.error, 'UNAUTHENTICATED');
   console.log('  PASSED: Unauthenticated caller rejected cleanly.\n');
 
-  // TEST 3: create_verified_booking with valid payment ref creates confirmed booking & payment record
-  console.log('Test 3: create_verified_booking with payment ref sets confirmed & completed status...');
+  // Helper: books a 2-hour car slot for the current session and returns the booking id
+  let bookingSeq = 0;
+  function createBooking(hoursFromNow, paymentRef = null) {
+    bookingSeq++;
+    const res = queryJson(`
+      SELECT ${testSchema}.create_verified_booking(
+        '${spaceId}'::UUID,
+        'car',
+        NOW() + INTERVAL '${hoursFromNow} hours',
+        2,
+        'TN 59 AA ${1000 + bookingSeq}',
+        'Driver One',
+        '9876543210',
+        ARRAY[]::TEXT[],
+        'hash_token_test_${bookingSeq}',
+        'IDM-PAY-${String(bookingSeq).padStart(2, '0')}',
+        ${paymentRef ? `'${paymentRef}'` : 'NULL'}
+      ) as result;
+    `);
+    assert(res.length > 0 && res[0].result.success === true, `Booking ${bookingSeq} must succeed`);
+    return res[0].result;
+  }
+
+  // Helper: what a backend order-creation function does after calling Razorpay's Orders API
+  function attachOrder(bookingId, razorpayOrderId) {
+    execute(`UPDATE ${testSchema}.bookings SET razorpay_order_id = '${razorpayOrderId}' WHERE id = '${bookingId}';`);
+  }
+
+  function verify(bookingId, orderId, paymentId, signature) {
+    return queryJson(`
+      SELECT ${testSchema}.verify_razorpay_payment(
+        '${bookingId}'::UUID, '${orderId}', '${paymentId}', '${signature}'
+      ) as result;
+    `)[0].result;
+  }
+
+  function bookingRow(bookingId) {
+    return queryJson(`SELECT * FROM ${testSchema}.bookings WHERE id = '${bookingId}';`)[0];
+  }
+
+  const sign = (secret, orderId, paymentId) =>
+    crypto.createHmac('sha256', secret).update(`${orderId}|${paymentId}`).digest('hex');
+
+  // TEST 3: a client-supplied payment ref no longer confirms a booking
+  console.log('Test 3: create_verified_booking ignores client payment ref (booking stays pending)...');
   setSession(driverId, 'authenticated');
   const paymentRef1 = 'pay_test_rzp_' + Date.now();
-  const bookRes1 = queryJson(`
-    SELECT ${testSchema}.create_verified_booking(
-      '${spaceId}'::UUID,
-      'car',
-      NOW() + INTERVAL '1 hour',
-      2,
-      'TN 59 AA 1111',
-      'Driver One',
-      '9876543210',
-      ARRAY[]::TEXT[],
-      'hash_token_test_1',
-      'IDM-PAY-01',
-      '${paymentRef1}'
-    ) as result;
-  `);
-  assert(bookRes1.length > 0 && bookRes1[0].result.success === true, 'Booking with payment ref must succeed');
-  assert.strictEqual(bookRes1[0].result.booking_status, 'confirmed');
-  assert.strictEqual(bookRes1[0].result.payment_status, 'completed');
-  const booking1Id = bookRes1[0].result.booking_id;
-
-  // Verify record in payments table
+  const booking1 = createBooking(1, paymentRef1);
+  assert.strictEqual(booking1.booking_status, 'pending');
+  assert.strictEqual(booking1.payment_status, 'pending');
+  assert.strictEqual(bookingRow(booking1.booking_id).payment_status, 'pending');
   const paymentRow1 = queryJson(`SELECT * FROM ${testSchema}.payments WHERE transaction_ref = '${paymentRef1}';`);
-  assert(paymentRow1.length > 0, 'Payment record must be inserted');
-  assert.strictEqual(paymentRow1[0].status, 'success');
-  assert.strictEqual(paymentRow1[0].booking_id, booking1Id);
-  console.log('  PASSED: Booking confirmed and payment persisted in payments table.\n');
+  assert.strictEqual(paymentRow1.length, 0, 'An unverified client payment ref must not create a payment record');
+  console.log('  PASSED: Client payment ref is not trusted; booking awaits verified payment.\n');
 
   // TEST 4: create_verified_booking without payment reference leaves booking pending
   console.log('Test 4: create_verified_booking without payment ref sets pending status...');
-  const bookRes2 = queryJson(`
-    SELECT ${testSchema}.create_verified_booking(
-      '${spaceId}'::UUID,
-      'car',
-      NOW() + INTERVAL '4 hours',
-      2,
-      'TN 59 BB 2222',
-      'Driver One',
-      '9876543210',
-      ARRAY[]::TEXT[],
-      'hash_token_test_2',
-      'IDM-PAY-02',
-      NULL
-    ) as result;
-  `);
-  assert(bookRes2.length > 0 && bookRes2[0].result.success === true);
-  assert.strictEqual(bookRes2[0].result.booking_status, 'pending');
-  assert.strictEqual(bookRes2[0].result.payment_status, 'pending');
-  const booking2Id = bookRes2[0].result.booking_id;
+  const booking2 = createBooking(4);
+  assert.strictEqual(booking2.booking_status, 'pending');
+  assert.strictEqual(booking2.payment_status, 'pending');
+  const booking2Id = booking2.booking_id;
   console.log('  PASSED: Unpaid booking initialized in pending state.\n');
 
-  // TEST 5: Anti-replay protection in create_verified_booking
-  console.log('Test 5: Anti-replay protection prevents reusing payment reference...');
-  const replayRes = queryJson(`
-    SELECT ${testSchema}.create_verified_booking(
-      '${spaceId}'::UUID,
-      'car',
-      NOW() + INTERVAL '7 hours',
-      2,
-      'TN 59 CC 3333',
-      'Driver One',
-      '9876543210',
-      ARRAY[]::TEXT[],
-      'hash_token_test_3',
-      'IDM-PAY-03',
-      '${paymentRef1}'
-    ) as result;
-  `);
-  assert(replayRes.length > 0 && replayRes[0].result.success === false, 'Reused payment ref must be rejected');
-  assert.strictEqual(replayRes[0].result.error, 'PAYMENT_ALREADY_USED');
-  console.log('  PASSED: Replay attack with duplicate payment ref blocked.\n');
-
-  // TEST 6: Idempotent payment reconciliation confirms pending booking
-  console.log('Test 6: record_payment_reconciliation reconciles pending booking to confirmed...');
+  // TEST 5: trusted backend reconciliation confirms a pending booking
+  console.log('Test 5: record_payment_reconciliation (service path) reconciles pending booking to confirmed...');
   const paymentRef2 = 'pay_test_rzp_' + (Date.now() + 100);
   const reconRes1 = queryJson(`
     SELECT ${testSchema}.record_payment_reconciliation(
@@ -228,148 +217,124 @@ try {
     ) as result;
   `);
   assert(reconRes1.length > 0 && reconRes1[0].result.success === true);
-  assert.strictEqual(reconRes1[0].result.status, 'success');
-
-  const reconciledBooking = queryJson(`SELECT * FROM ${testSchema}.bookings WHERE id = '${booking2Id}';`);
-  assert.strictEqual(reconciledBooking[0].booking_status, 'confirmed');
-  assert.strictEqual(reconciledBooking[0].payment_status, 'completed');
-  assert.strictEqual(reconciledBooking[0].payment_id, paymentRef2);
+  const reconciledBooking = bookingRow(booking2Id);
+  assert.strictEqual(reconciledBooking.booking_status, 'confirmed');
+  assert.strictEqual(reconciledBooking.payment_status, 'completed');
+  assert.strictEqual(reconciledBooking.payment_id, paymentRef2);
   console.log('  PASSED: Pending booking reconciled to confirmed state.\n');
 
-  // TEST 7: Idempotency of reconciliation
-  console.log('Test 7: Idempotency: duplicate reconciliation call updates cleanly...');
+  // TEST 6: idempotency of reconciliation
+  console.log('Test 6: Idempotency: duplicate reconciliation call updates cleanly...');
   const reconRes2 = queryJson(`
     SELECT ${testSchema}.record_payment_reconciliation(
-      '${booking2Id}'::UUID,
-      '${paymentRef2}',
-      105.00,
-      'Razorpay',
-      'success',
+      '${booking2Id}'::UUID, '${paymentRef2}', 105.00, 'Razorpay', 'success',
       '{"order_id": "order_test_1_retry"}'::jsonb
     ) as result;
   `);
   assert(reconRes2.length > 0 && reconRes2[0].result.success === true);
   console.log('  PASSED: Duplicate reconciliation call was idempotent.\n');
 
-  // TEST 8: Replay attack in reconciliation across bookings
-  console.log('Test 8: Replay attack: reconciling different booking with used ref is rejected...');
-  const bookRes3 = queryJson(`
-    SELECT ${testSchema}.create_verified_booking(
-      '${spaceId}'::UUID,
-      'bike',
-      NOW() + INTERVAL '10 hours',
-      1,
-      'TN 59 BK 4444',
-      'Driver One',
-      '9876543210',
-      ARRAY[]::TEXT[],
-      'hash_token_test_4',
-      'IDM-PAY-04',
-      NULL
-    ) as result;
-  `);
-  const booking3Id = bookRes3[0].result.booking_id;
+  // TEST 7: replay of a payment ref across bookings is rejected
+  console.log('Test 7: Replay attack: reconciling different booking with used ref is rejected...');
+  const booking3 = createBooking(10);
   const replayReconRes = queryJson(`
     SELECT ${testSchema}.record_payment_reconciliation(
-      '${booking3Id}'::UUID,
-      '${paymentRef1}',
-      30.00,
-      'Razorpay',
-      'success'
+      '${booking3.booking_id}'::UUID, '${paymentRef2}', 30.00, 'Razorpay', 'success'
     ) as result;
   `);
-  assert(replayReconRes.length > 0 && replayReconRes[0].result.success === false);
+  assert.strictEqual(replayReconRes[0].result.success, false);
   assert.strictEqual(replayReconRes[0].result.error, 'PAYMENT_ALREADY_USED');
   console.log('  PASSED: Cross-booking payment reference replay blocked.\n');
 
-  // TEST 9: verify_razorpay_payment with HMAC-SHA256 signature
-  console.log('Test 9: verify_razorpay_payment verifies HMAC signature on server...');
+  // Server-side secret, stored where production keeps it (Supabase Vault)
   const testSecret = 'idam_test_razorpay_secret_key_99';
+  createdVaultStub = queryJson(`SELECT to_regnamespace('vault') IS NULL AS missing`)[0].missing;
+  execute(`
+    CREATE SCHEMA IF NOT EXISTS vault;
+    CREATE TABLE IF NOT EXISTS vault.decrypted_secrets (name TEXT, decrypted_secret TEXT);
+    DELETE FROM vault.decrypted_secrets WHERE name = 'razorpay_key_secret';
+  `);
+
+  // TEST 8: with no secret configured, verification fails closed
+  console.log('Test 8: verify_razorpay_payment fails closed when no server secret is configured...');
+  const booking8 = createBooking(12);
+  attachOrder(booking8.booking_id, 'order_test_888');
+  const noSecretRes = verify(booking8.booking_id, 'order_test_888', 'pay_nosecret_1', 'sig_anything');
+  assert.strictEqual(noSecretRes.success, false);
+  assert.strictEqual(noSecretRes.error, 'PAYMENT_VERIFICATION_UNAVAILABLE');
+  const lenSig = verify(booking8.booking_id, 'order_test_888', 'pay_nosecret_2', 'a'.repeat(64));
+  assert.strictEqual(lenSig.success, false, 'A 64-character signature must not be accepted without a secret');
+  assert.strictEqual(bookingRow(booking8.booking_id).payment_status, 'pending');
+  console.log('  PASSED: No secret -> no payment can be verified (sig_ / 64-char shortcuts removed).\n');
+
+  execute(`INSERT INTO vault.decrypted_secrets (name, decrypted_secret) VALUES ('razorpay_key_secret', '${testSecret}');`);
+
+  // TEST 9: valid HMAC signature confirms the booking
+  console.log('Test 9: verify_razorpay_payment verifies HMAC signature using the server secret...');
   const orderId = 'order_test_999';
   const paymentId = 'pay_sig_test_' + Date.now();
-  const validSignature = crypto.createHmac('sha256', testSecret).update(`${orderId}|${paymentId}`).digest('hex');
-
-  const bookRes4 = queryJson(`
-    SELECT ${testSchema}.create_verified_booking(
-      '${spaceId}'::UUID,
-      'car',
-      NOW() + INTERVAL '12 hours',
-      2,
-      'TN 59 SIG 5555',
-      'Driver One',
-      '9876543210',
-      ARRAY[]::TEXT[],
-      'hash_token_test_5',
-      'IDM-PAY-05',
-      NULL
-    ) as result;
-  `);
-  const booking4Id = bookRes4[0].result.booking_id;
-
-  const verifyRes1 = queryJson(`
-    SELECT ${testSchema}.verify_razorpay_payment(
-      '${booking4Id}'::UUID,
-      '${orderId}',
-      '${paymentId}',
-      '${validSignature}',
-      '${testSecret}'
-    ) as result;
-  `);
-  assert(verifyRes1.length > 0 && verifyRes1[0].result.success === true, 'Valid signature must be verified');
-
-  const verifiedBooking = queryJson(`SELECT * FROM ${testSchema}.bookings WHERE id = '${booking4Id}';`);
-  assert.strictEqual(verifiedBooking[0].booking_status, 'confirmed');
-  assert.strictEqual(verifiedBooking[0].payment_status, 'completed');
+  const booking9 = createBooking(14);
+  attachOrder(booking9.booking_id, orderId);
+  const verifyRes1 = verify(booking9.booking_id, orderId, paymentId, sign(testSecret, orderId, paymentId));
+  assert.strictEqual(verifyRes1.success, true, 'Valid signature must be verified');
+  const verifiedBooking = bookingRow(booking9.booking_id);
+  assert.strictEqual(verifiedBooking.booking_status, 'confirmed');
+  assert.strictEqual(verifiedBooking.payment_status, 'completed');
+  assert.strictEqual(Number(queryJson(`SELECT amount FROM ${testSchema}.payments WHERE transaction_ref = '${paymentId}';`)[0].amount),
+    Number(verifiedBooking.total_amount), 'Recorded amount must be the server-computed booking total');
+  const retry = verify(booking9.booking_id, orderId, paymentId, sign(testSecret, orderId, paymentId));
+  assert.strictEqual(retry.success, true, 'Retrying the same verified payment must be idempotent');
   console.log('  PASSED: Valid HMAC signature verified and booking confirmed.\n');
 
-  // TEST 10: verify_razorpay_payment rejects forged signature
-  console.log('Test 10: verify_razorpay_payment rejects forged signature...');
-  const bookRes5 = queryJson(`
-    SELECT ${testSchema}.create_verified_booking(
-      '${spaceId}'::UUID,
-      'car',
-      NOW() + INTERVAL '15 hours',
-      2,
-      'TN 59 FORGE 666',
-      'Driver One',
-      '9876543210',
-      ARRAY[]::TEXT[],
-      'hash_token_test_6',
-      'IDM-PAY-06',
-      NULL
-    ) as result;
-  `);
-  const booking5Id = bookRes5[0].result.booking_id;
-
-  const forgedSig = 'forged_signature_00000000000000000000000000000000000000000000000000';
-  const verifyRes2 = queryJson(`
+  // TEST 10: forged signature / attacker-chosen secret are rejected
+  console.log('Test 10: verify_razorpay_payment rejects forged signatures and caller-supplied secrets...');
+  const booking10 = createBooking(17);
+  attachOrder(booking10.booking_id, 'order_test_1010');
+  const forged = verify(booking10.booking_id, 'order_test_1010', 'pay_forged_1', 'sig_forged');
+  assert.strictEqual(forged.error, 'INVALID_SIGNATURE');
+  const ownSecretSig = sign('attacker_secret', 'order_test_1010', 'pay_forged_2');
+  assert.strictEqual(verify(booking10.booking_id, 'order_test_1010', 'pay_forged_2', ownSecretSig).error, 'INVALID_SIGNATURE');
+  assert.throws(() => execute(`
     SELECT ${testSchema}.verify_razorpay_payment(
-      '${booking5Id}'::UUID,
-      '${orderId}',
-      '${paymentId}_2',
-      '${forgedSig}',
-      '${testSecret}'
-    ) as result;
-  `);
-  assert(verifyRes2.length > 0 && verifyRes2[0].result.success === false);
-  assert.strictEqual(verifyRes2[0].result.error, 'INVALID_SIGNATURE');
-  console.log('  PASSED: Forged HMAC signature rejected.\n');
+      '${booking10.booking_id}'::UUID, 'order_test_1010', 'pay_forged_3', '${sign('x', 'order_test_1010', 'pay_forged_3')}', 'x'
+    );
+  `), 'The 5-argument variant that accepted a caller-supplied secret must no longer exist');
+  assert.strictEqual(bookingRow(booking10.booking_id).payment_status, 'pending');
+  console.log('  PASSED: Forged signatures and caller-supplied secrets rejected.\n');
 
-  // TEST 11: cancel_booking automatically refunds payment
-  console.log('Test 11: cancel_booking automatically updates payment status to refunded...');
+  // TEST 11: a real payment for one order cannot pay for a different booking
+  console.log('Test 11: verify_razorpay_payment rejects an order that does not belong to the booking...');
+  const booking11 = createBooking(20);
+  const noOrder = verify(booking11.booking_id, orderId, 'pay_other_1', sign(testSecret, orderId, 'pay_other_1'));
+  assert.strictEqual(noOrder.error, 'ORDER_MISMATCH', 'Booking without a server-created order cannot be paid');
+  attachOrder(booking11.booking_id, 'order_test_1111');
+  const cheapOrder = 'order_cheap_1';
+  const mismatch = verify(booking11.booking_id, cheapOrder, 'pay_other_2', sign(testSecret, cheapOrder, 'pay_other_2'));
+  assert.strictEqual(mismatch.error, 'ORDER_MISMATCH');
+  console.log('  PASSED: Payments are bound to the order created for that booking.\n');
+
+  // TEST 12: only the booking's driver can verify its payment
+  console.log("Test 12: verify_razorpay_payment rejects another driver's booking and anonymous callers...");
+  const otherDriverId = '22222222-2222-4222-8222-222222222222';
+  setSession(otherDriverId, 'authenticated');
+  const foreign = verify(booking11.booking_id, 'order_test_1111', 'pay_foreign', sign(testSecret, 'order_test_1111', 'pay_foreign'));
+  assert.strictEqual(foreign.error, 'FORBIDDEN');
+  setSession(null, 'anon');
+  const anon = verify(booking11.booking_id, 'order_test_1111', 'pay_anon', sign(testSecret, 'order_test_1111', 'pay_anon'));
+  assert.strictEqual(anon.error, 'UNAUTHENTICATED');
+  setSession(driverId, 'authenticated');
+  console.log('  PASSED: Ownership enforced on payment verification.\n');
+
+  // TEST 13: cancel_booking marks a paid booking refunded
+  console.log('Test 13: cancel_booking automatically updates payment status to refunded...');
   const cancelRes = queryJson(`
-    SELECT ${testSchema}.cancel_booking(
-      '${booking1Id}'::UUID,
-      'Driver had change of plans'
-    ) as result;
+    SELECT ${testSchema}.cancel_booking('${booking9.booking_id}'::UUID, 'Driver had change of plans') as result;
   `);
   assert(cancelRes.length > 0 && cancelRes[0].result.success === true);
-
-  const cancelledBooking = queryJson(`SELECT * FROM ${testSchema}.bookings WHERE id = '${booking1Id}';`);
-  assert.strictEqual(cancelledBooking[0].booking_status, 'cancelled');
-  assert.strictEqual(cancelledBooking[0].payment_status, 'refunded');
-
-  const refundedPayment = queryJson(`SELECT * FROM ${testSchema}.payments WHERE booking_id = '${booking1Id}';`);
+  const cancelledBooking = bookingRow(booking9.booking_id);
+  assert.strictEqual(cancelledBooking.booking_status, 'cancelled');
+  assert.strictEqual(cancelledBooking.payment_status, 'refunded');
+  const refundedPayment = queryJson(`SELECT * FROM ${testSchema}.payments WHERE booking_id = '${booking9.booking_id}';`);
   assert.strictEqual(refundedPayment[0].status, 'refunded');
   console.log('  PASSED: Booking and payment record transitioned to refunded.\n');
 
@@ -380,4 +345,9 @@ try {
 } finally {
   console.log(`\nCleaning up test schema ${testSchema}...`);
   execSync(`psql -d myapp -c "DROP SCHEMA IF EXISTS ${testSchema} CASCADE;"`, { stdio: 'inherit' });
+  if (createdVaultStub) {
+    execSync(`psql -d myapp -c "DROP SCHEMA IF EXISTS vault CASCADE;"`, { stdio: 'inherit' });
+  } else {
+    execSync(`psql -d myapp -c "DO \\$\\$ BEGIN IF to_regclass('vault.decrypted_secrets') IS NOT NULL THEN DELETE FROM vault.decrypted_secrets WHERE name = 'razorpay_key_secret'; END IF; END \\$\\$;"`, { stdio: 'inherit' });
+  }
 }

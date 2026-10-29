@@ -8,13 +8,15 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Language } from '@/types';
 import { useAuth } from '@/context/AuthContext';
+import { loginUrlReturningTo } from '@/lib/auth/redirect';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 const DRAFT_STORAGE_KEY = 'idam_space_draft';
 
 export default function ListYourSpacePage() {
   const router = useRouter();
-  const { profile, switchRole, isDemoMode } = useAuth();
+  const { profile, switchRole, isDemoMode, supabaseUser } = useAuth();
+  const mustSignInToSubmit = isSupabaseConfigured && !isDemoMode && !supabaseUser;
   const [lang, setLang] = useState<Language>('en');
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -129,7 +131,7 @@ export default function ListYourSpacePage() {
         if (!user) {
           alert('You must be signed in to submit a parking space listing. Please sign in and try again.');
           setIsSubmitting(false);
-          router.push('/login');
+          router.push(loginUrlReturningTo('/list-your-space'));
           return;
         }
 
@@ -155,27 +157,10 @@ export default function ListYourSpacePage() {
             return;
           }
 
-          // 2. Also insert into parking_locations for backward compatibility
-          await supabase.from('parking_locations').insert([{
-            owner_id: user.id,
-            title: spaceTitle,
-            address: address,
-            hourly_rate_car: priceCar,
-            hourly_rate_bike: priceBike,
-            total_spots: carCapacity + bikeCapacity,
-            available_spots: carCapacity + bikeCapacity,
-            car_capacity: carCapacity,
-            bike_capacity: bikeCapacity,
-            operating_hours: `${openingTime} - ${closingTime}`,
-            latitude: 9.9195,
-            longitude: 78.1198,
-            status: 'pending_review'
-          }]);
-
-          // 3. Call apply_for_owner_role RPC
+          // 2. Call apply_for_owner_role RPC
           await supabase.rpc('apply_for_owner_role', {
-            p_full_name: profile?.name || 'Space Owner',
-            p_phone: profile?.phone || ''
+            p_property_name: spaceTitle,
+            p_property_address: address
           });
         } catch (e: any) {
         console.error('Supabase space insert exception:', e);
@@ -233,6 +218,15 @@ export default function ListYourSpacePage() {
         </Link>
 
         {/* Resumed Draft Alert */}
+        {mustSignInToSubmit && !isSubmitted && (
+          <div role="status" className="mb-4 bg-amber-50 border border-amber-200 text-amber-950 rounded-2xl p-4 text-xs font-semibold flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <span>You need to sign in to submit a listing. Your answers are saved on this device, so nothing is lost.</span>
+            <Link href={loginUrlReturningTo('/list-your-space')} className="shrink-0 bg-slate-900 text-white px-3 py-1.5 rounded-xl font-extrabold text-center">
+              Sign in first
+            </Link>
+          </div>
+        )}
+
         {resumedFromDraft && !isSubmitted && (
           <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex items-center justify-between text-xs animate-fade-in">
             <div className="flex items-center space-x-2 text-emerald-900 font-bold">

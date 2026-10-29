@@ -12,7 +12,9 @@ interface AuthScreenProps {
 }
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onSkipDemo }) => {
-  const { signIn, signUp, startDemo, resetPassword } = useAuth();
+  const { signIn, signUp, startDemo, resetPassword, resendConfirmation } = useAuth();
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle');
 
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   
@@ -32,12 +34,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onSkipDemo })
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [infoMsg, setInfoMsg] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg(null);
+    setInfoMsg(null);
 
     const res = await signIn(loginEmail, loginPassword);
     setIsLoading(false);
@@ -45,7 +49,20 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onSkipDemo })
     if (res.success) {
       onSuccess();
     } else {
+      setNeedsConfirmation(res.code === 'EMAIL_NOT_CONFIRMED');
+      setResendState('idle');
       setErrorMsg(res.error || 'Failed to sign in. Please check credentials.');
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    setResendState('sending');
+    const res = await resendConfirmation(loginEmail);
+    if (res.success) {
+      setResendState('sent');
+    } else {
+      setResendState('idle');
+      setErrorMsg(res.error || 'Could not resend the confirmation email.');
     }
   };
 
@@ -53,6 +70,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onSkipDemo })
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg(null);
+    setInfoMsg(null);
 
     const res = await signUp({
       email: signupEmail,
@@ -61,7 +79,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onSkipDemo })
     });
     setIsLoading(false);
 
-    if (res.success) {
+    if (res.success && res.needsEmailConfirmation) {
+      // Not signed in yet: send them to the login form to come back after confirming
+      setMode('login');
+      setLoginEmail(signupEmail);
+      setInfoMsg(`Account created. We sent a confirmation link to ${signupEmail}. Open it, then sign in here.`);
+      setNeedsConfirmation(true);
+      setResendState('idle');
+    } else if (res.success) {
       setIsSuccess(true);
       setTimeout(() => {
         onSuccess();
@@ -145,6 +170,25 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onSkipDemo })
             <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
             <span>{errorMsg}</span>
           </div>
+        )}
+
+        {infoMsg && (
+          <div role="status" className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl text-xs text-emerald-900 font-semibold">
+            {infoMsg}
+          </div>
+        )}
+
+        {needsConfirmation && mode === 'login' && (
+          <button
+            type="button"
+            onClick={handleResendConfirmation}
+            disabled={resendState !== 'idle'}
+            className="w-full text-xs font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-2xl py-2.5 disabled:opacity-70"
+          >
+            {resendState === 'sent'
+              ? `Confirmation email sent to ${loginEmail}. Check inbox and spam.`
+              : resendState === 'sending' ? 'Sending...' : "Didn't get the email? Resend it"}
+          </button>
         )}
 
         {isSuccess ? (

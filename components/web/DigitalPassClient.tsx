@@ -53,15 +53,24 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
 
   useEffect(() => {
     let isMounted = true;
+    let pollTimer: ReturnType<typeof setTimeout> | undefined;
+    let polls = 0;
+
     async function loadBooking() {
       try {
         const dbBooking = await fetchBookingByPassCode(passId);
-        if (isMounted) {
-          if (dbBooking) {
-            setBooking(dbBooking);
+        if (!isMounted) return;
+        if (dbBooking) {
+          // The server keeps only the token hash; the scannable token lives on the booking device
+          const local = getBookingByPassCode(passId);
+          setBooking(local?.passToken ? { ...dbBooking, passToken: local.passToken, qrData: local.qrData } : dbBooking);
+          // Payment confirmation may arrive a little later (webhook): keep checking for ~2 minutes
+          if (dbBooking.paymentStatus === 'pending' && polls < 24) {
+            polls++;
+            pollTimer = setTimeout(loadBooking, 5000);
           }
-          setIsLoading(false);
         }
+        setIsLoading(false);
       } catch (err) {
         if (isMounted) setIsLoading(false);
       }
@@ -69,10 +78,13 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
     loadBooking();
     return () => {
       isMounted = false;
+      if (pollTimer) clearTimeout(pollTimer);
     };
   }, [passId]);
 
-  const mockFallback = (isDemoMode || !booking) ? MOCK_PASS_REGISTRY[passId] : undefined;
+  const mockFallback = isDemoMode ? MOCK_PASS_REGISTRY[passId] : undefined;
+  const isAwaitingPayment = Boolean(booking && booking.paymentStatus !== 'completed' && booking.status !== 'cancelled');
+  const isCancelled = booking?.status === 'cancelled';
   const isNotFound = !isLoading && !booking && !mockFallback;
 
   const location = booking?.parkingLocation
@@ -100,13 +112,13 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
 
   const passPaymentId = booking?.paymentId
     || mockFallback?.paymentId
-    || 'pay_rzp_mock_confirmed';
+    || (isAwaitingPayment ? 'awaiting confirmation' : '—');
 
   const qrPayload = booking?.qrData
     || (booking?.passToken ? formatSecureQrPayload(booking.passToken) : formatSecureQrPayload(passId));
 
   useEffect(() => {
-    if (booking || mockFallback) {
+    if ((booking && !isAwaitingPayment && !isCancelled) || mockFallback) {
       try {
         confetti({
           particleCount: 80,
@@ -121,7 +133,7 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
 
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(
-      `🚗 My iDAM Parking Pass: ${passId}\n📍 Location: ${location.title}\n🕒 ${passDate} (${passTimeSlot})\n💳 Payment: ${passPayment} (${passPaymentId})\nStatus: CONFIRMED`
+      `🚗 My iDAM Parking Pass: ${passId}\n📍 Location: ${location.title}\n🕒 ${passDate} (${passTimeSlot})\n💳 Payment: ${passPayment} (${passPaymentId})\nStatus: ${isCancelled ? 'CANCELLED' : isAwaitingPayment ? 'AWAITING PAYMENT' : 'CONFIRMED'}`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
@@ -187,20 +199,23 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-between font-sans">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-between font-sans print:min-h-0 print:bg-white">
       
-      <Navbar
-        lang={lang}
-        onLanguageToggle={setLang}
-        activeView="web"
-        onViewChange={() => {}}
-        onOpenOwnerModal={() => {}}
-      />
+      {/* Printing shows only the pass itself (header, footer and buttons are screen-only) */}
+      <div className="print:hidden">
+        <Navbar
+          lang={lang}
+          onLanguageToggle={setLang}
+          activeView="web"
+          onViewChange={() => {}}
+          onOpenOwnerModal={() => {}}
+        />
+      </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12 w-full flex-1 space-y-6">
+      <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12 w-full flex-1 space-y-6 print:p-0 print:space-y-4">
         
         {/* Top Back & Print Controls */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between print:hidden">
           <button
             onClick={() => router.push('/')}
             className="inline-flex items-center space-x-2 text-xs font-bold text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer"
@@ -227,7 +242,21 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
           </div>
         </div>
 
+        {(isAwaitingPayment || isCancelled) && (
+          <div role="status" className={`rounded-3xl p-6 shadow-xl border ${isCancelled ? 'bg-red-50 border-red-200 text-red-900' : 'bg-amber-50 border-amber-200 text-amber-950'}`}>
+            <h1 className="text-xl font-black tracking-tight">
+              {isCancelled ? 'This booking was cancelled' : 'Confirming your payment…'}
+            </h1>
+            <p className="text-xs mt-1">
+              {isCancelled
+                ? 'This pass cannot be used for entry.'
+                : 'If you completed the payment, this page updates automatically within a minute or two. Your entry QR appears once payment is confirmed. If you did not pay, the slot is released after 15 minutes.'}
+            </p>
+          </div>
+        )}
+
         {/* Confirmed Banner */}
+        {!isAwaitingPayment && !isCancelled && (
         <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-900 text-white rounded-3xl p-6 shadow-xl flex items-center justify-between">
           <div className="space-y-1">
             <div className="inline-flex items-center space-x-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-3 py-1 rounded-full text-xs font-bold">
@@ -242,9 +271,10 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
             <ShieldCheck className="w-7 h-7" />
           </div>
         </div>
+        )}
 
         {/* Main Pass Card */}
-        <div className="bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden relative">
+        <div className="bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden relative print:shadow-none print:break-inside-avoid">
           
           <div className="h-2 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-700" />
 
@@ -255,12 +285,18 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
               {/* QR Code Column */}
               <div className="md:col-span-5 text-center">
                 <div className="bg-emerald-50/60 p-5 rounded-3xl border border-emerald-100 inline-block shadow-inner">
-                  <QRCodeSVG
-                    value={qrPayload}
-                    size={160}
-                    level="H"
-                    className="mx-auto"
-                  />
+                  {isAwaitingPayment || isCancelled ? (
+                    <div className="w-40 h-40 mx-auto flex items-center justify-center text-center text-xs font-semibold text-gray-500">
+                      {isCancelled ? 'Pass cancelled' : 'QR available after payment is confirmed'}
+                    </div>
+                  ) : (
+                    <QRCodeSVG
+                      value={qrPayload}
+                      size={160}
+                      level="H"
+                      className="mx-auto"
+                    />
+                  )}
                   <div className="font-mono text-xs font-bold text-gray-900 mt-3 tracking-widest">
                     {passId}
                   </div>
@@ -308,7 +344,7 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
                     </div>
 
                     <div>
-                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Amount Paid</label>
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">{isAwaitingPayment ? 'Amount' : 'Amount Paid'}</label>
                       <div className="font-extrabold text-emerald-800 text-base mt-0.5">
                         {passAmount}
                       </div>
@@ -345,7 +381,7 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
 
               <button
                 onClick={() => window.open(`https://maps.google.com/?q=${location.latitude},${location.longitude}`, '_blank')}
-                className="w-full sm:w-auto bg-emerald-950 hover:bg-emerald-900 text-white font-bold px-6 py-3 rounded-2xl text-xs shadow-md flex items-center justify-center space-x-2 transition-all"
+                className="print:hidden w-full sm:w-auto bg-emerald-950 hover:bg-emerald-900 text-white font-bold px-6 py-3 rounded-2xl text-xs shadow-md flex items-center justify-center space-x-2 transition-all"
               >
                 <Navigation className="w-4 h-4 text-emerald-300" />
                 <span>Navigate in Google Maps &rarr;</span>
@@ -358,7 +394,9 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
 
       </div>
 
-      <Footer lang={lang} />
+      <div className="print:hidden">
+        <Footer lang={lang} />
+      </div>
 
     </div>
   );

@@ -21,6 +21,7 @@ export const SignupForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,9 +42,14 @@ export const SignupForm: React.FC = () => {
 
     if (res.success) {
       setIsSuccess(true);
-      setTimeout(() => {
-        router.push('/');
-      }, 1500);
+      // Without email confirmation the user is signed in already; otherwise they must confirm first
+      if (res.needsEmailConfirmation) {
+        setNeedsConfirmation(true);
+      } else {
+        setTimeout(() => {
+          router.push('/');
+        }, 1500);
+      }
     } else {
       setErrorMessage(res.error || 'Failed to create account. Please try again.');
     }
@@ -67,7 +73,18 @@ export const SignupForm: React.FC = () => {
             <CheckCircle2 className="w-8 h-8 text-emerald-700" />
           </div>
           <h3 className="text-base font-black text-slate-900">Account Created!</h3>
-          <p className="text-xs text-slate-500 font-medium">Redirecting you to iDAM...</p>
+          {needsConfirmation ? (
+            <>
+              <p className="text-xs text-slate-600 font-medium">
+                We sent a confirmation link to <strong>{email}</strong>. Open it, then sign in.
+              </p>
+              <Link href="/login" className="inline-block text-xs font-bold text-emerald-800 hover:underline">
+                Go to sign in →
+              </Link>
+            </>
+          ) : (
+            <p className="text-xs text-slate-500 font-medium">Redirecting you to iDAM...</p>
+          )}
         </div>
       ) : (
         <>

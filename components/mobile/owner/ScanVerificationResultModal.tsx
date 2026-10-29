@@ -2,13 +2,13 @@
 
 import React, { useState } from 'react';
 import { CheckCircle2, AlertTriangle, XCircle, ArrowRight, ShieldCheck, MapPin, Calendar, Clock, Car, RefreshCw, X, Check, Loader2 } from 'lucide-react';
-import { PassVerificationResult, Booking } from '@/types';
+import { PassVerificationResult, Booking, CheckInCredentials } from '@/types';
 
 interface ScanVerificationResultModalProps {
   result: PassVerificationResult;
   onClose: () => void;
   onScanAgain: () => void;
-  onConfirmCheckIn: (booking: Booking) => Promise<{ success: boolean; message: string; checkInAt?: string }>;
+  onConfirmCheckIn: (booking: Booking, credentials: CheckInCredentials) => Promise<{ success: boolean; message: string; checkInAt?: string }>;
   onViewCurrentlyParked?: () => void;
 }
 
@@ -27,13 +27,26 @@ export const ScanVerificationResultModal: React.FC<ScanVerificationResultModalPr
   const booking = result.booking;
   const isValid = result.isValid && !!booking;
 
+  // Gate rule: the person holding the pass must be in the booked vehicle.
+  // QR scans: the owner confirms the plate by eye. Typed codes: the owner types the plate's
+  // last 4 letters/digits and the server checks them (a code alone can be copied from a URL).
+  const typedCode = result.entryMethod === 'code';
+  const [plateConfirmed, setPlateConfirmed] = useState(false);
+  const [plateLast4, setPlateLast4] = useState('');
+  const plateDigits = plateLast4.replace(/[^A-Za-z0-9]/g, '');
+  const canConfirm = typedCode ? plateDigits.length >= 4 : plateConfirmed;
+
   const handleConfirm = async () => {
-    if (!booking || isConfirming) return;
+    if (!booking || isConfirming || !canConfirm) return;
     setIsConfirming(true);
     setErrorMessage(null);
 
     try {
-      const res = await onConfirmCheckIn(booking);
+      const res = await onConfirmCheckIn(booking, {
+        tokenHash: result.scannedTokenHash,
+        passCode: booking.passCode,
+        plateLast4: typedCode ? plateDigits : undefined
+      });
       if (res.success) {
         setConfirmedSuccess(true);
         setCheckInTimestamp(res.checkInAt || new Date().toISOString());
@@ -176,13 +189,17 @@ export const ScanVerificationResultModal: React.FC<ScanVerificationResultModalPr
                   </div>
                 </div>
 
+                <div className="pt-2 border-t border-slate-100 text-center">
+                  <span className="text-[10px] text-slate-500 font-extrabold block uppercase tracking-wider">Booked vehicle plate</span>
+                  <span className="font-mono font-black text-2xl tracking-widest text-amber-950 bg-amber-100 border-2 border-amber-300 px-4 py-1.5 rounded-xl inline-block mt-1">
+                    {booking.vehicleNumber || 'No plate on booking'}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-semibold block mt-1">
+                    Only let in the vehicle with this plate.
+                  </span>
+                </div>
+
                 <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-bold block uppercase">Vehicle Number</span>
-                    <span className="font-mono font-black text-slate-900 bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-xs inline-block mt-0.5">
-                      {booking.vehicleNumber || 'TN 59 AB 1234'}
-                    </span>
-                  </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-bold block uppercase">Vehicle Type</span>
                     <span className="font-black text-slate-800 capitalize mt-0.5 inline-block">
@@ -222,11 +239,37 @@ export const ScanVerificationResultModal: React.FC<ScanVerificationResultModalPr
 
               </div>
 
+              {/* Plate check: required before check-in */}
+              {typedCode ? (
+                <label className="block bg-amber-50 border border-amber-300 p-3 rounded-2xl text-xs text-amber-950 font-bold space-y-1.5">
+                  <span>Pass code entered by hand. Type the last 4 letters/digits of the car's plate:</span>
+                  <input
+                    value={plateLast4}
+                    onChange={(e) => setPlateLast4(e.target.value.toUpperCase())}
+                    inputMode="text"
+                    autoCapitalize="characters"
+                    maxLength={8}
+                    placeholder="e.g. 3200"
+                    className="w-full px-3 py-2 rounded-xl border border-amber-300 bg-white font-mono text-base font-black tracking-widest text-slate-900 outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+                </label>
+              ) : (
+                <label className="flex items-start space-x-2.5 bg-amber-50 border border-amber-300 p-3 rounded-2xl text-xs text-amber-950 font-bold cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={plateConfirmed}
+                    onChange={(e) => setPlateConfirmed(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-emerald-600 shrink-0"
+                  />
+                  <span>I checked the car: its plate is <span className="font-mono">{booking.vehicleNumber || '(none on booking)'}</span></span>
+                </label>
+              )}
+
               {/* Action Buttons */}
               <div className="space-y-2 pt-2">
                 <button
                   onClick={handleConfirm}
-                  disabled={isConfirming}
+                  disabled={isConfirming || !canConfirm}
                   className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 active:scale-98 text-white rounded-2xl text-xs font-black shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center space-x-2 disabled:opacity-75"
                 >
                   {isConfirming ? (

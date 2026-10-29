@@ -11,20 +11,11 @@ import {
   Wallet,
   QrCode,
   CheckCircle2,
-  Key,
   ChevronRight,
   Info,
-  Loader2,
-  ExternalLink
+  Loader2
 } from 'lucide-react';
-import {
-  getRazorpayKey,
-  setRazorpayKey,
-  isRealRazorpayKey,
-  generateMockPaymentId,
-  openOfficialRazorpayCheckout,
-  RazorpaySuccessResult
-} from '@/lib/payment/razorpay';
+import { generateMockPaymentId, RazorpaySuccessResult } from '@/lib/payment/razorpay';
 import { useRegisterModal } from '@/context/BackNavigationContext';
 
 interface RazorpayCheckoutModalProps {
@@ -65,9 +56,6 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
   const [cardCvv, setCardCvv] = useState('789');
   const [cardHolder, setCardHolder] = useState(driverName || 'Kishore Kumar');
 
-  // Key configuration
-  const [customKey, setCustomKey] = useState(getRazorpayKey());
-  const [showKeyConfig, setShowKeyConfig] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccessData, setPaymentSuccessData] = useState<RazorpaySuccessResult | null>(null);
 
@@ -76,7 +64,6 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setCustomKey(getRazorpayKey());
       setIsProcessing(false);
       setPaymentSuccessData(null);
     }
@@ -84,53 +71,10 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
 
   if (!isOpen) return null;
 
-  const hasRealKey = isRealRazorpayKey(customKey);
-
-  const handleSaveKey = () => {
-    setRazorpayKey(customKey);
-    setShowKeyConfig(false);
-  };
-
-  const handleLaunchOfficialPopup = async () => {
-    if (isProcessing) return;
-    setIsProcessing(true);
-    try {
-      const res = await openOfficialRazorpayCheckout({
-        amount,
-        locationTitle,
-        bookingPassCode,
-        vehicleNumber,
-        vehicleType,
-        driverName,
-        driverPhone
-      });
-      setIsProcessing(false);
-      onSuccess(res);
-    } catch (err: any) {
-      setIsProcessing(false);
-      if (err?.message === 'PAYMENT_DISMISSED') {
-        // User closed the popup, do not show error
-        return;
-      }
-      console.warn('Official Razorpay popup failed, falling back to sandbox modal:', err);
-      // If official popup fails (e.g., unauthorized domain or bad key), alert user gently
-      alert('Official Razorpay window could not proceed (' + (err?.description || err?.message || 'SDK check') + '). You can complete payment instantly via the Razorpay Sandbox Mode below!');
-    }
-  };
-
-  const handlePrimaryPayClick = () => {
-    if (isProcessing) return;
-    if (hasRealKey) {
-      handleLaunchOfficialPopup();
-    } else {
-      handleSimulatePayment(activeTab);
-    }
-  };
-
   const handleSimulatePayment = (methodUsed: string) => {
     if (isProcessing) return;
     setIsProcessing(true);
-    const mockPaymentId = generateMockPaymentId(true);
+    const mockPaymentId = generateMockPaymentId();
     const mockOrderId = `demo_order_${Math.random().toString(36).substring(2, 11)}`;
 
     setTimeout(() => {
@@ -198,23 +142,11 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
           </div>
         </div>
 
-        {/* Real Key Notice or Official Popup Trigger */}
-        {hasRealKey && (
-          <div className="bg-blue-50 px-4 py-2.5 border-b border-blue-100 flex items-center justify-between text-xs">
-            <div className="flex items-center space-x-2 text-blue-900 font-semibold">
-              <Info className="w-4 h-4 text-blue-600 shrink-0" />
-              <span>Configured with custom Razorpay Key: <code className="font-mono text-[11px]">{customKey.slice(0, 12)}...</code></span>
-            </div>
-            <button
-              onClick={handleLaunchOfficialPopup}
-              disabled={isProcessing}
-              className="px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-bold text-[11px] flex items-center space-x-1 shadow-xs transition-all shrink-0 ml-2"
-            >
-              <span>Launch Official Popup</span>
-              <ExternalLink className="w-3 h-3" />
-            </button>
-          </div>
-        )}
+        {/* This modal only ever runs in demo mode; real payments use Razorpay's own checkout */}
+        <div className="bg-amber-50 px-4 py-2.5 border-b border-amber-200 flex items-center space-x-2 text-xs text-amber-900 font-semibold">
+          <Info className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>Demo checkout: this simulates a payment. No money is charged and no real booking is made.</span>
+        </div>
 
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
@@ -455,42 +387,6 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
             </div>
           )}
 
-          {/* Key Configuration Drawer */}
-          <div className="pt-2 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={() => setShowKeyConfig(!showKeyConfig)}
-              className="text-[11px] font-bold text-slate-500 hover:text-blue-700 flex items-center space-x-1 transition-colors"
-            >
-              <Key className="w-3.5 h-3.5" />
-              <span>{showKeyConfig ? 'Hide Razorpay Key Config' : 'Configure Razorpay API Key'}</span>
-            </button>
-
-            {showKeyConfig && (
-              <div className="mt-2 p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 text-xs animate-scale-in">
-                <p className="text-[11px] text-slate-600">
-                  Enter your Razorpay Key ID from the Razorpay Dashboard (e.g. <code className="bg-slate-200 px-1 rounded">rzp_test_...</code>) or leave blank for sandbox demo:
-                </p>
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    value={customKey}
-                    onChange={(e) => setCustomKey(e.target.value)}
-                    placeholder="rzp_test_YourKeyHere"
-                    className="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 font-mono text-[11px] font-bold text-slate-900 outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSaveKey}
-                    className="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl font-bold text-xs"
-                  >
-                    Save
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
         </div>
 
         {/* Footer Actions */}
@@ -498,37 +394,26 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
           
           <button
             type="button"
-            onClick={handlePrimaryPayClick}
+            onClick={() => handleSimulatePayment(activeTab)}
             disabled={isProcessing}
             className="w-full bg-blue-700 hover:bg-blue-800 text-white font-black py-3.5 rounded-2xl shadow-lg text-sm transition-all flex items-center justify-center space-x-2 disabled:opacity-75 cursor-pointer"
           >
             {isProcessing ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin text-white" />
-                <span>Processing via Razorpay...</span>
+                <span>Simulating payment...</span>
               </>
             ) : (
               <>
                 <Lock className="w-4 h-4 text-blue-200" />
-                <span>Pay ₹{amount} via Razorpay</span>
+                <span>Simulate paying ₹{amount}</span>
               </>
             )}
           </button>
 
-          {hasRealKey && (
-            <button
-              type="button"
-              onClick={() => handleSimulatePayment(activeTab)}
-              disabled={isProcessing}
-              className="text-[11px] text-slate-500 hover:text-blue-700 font-semibold underline text-center cursor-pointer transition-colors"
-            >
-              Test with Instant Sandbox Simulation
-            </button>
-          )}
-
           <div className="flex items-center justify-center space-x-2 text-[10px] text-slate-500 font-semibold">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-            <span>Secured by Razorpay • Instant Refund Guarantee</span>
+            <span>Demo mode • No real money is charged</span>
           </div>
 
         </div>

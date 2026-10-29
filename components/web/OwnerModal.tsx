@@ -75,27 +75,10 @@ export const OwnerModal: React.FC<OwnerModalProps> = ({ isOpen, onClose, lang })
           return;
         }
 
-        // Backward compatibility insert
-        await supabase.from('parking_locations').insert([{
-          owner_id: user.id,
-          title: formData.title,
-          address: formData.address,
-          hourly_rate_car: Number(formData.hourlyRateCar) || 30,
-          hourly_rate_bike: Number(formData.hourlyRateBike) || 15,
-          total_spots: spotsTotal,
-          available_spots: spotsTotal,
-          car_capacity: carCap,
-          bike_capacity: bikeCap,
-          operating_hours: formData.operatingHours,
-          latitude: 9.9195,
-          longitude: 78.1198,
-          status: 'pending_review'
-        }]);
-
         // Submit owner role application
         await supabase.rpc('apply_for_owner_role', {
-          p_full_name: profile?.name || user.user_metadata?.full_name || 'Space Owner',
-          p_phone: formData.ownerPhone
+          p_property_name: formData.title,
+          p_property_address: formData.address
         });
 
       } catch (err: any) {

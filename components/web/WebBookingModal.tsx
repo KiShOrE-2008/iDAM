@@ -21,7 +21,10 @@ import { createBooking } from '@/lib/booking/service';
 import { useRouter } from 'next/navigation';
 import { RazorpayCheckoutModal } from '@/components/payment/RazorpayCheckoutModal';
 import { RazorpaySuccessResult } from '@/lib/payment/razorpay';
+import { bookAndPay, checkoutErrorMessage } from '@/lib/payment/checkout';
 import { useBackNavigation } from '@/context/BackNavigationContext';
+import { useAuth } from '@/context/AuthContext';
+import { loginUrlReturningTo } from '@/lib/auth/redirect';
 
 interface WebBookingModalProps {
   location: ParkingLocation | null;
@@ -37,19 +40,28 @@ export const WebBookingModal: React.FC<WebBookingModalProps> = ({
   lang
 }) => {
   const router = useRouter();
+  const { isDemoMode, supabaseUser, profile } = useAuth();
   const [step, setStep] = useState<'details' | 'payment'>('details');
   const [vehicleType, setVehicleType] = useState<'car' | 'bike'>('car');
   const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
   const [startTime, setStartTime] = useState('10:00');
   const [duration, setDuration] = useState(2);
-  const [vehicleNo, setVehicleNo] = useState('TN 59 AB 1234');
-  const [driverName, setDriverName] = useState('Kishore Kumar');
-  const [driverPhone, setDriverPhone] = useState('9876543210');
-  const [paymentMethod, setPaymentMethod] = useState<'Razorpay' | 'UPI' | 'Card' | 'Net Banking'>('Razorpay');
+  const [vehicleNo, setVehicleNo] = useState(profile?.vehicleNumber || '');
+  const [driverName, setDriverName] = useState(profile?.name || '');
+  const [driverPhone, setDriverPhone] = useState(profile?.phone || '');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [showRazorpayModal, setShowRazorpayModal] = useState(false);
 
   const { registerBackHandler } = useBackNavigation();
+
+  // The profile can load after this component mounts: fill any empty fields when opened
+  React.useEffect(() => {
+    if (!isOpen || !profile) return;
+    setVehicleNo(v => v || profile.vehicleNumber || '');
+    setDriverName(n => n || profile.name || '');
+    setDriverPhone(p => p || profile.phone || '');
+  }, [isOpen, profile]);
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -71,69 +83,66 @@ export const WebBookingModal: React.FC<WebBookingModalProps> = ({
   const platformFee = 5;
   const totalAmount = basePrice + platformFee;
 
-  const handleRazorpaySuccess = async (result: RazorpaySuccessResult) => {
+  const buildRequest = (paymentId?: string): BookingRequest => ({
+    parkingLocationId: location.id,
+    vehicleType,
+    bookingDate,
+    startTime,
+    durationHours: duration,
+    basePrice,
+    platformFee,
+    totalAmount,
+    paymentMethod: 'Razorpay',
+    paymentId,
+    vehicleNumber: vehicleNo,
+    driverName: driverName || 'iDAM Driver',
+    driverPhone
+  });
+
+  // Demo mode only: the simulated checkout succeeded, save a local demo pass
+  const handleDemoPaymentSuccess = async (result: RazorpaySuccessResult) => {
     setShowRazorpayModal(false);
     setIsProcessing(true);
-
-    const bookingReq: BookingRequest = {
-      parkingLocationId: location.id,
-      vehicleType,
-      bookingDate,
-      startTime,
-      durationHours: duration,
-      basePrice,
-      platformFee,
-      totalAmount,
-      paymentMethod: 'Razorpay',
-      paymentId: result.razorpay_payment_id,
-      razorpayOrderId: result.razorpay_order_id,
-      vehicleNumber: vehicleNo,
-      driverName: driverName || 'iDAM Driver',
-      driverPhone: driverPhone || '9876543210'
-    };
-
-    const booking = await createBooking(location, bookingReq);
-
-    setTimeout(() => {
-      setIsProcessing(false);
+    try {
+      const booking = await createBooking(location, buildRequest(result.razorpay_payment_id), { isDemoMode: true });
       onClose();
       router.push(`/pass/${booking.passCode}`);
-    }, 800);
+    } catch (err) {
+      setPaymentError(checkoutErrorMessage(err));
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isProcessing) return;
+    setPaymentError(null);
 
-    if (paymentMethod === 'Razorpay') {
+    if (isDemoMode) {
       setShowRazorpayModal(true);
+      return;
+    }
+    if (!supabaseUser) {
+      onClose();
+      router.push(loginUrlReturningTo(window.location.pathname));
       return;
     }
 
     setIsProcessing(true);
-
-    const bookingReq: BookingRequest = {
-      parkingLocationId: location.id,
-      vehicleType,
-      bookingDate,
-      startTime,
-      durationHours: duration,
-      basePrice,
-      platformFee,
-      totalAmount,
-      paymentMethod,
-      paymentId: `pay_direct_${Date.now().toString(36)}`,
-      vehicleNumber: vehicleNo,
-      driverName: driverName || 'iDAM Driver',
-      driverPhone: driverPhone || '9876543210'
-    };
-
-    const booking = await createBooking(location, bookingReq);
-
-    setTimeout(() => {
-      setIsProcessing(false);
+    try {
+      const { booking } = await bookAndPay(location, buildRequest(), {
+        name: driverName,
+        email: profile?.email,
+        phone: driverPhone
+      });
       onClose();
       router.push(`/pass/${booking.passCode}`);
-    }, 1200);
+    } catch (err) {
+      setPaymentError(checkoutErrorMessage(err));
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -312,9 +321,10 @@ export const WebBookingModal: React.FC<WebBookingModalProps> = ({
 
               <button
                 onClick={() => setStep('payment')}
-                className="w-full bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 rounded-2xl text-sm shadow-md transition-all flex items-center justify-center space-x-2"
+                disabled={!vehicleNo.trim()}
+                className="w-full bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 rounded-2xl text-sm shadow-md transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span>Proceed to Payment</span>
+                <span>{vehicleNo.trim() ? 'Proceed to Payment' : 'Enter your vehicle number'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -329,19 +339,11 @@ export const WebBookingModal: React.FC<WebBookingModalProps> = ({
                 <div className="text-xl font-black text-white">₹{totalAmount}</div>
               </div>
 
-              {/* Razorpay Banner / Primary Option */}
+              {/* Razorpay checkout handles UPI, cards, net banking and wallets itself */}
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-700">Choose Payment Method</label>
+                <label className="block text-xs font-bold text-gray-700">Payment</label>
 
-                {/* FEATURED: Razorpay All-in-One Gateway */}
-                <div
-                  onClick={() => setPaymentMethod('Razorpay')}
-                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden ${
-                    paymentMethod === 'Razorpay'
-                      ? 'bg-blue-50/60 border-blue-600 ring-2 ring-blue-500/20 shadow-sm'
-                      : 'bg-white border-gray-200 hover:border-gray-300'
-                  }`}
-                >
+                <div className="p-3.5 rounded-2xl border transition-all relative overflow-hidden bg-blue-50/60 border-blue-600 ring-2 ring-blue-500/20 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-base shadow-xs">
@@ -360,59 +362,27 @@ export const WebBookingModal: React.FC<WebBookingModalProps> = ({
                       </div>
                     </div>
 
-                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-                      paymentMethod === 'Razorpay' ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
-                    }`}>
-                      {paymentMethod === 'Razorpay' && <CheckCircle2 className="w-3 h-3 text-white fill-current" />}
+                    <div className="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 border-blue-600 bg-blue-600">
+                      <CheckCircle2 className="w-3 h-3 text-white fill-current" />
                     </div>
-                  </div>
-                </div>
-
-                {/* Direct UPI */}
-                <div
-                  onClick={() => setPaymentMethod('UPI')}
-                  className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                    paymentMethod === 'UPI'
-                      ? 'bg-emerald-50 border-emerald-700 text-emerald-950 font-bold'
-                      : 'bg-white border-gray-200 text-gray-700'
-                  }`}
-                >
-                  <div className="flex items-center space-x-2.5">
-                    <Smartphone className="w-4 h-4 text-emerald-700" />
-                    <span className="text-xs font-bold">Direct UPI App Transfer</span>
-                  </div>
-                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                    paymentMethod === 'UPI' ? 'border-emerald-700 bg-emerald-700' : 'border-gray-300'
-                  }`}>
-                    {paymentMethod === 'UPI' && <CheckCircle2 className="w-3 h-3 text-white fill-current" />}
-                  </div>
-                </div>
-
-                {/* Card */}
-                <div
-                  onClick={() => setPaymentMethod('Card')}
-                  className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                    paymentMethod === 'Card'
-                      ? 'bg-emerald-50 border-emerald-700 text-emerald-950 font-bold'
-                      : 'bg-white border-gray-200 text-gray-700'
-                  }`}
-                >
-                  <div className="flex items-center space-x-2.5">
-                    <CreditCard className="w-4 h-4 text-blue-700" />
-                    <span className="text-xs font-bold">Credit or Debit Card</span>
-                  </div>
-                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                    paymentMethod === 'Card' ? 'border-emerald-700 bg-emerald-700' : 'border-gray-300'
-                  }`}>
-                    {paymentMethod === 'Card' && <CheckCircle2 className="w-3 h-3 text-white fill-current" />}
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center space-x-2 text-[11px] text-gray-500 bg-gray-50 p-2.5 rounded-xl border border-gray-100">
                 <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
-                <span>256-bit encrypted checkout. Instant digital QR pass generated upon verification.</span>
+                <span>
+                  {isDemoMode
+                    ? 'Demo mode: payment is simulated and no money is charged.'
+                    : 'Your slot is held while you pay. The final amount is confirmed by our server in the Razorpay window.'}
+                </span>
               </div>
+
+              {paymentError && (
+                <div role="alert" className="text-xs font-semibold text-red-800 bg-red-50 border border-red-200 p-3 rounded-xl">
+                  {paymentError}
+                </div>
+              )}
 
               <div className="flex items-center space-x-3 pt-2">
                 <button
@@ -426,19 +396,15 @@ export const WebBookingModal: React.FC<WebBookingModalProps> = ({
                 <button
                   type="submit"
                   disabled={isProcessing}
-                  className={`w-2/3 py-3.5 rounded-2xl text-xs font-black shadow-md transition-all flex items-center justify-center space-x-2 disabled:opacity-75 ${
-                    paymentMethod === 'Razorpay'
-                      ? 'bg-blue-700 hover:bg-blue-800 text-white shadow-blue-700/20'
-                      : 'bg-emerald-950 hover:bg-emerald-900 text-white'
-                  }`}
+                  className="w-2/3 py-3.5 rounded-2xl text-xs font-black shadow-md transition-all flex items-center justify-center space-x-2 disabled:opacity-75 bg-blue-700 hover:bg-blue-800 text-white shadow-blue-700/20"
                 >
                   <Lock className="w-4 h-4" />
                   <span>
                     {isProcessing
                       ? 'Processing...'
-                      : paymentMethod === 'Razorpay'
-                      ? `Pay ₹${totalAmount} via Razorpay`
-                      : `Pay ₹${totalAmount} & Generate Pass`}
+                      : !isDemoMode && !supabaseUser
+                      ? 'Sign in to book'
+                      : `Pay ₹${totalAmount} via Razorpay`}
                   </span>
                 </button>
               </div>
@@ -450,8 +416,9 @@ export const WebBookingModal: React.FC<WebBookingModalProps> = ({
       </div>
 
       {/* Razorpay Interactive Modal */}
+      {/* Simulated checkout, demo mode only */}
       <RazorpayCheckoutModal
-        isOpen={showRazorpayModal}
+        isOpen={isDemoMode && showRazorpayModal}
         amount={totalAmount}
         locationTitle={location.title}
         bookingPassCode="IDM-TEMP"
@@ -459,7 +426,7 @@ export const WebBookingModal: React.FC<WebBookingModalProps> = ({
         vehicleType={vehicleType}
         driverName={driverName}
         driverPhone={driverPhone}
-        onSuccess={handleRazorpaySuccess}
+        onSuccess={handleDemoPaymentSuccess}
         onClose={() => setShowRazorpayModal(false)}
       />
     </>

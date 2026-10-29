@@ -5,6 +5,7 @@ import { UserProfile } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { fetchProfile, upsertProfile } from '@/lib/auth/service';
 import { Session, User } from '@supabase/supabase-js';
+import { Capacitor } from '@capacitor/core';
 
 interface AuthContextType {
   user: UserProfile | null; // UserProfile for backward compatibility with UI components
@@ -16,8 +17,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isDemoMode: boolean;
 
-  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (data: { email: string; password: string; fullName: string; phone?: string }) => Promise<{ success: boolean; error?: string; message?: string }>;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string; code?: 'EMAIL_NOT_CONFIRMED' }>;
+  resendConfirmation: (email: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (data: { email: string; password: string; fullName: string; phone?: string }) => Promise<{ success: boolean; error?: string; message?: string; needsEmailConfirmation?: boolean }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   updatePassword: (password: string) => Promise<{ success: boolean; error?: string }>;
@@ -96,6 +98,34 @@ const SEED_ACCOUNTS: LocalAccount[] = [
   },
 ];
 
+// Read at module load, before Supabase consumes and clears the link tokens from the URL:
+// a password-reset email link opens the site with `type=recovery` in the hash.
+const INITIAL_URL_IS_RECOVERY =
+  typeof window !== 'undefined' && /(^|[#&?])type=recovery(&|$)/.test(window.location.hash + window.location.search);
+
+/** Profile to use until (or if) the profiles row cannot be read. */
+function profileFromAuthUser(user: User): UserProfile {
+  return {
+    id: user.id,
+    name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+    email: user.email || '',
+    phone: user.user_metadata?.phone || '',
+    role: 'driver',
+  };
+}
+
+/**
+ * Where Supabase email links (confirmation, password reset) should send people.
+ * The Android app's own origin (https://localhost) cannot be opened from an email, so the app
+ * uses VITE_PUBLIC_SITE_URL; when that is not set, Supabase falls back to the project Site URL.
+ */
+export function authRedirectUrl(path: string): string | undefined {
+  const configured = (import.meta.env?.VITE_PUBLIC_SITE_URL as string | undefined)?.replace(/\/+$/, '');
+  if (configured) return `${configured}${path}`;
+  if (typeof window === 'undefined' || Capacitor.isNativePlatform()) return undefined;
+  return `${window.location.origin}${path}`;
+}
+
 function getLocalAccounts(): LocalAccount[] {
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEYS.ACCOUNTS);
@@ -129,6 +159,7 @@ const AuthContext = createContext<AuthContextType>({
   signUp: async () => ({ success: false }),
   signOut: async () => {},
   resetPassword: async () => ({ success: false }),
+  resendConfirmation: async () => ({ success: false }),
   updatePassword: async () => ({ success: false }),
   isPasswordRecovery: false,
   startDemo: () => {},
@@ -147,139 +178,90 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState<boolean>(false);
 
-  const isAuthenticated = isDemoMode || !!session || !!profile;
+  // With a backend, only a real session (or demo mode) counts as signed in
+  const isAuthenticated = isDemoMode || !!session || (!isSupabaseConfigured && !!profile);
 
   // Initialize Auth & Supabase Session listener
   useEffect(() => {
     let isMounted = true;
 
-    async function initAuth() {
-      // 1. Check if user was explicitly in Demo Mode
+    // Demo mode is a local showcase; a real Supabase session always takes priority over it
+    let demoProfile: UserProfile | null = null;
+    try {
+      const demoUser = localStorage.getItem(LOCAL_STORAGE_KEYS.DEMO_USER);
+      if (localStorage.getItem(LOCAL_STORAGE_KEYS.DEMO_MODE) === 'true' && demoUser) {
+        demoProfile = JSON.parse(demoUser);
+        setIsDemoMode(true);
+        setProfile(demoProfile);
+      }
+    } catch (e) {}
+
+    if (isSupabaseConfigured && supabase) {
+      // Offline accounts from builds without a backend must never look like real sign-ins
       try {
-        const demoStorage = localStorage.getItem(LOCAL_STORAGE_KEYS.DEMO_MODE);
-        const demoUser = localStorage.getItem(LOCAL_STORAGE_KEYS.DEMO_USER);
-        if (demoStorage === 'true' && demoUser) {
-          if (isMounted) {
-            setIsDemoMode(true);
-            setProfile(JSON.parse(demoUser));
-          }
-        }
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.ACTIVE_USER);
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.ACCOUNTS);
       } catch (e) {}
 
-      // 2. If Supabase is configured, check for real active session
-      if (isSupabaseConfigured && supabase) {
-        try {
-          const { data: { session: currentSession } } = await supabase.auth.getSession();
-          if (isMounted) {
-            setSession(currentSession);
-            setSupabaseUser(currentSession?.user || null);
-          }
+      if (INITIAL_URL_IS_RECOVERY) setIsPasswordRecovery(true);
 
-          if (currentSession?.user) {
-            // Real Supabase session takes priority over demo mode
-            if (isMounted) {
-              setIsDemoMode(false);
-            }
-            try {
-              localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_MODE);
-              localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_USER);
-            } catch (e) {}
+      const loadProfileFor = async (user: User) => {
+        const userProf = await fetchProfile(user.id);
+        if (isMounted) setProfile(userProf || profileFromAuthUser(user));
+      };
 
-            const userProf = await fetchProfile(currentSession.user.id);
-            if (isMounted) {
-              if (userProf) {
-                setProfile(userProf);
-              } else {
-                const fallbackProf: UserProfile = {
-                  id: currentSession.user.id,
-                  name: currentSession.user.user_metadata?.full_name || currentSession.user.email?.split('@')[0] || 'User',
-                  email: currentSession.user.email || '',
-                  phone: currentSession.user.user_metadata?.phone || '',
-                  role: 'driver',
-                };
-                setProfile(fallbackProf);
-              }
-            }
-          } else {
-            // No real Supabase session: check if there is an active local account
-            const demoStorage = localStorage.getItem(LOCAL_STORAGE_KEYS.DEMO_MODE);
-            if (demoStorage !== 'true') {
-              const activeUserRaw = localStorage.getItem(LOCAL_STORAGE_KEYS.ACTIVE_USER);
-              if (activeUserRaw && isMounted) {
-                setProfile(JSON.parse(activeUserRaw));
-              }
-            }
+      // Subscribe before anything else: Supabase emits PASSWORD_RECOVERY / SIGNED_IN for a link
+      // in the URL right after it initializes, and INITIAL_SESSION once it knows the session.
+      // The callback stays synchronous and defers other Supabase calls: awaiting them inside it
+      // can deadlock the client (Supabase docs).
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+        if (!isMounted) return;
+        if (event === 'PASSWORD_RECOVERY') setIsPasswordRecovery(true);
+
+        setSession(newSession);
+        setSupabaseUser(newSession?.user || null);
+
+        if (newSession?.user) {
+          setIsDemoMode(false);
+          try {
+            localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_MODE);
+            localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_USER);
+          } catch (e) {}
+          if (event !== 'TOKEN_REFRESHED') {
+            const user = newSession.user;
+            setTimeout(() => loadProfileFor(user), 0);
           }
-        } catch (e) {
-          console.error('Error initializing auth session:', e);
-        } finally {
-          if (isMounted) setIsLoading(false);
+        } else if (event === 'SIGNED_OUT') {
+          setProfile(null);
+          setIsDemoMode(false);
+        } else if (!demoProfile) {
+          setProfile(null);
         }
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-          if (!isMounted) return;
-          setSession(newSession);
-          setSupabaseUser(newSession?.user || null);
+        if (event === 'INITIAL_SESSION') setIsLoading(false);
+      });
 
-          if (event === 'PASSWORD_RECOVERY') {
-            setIsPasswordRecovery(true);
-          }
-
-          if (newSession?.user) {
-            setIsDemoMode(false);
-            try {
-              localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_MODE);
-              localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_USER);
-            } catch (e) {}
-
-            const userProf = await fetchProfile(newSession.user.id);
-            if (isMounted) {
-              setProfile(userProf || {
-                name: newSession.user.user_metadata?.full_name || newSession.user.email?.split('@')[0] || 'User',
-                email: newSession.user.email || '',
-                phone: newSession.user.user_metadata?.phone || '',
-                role: 'driver',
-              });
-            }
-          } else if (event === 'SIGNED_OUT') {
-            if (isMounted) {
-              setProfile(null);
-              setIsDemoMode(false);
-            }
-          }
-        });
-
-        return () => {
-          isMounted = false;
-          subscription.unsubscribe();
-        };
-      } else {
-        // Supabase not configured: fallback to local accounts / demo mode
-        try {
-          const demoStorage = localStorage.getItem(LOCAL_STORAGE_KEYS.DEMO_MODE);
-          const demoUser = localStorage.getItem(LOCAL_STORAGE_KEYS.DEMO_USER);
-          if (demoStorage === 'true' && demoUser) {
-            setIsDemoMode(true);
-            setProfile(JSON.parse(demoUser));
-          } else {
-            const activeUserRaw = localStorage.getItem(LOCAL_STORAGE_KEYS.ACTIVE_USER);
-            if (activeUserRaw) {
-              setProfile(JSON.parse(activeUserRaw));
-            }
-          }
-        } catch (e) {}
-        if (isMounted) setIsLoading(false);
-      }
+      return () => {
+        isMounted = false;
+        subscription.unsubscribe();
+      };
     }
 
-    initAuth();
+    // Supabase not configured: fallback to local accounts / demo mode
+    try {
+      if (!demoProfile) {
+        const activeUserRaw = localStorage.getItem(LOCAL_STORAGE_KEYS.ACTIVE_USER);
+        if (activeUserRaw) setProfile(JSON.parse(activeUserRaw));
+      }
+    } catch (e) {}
+    setIsLoading(false);
 
     return () => {
       isMounted = false;
     };
   }, []);
 
-  const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string; code?: 'EMAIL_NOT_CONFIRMED' }> => {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
 
@@ -321,6 +303,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password: cleanPassword });
       if (error) {
+        if (error.code === 'email_not_confirmed' || /email not confirmed/i.test(error.message)) {
+          return {
+            success: false,
+            code: 'EMAIL_NOT_CONFIRMED',
+            error: 'Please confirm your email first: open the link we sent you. Did not get it? Send it again below.'
+          };
+        }
         return { success: false, error: error.message };
       }
       setIsDemoMode(false);
@@ -334,12 +323,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(data.session);
         setSupabaseUser(data.user);
         const userProf = await fetchProfile(data.user.id);
-        setProfile(userProf || {
-          name: data.user.user_metadata?.full_name || cleanEmail.split('@')[0],
-          email: data.user.email || cleanEmail,
-          phone: data.user.user_metadata?.phone || '',
-          role: 'driver',
-        });
+        setProfile(userProf || profileFromAuthUser(data.user));
       }
       return { success: true };
     } catch (e: any) {
@@ -352,7 +336,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     password: string; 
     fullName: string; 
     phone?: string 
-  }): Promise<{ success: boolean; error?: string; message?: string }> => {
+  }): Promise<{ success: boolean; error?: string; message?: string; needsEmailConfirmation?: boolean }> => {
     const cleanEmail = data.email.trim().toLowerCase();
     const cleanName = data.fullName.trim();
     const cleanPassword = data.password.trim();
@@ -417,6 +401,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: cleanEmail,
         password: cleanPassword,
         options: {
+          emailRedirectTo: authRedirectUrl('/login'),
           data: {
             full_name: cleanName,
             phone: cleanPhone,
@@ -457,10 +442,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsDemoMode(false);
       }
 
-      return { 
+      return {
         success: true,
-        message: signUpData.session 
-          ? 'Account created successfully!' 
+        // No session means Supabase requires the user to confirm their email before signing in
+        needsEmailConfirmation: !signUpData.session,
+        message: signUpData.session
+          ? 'Account created successfully!'
           : 'Account created! Please check your email for confirmation instructions.'
       };
     } catch (e: any) {
@@ -488,13 +475,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsDemoMode(false);
   };
 
+  const resendConfirmation = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) return { success: false, error: 'Enter your email address first.' };
+    if (!isSupabaseConfigured || !supabase) return { success: true };
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: cleanEmail,
+        options: { emailRedirectTo: authRedirectUrl('/login') }
+      });
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'Could not resend the confirmation email.' };
+    }
+  };
+
   const resetPassword = async (email: string) => {
     if (!isSupabaseConfigured || !supabase) {
       return { success: true };
     }
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/forgot-password`,
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: authRedirectUrl('/forgot-password'),
       });
       if (error) return { success: false, error: error.message };
       return { success: true };
@@ -540,9 +544,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMO_USER);
     } catch (e) {}
     if (session?.user) {
-      fetchProfile(session.user.id).then((prof) => {
-        if (prof) setProfile(prof);
-      });
+      const user = session.user;
+      fetchProfile(user.id).then((prof) => setProfile(prof || profileFromAuthUser(user)));
+    } else if (isSupabaseConfigured) {
+      setProfile(null);
     } else {
       const activeUserRaw = localStorage.getItem(LOCAL_STORAGE_KEYS.ACTIVE_USER);
       if (activeUserRaw) {
@@ -628,6 +633,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signUp,
         signOut,
         resetPassword,
+        resendConfirmation,
         updatePassword,
         isPasswordRecovery,
         startDemo,

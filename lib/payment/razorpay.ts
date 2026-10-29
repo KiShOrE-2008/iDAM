@@ -1,24 +1,16 @@
 /**
  * Razorpay Payment Gateway Integration for iDAM Smart Parking
- * Supports official Razorpay Checkout SDK (checkout.js), server order creation,
- * cryptographic signature verification, and isolated interactive sandbox/test fallback.
+ *
+ * Real payments: the order (amount, currency, key) always comes from the
+ * create-razorpay-order Edge Function, and success is confirmed only by the
+ * verify-razorpay-payment Edge Function (or the razorpay-webhook function).
+ * Nothing the browser sends can mark a booking as paid.
+ *
+ * Demo mode uses generateMockPaymentId() and never touches the database.
  */
 
 import { RazorpayOptions, RazorpayPaymentSuccessResponse } from '@/types/razorpay';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { withTimeout } from '@/lib/utils/timeout';
-
-export interface RazorpayCheckoutParams {
-  amount: number; // in INR (Rupees)
-  locationTitle: string;
-  orderId?: string;
-  bookingPassCode?: string;
-  vehicleNumber?: string;
-  vehicleType?: string;
-  driverName?: string;
-  driverPhone?: string;
-  driverEmail?: string;
-}
 
 export interface RazorpaySuccessResult {
   razorpay_payment_id: string;
@@ -30,48 +22,32 @@ export interface RazorpaySuccessResult {
   isSandbox?: boolean;
 }
 
-export interface PaymentOrderResult {
-  success: boolean;
+export interface ServerOrder {
   orderId: string;
-  amount: number;
   amountPaise: number;
   currency: string;
-  error?: string;
+  keyId: string;
+}
+
+export interface OfficialCheckoutParams {
+  order: ServerOrder;
+  locationTitle: string;
+  bookingPassCode?: string;
+  vehicleNumber?: string;
+  driverName?: string;
+  driverPhone?: string;
+  driverEmail?: string;
+}
+
+/** A payment step failed; `code` is the server error code when there is one. */
+export class PaymentError extends Error {
+  constructor(message: string, public code: string) {
+    super(message);
+    this.name = 'PaymentError';
+  }
 }
 
 const RAZORPAY_SCRIPT_URL = 'https://checkout.razorpay.com/v1/checkout.js';
-const STORAGE_KEY = 'idam_razorpay_custom_key';
-
-/**
- * Retrieve the active Razorpay Key ID.
- * Priority: localStorage override > env VITE_RAZORPAY_KEY_ID > env NEXT_PUBLIC_RAZORPAY_KEY_ID > default test key
- */
-export function getRazorpayKey(): string {
-  if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved && saved.trim().length > 0) return saved.trim();
-  }
-
-  const viteKey = import.meta.env?.VITE_RAZORPAY_KEY_ID;
-  if (viteKey && viteKey.trim().length > 0) return viteKey.trim();
-
-  // Configured test key fallback
-  return 'rzp_test_TmV7qmQblC0tgU';
-}
-
-export function setRazorpayKey(key: string): void {
-  if (typeof window !== 'undefined') {
-    if (key.trim()) {
-      localStorage.setItem(STORAGE_KEY, key.trim());
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  }
-}
-
-export function isRealRazorpayKey(key: string): boolean {
-  return /^rzp_(test|live)_[A-Za-z0-9]+$/.test(key) && key !== 'rzp_test_IDAMParkingDemo';
-}
 
 /**
  * Dynamically loads the Razorpay checkout.js script if not present.
@@ -111,200 +87,107 @@ export function loadRazorpayScript(): Promise<boolean> {
 /**
  * Generate an isolated demo Razorpay Payment ID clearly tagged for sandbox.
  */
-export function generateMockPaymentId(isDemo = true): string {
+export function generateMockPaymentId(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let rand = '';
   for (let i = 0; i < 12; i++) {
     rand += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  return isDemo ? `demo_pay_${rand}` : `pay_${rand}`;
+  return `demo_pay_${rand}`;
 }
 
-export function generateMockOrderId(isDemo = true): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let rand = '';
-  for (let i = 0; i < 10; i++) {
-    rand += chars.charAt(Math.floor(Math.random() * chars.length));
+/** Calls an Edge Function and unwraps its JSON, turning any failure into a PaymentError. */
+async function invokePaymentFunction<T>(name: string, body: Record<string, unknown>): Promise<T> {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new PaymentError('Payments are not available right now.', 'NOT_CONFIGURED');
   }
-  return isDemo ? `demo_order_${rand}` : `order_${rand}`;
+  const { data, error } = await supabase.functions.invoke(name, { body });
+  if (error) {
+    let payload: { error?: string; message?: string } = {};
+    const response = (error as { context?: Response }).context;
+    if (response && typeof response.json === 'function') {
+      payload = await response.json().catch(() => ({}));
+    }
+    throw new PaymentError(
+      payload.message || 'Could not reach the payment server. Please check your connection and try again.',
+      payload.error || 'NETWORK'
+    );
+  }
+  return data as T;
+}
+
+/** Asks the server for the Razorpay order of an unpaid booking (amount is set server-side). */
+export async function createRazorpayOrder(bookingId: string): Promise<ServerOrder> {
+  const data = await invokePaymentFunction<{ order_id: string; amount_paise: number; currency: string; key_id: string }>(
+    'create-razorpay-order',
+    { booking_id: bookingId }
+  );
+  return { orderId: data.order_id, amountPaise: data.amount_paise, currency: data.currency, keyId: data.key_id };
+}
+
+/** Asks the server to verify Razorpay's signature and confirm the booking. */
+export async function verifyRazorpayPayment(bookingId: string, result: RazorpaySuccessResult): Promise<void> {
+  await invokePaymentFunction('verify-razorpay-payment', {
+    booking_id: bookingId,
+    razorpay_order_id: result.razorpay_order_id,
+    razorpay_payment_id: result.razorpay_payment_id,
+    razorpay_signature: result.razorpay_signature
+  });
 }
 
 /**
- * Creates an authoritative payment order on the database server.
- * Derives accurate amount directly from space hourly rate.
+ * Launches the official Razorpay Checkout popup for a server-created order.
+ * Resolves with Razorpay's success payload, or rejects with PaymentError('PAYMENT_DISMISSED')
+ * if the customer closes it.
  */
-export async function createServerPaymentOrder(params: {
-  spaceId: string;
-  vehicleType: string;
-  durationHours: number;
-  vehicleNumber: string;
-  addons?: string[];
-  isDemoMode?: boolean;
-}): Promise<PaymentOrderResult> {
-  if (!params.isDemoMode) {
-    if (!isSupabaseConfigured || !supabase) {
-      return {
-        success: false,
-        orderId: '',
-        amount: 0,
-        amountPaise: 0,
-        currency: 'INR',
-        error: 'Database service is not configured for production payments.'
-      };
-    }
-
-    try {
-      const { data, error } = await withTimeout(
-        supabase.rpc('create_payment_order', {
-          p_space_id: params.spaceId,
-          p_vehicle_type: params.vehicleType === 'bike' ? 'bike' : 'car',
-          p_duration_hours: params.durationHours,
-          p_vehicle_number: params.vehicleNumber,
-          p_addons: params.addons || []
-        }),
-        10000,
-        'Payment order creation timed out'
-      );
-
-      if (error || !data?.success || !data?.order_id) {
-        return {
-          success: false,
-          orderId: '',
-          amount: 0,
-          amountPaise: 0,
-          currency: 'INR',
-          error: data?.message || data?.error || error?.message || 'Failed to create payment order on server'
-        };
-      }
-
-      return {
-        success: true,
-        orderId: data.order_id,
-        amount: data.amount,
-        amountPaise: data.amount_paise,
-        currency: data.currency || 'INR'
-      };
-    } catch (err: any) {
-      return {
-        success: false,
-        orderId: '',
-        amount: 0,
-        amountPaise: 0,
-        currency: 'INR',
-        error: err?.message || 'Payment order creation request failed'
-      };
-    }
-  }
-
-  // Explicit demo sandbox order
-  const orderId = generateMockOrderId(true);
-  const estAmount = params.vehicleType === 'bike' ? 20 * params.durationHours + 5 : 40 * params.durationHours + 5;
-  return {
-    success: true,
-    orderId,
-    amount: estAmount,
-    amountPaise: estAmount * 100,
-    currency: 'INR'
-  };
-}
-
-/**
- * Verifies Razorpay payment signature and reconciles payment on the server.
- */
-export async function verifyPaymentOnServer(
-  bookingId: string,
-  result: RazorpaySuccessResult
-): Promise<{ success: boolean; message?: string }> {
-  if (!result.isSandbox) {
-    if (!isSupabaseConfigured || !supabase) {
-      return {
-        success: false,
-        message: 'Server payment verification is not configured. Cannot verify production payment.'
-      };
-    }
-
-    try {
-      const { data, error } = await withTimeout(
-        supabase.rpc('verify_razorpay_payment', {
-          p_booking_id: bookingId,
-          p_order_id: result.razorpay_order_id || '',
-          p_payment_id: result.razorpay_payment_id,
-          p_signature: result.razorpay_signature || ''
-        }),
-        10000,
-        'Payment verification timed out'
-      );
-
-      if (!error && data?.success) {
-        return { success: true };
-      }
-      return { success: false, message: data?.message || data?.error || error?.message || 'Verification failed' };
-    } catch (err: any) {
-      return { success: false, message: err?.message || 'Verification call failed' };
-    }
-  }
-
-  // Demo / sandbox mock payment verification
-  return { success: true, message: 'Sandbox payment verified.' };
-}
-
-/**
- * Launches the official Razorpay Checkout popup modal.
- * Returns a promise resolving with the payment success payload or rejecting if closed/failed.
- */
-export async function openOfficialRazorpayCheckout(
-  params: RazorpayCheckoutParams
-): Promise<RazorpaySuccessResult> {
+export async function openOfficialRazorpayCheckout(params: OfficialCheckoutParams): Promise<RazorpaySuccessResult> {
   const isLoaded = await loadRazorpayScript();
   if (!isLoaded || !window.Razorpay) {
-    throw new Error('Razorpay Checkout SDK is unavailable.');
+    throw new PaymentError('Could not load Razorpay. Please check your connection and try again.', 'SDK_UNAVAILABLE');
   }
 
-  const key = getRazorpayKey();
-
+  const { order } = params;
   return new Promise((resolve, reject) => {
-    try {
-      const options: RazorpayOptions = {
-        key: key,
-        amount: Math.round(params.amount * 100), // convert rupees to paise
-        currency: 'INR',
-        order_id: params.orderId,
-        name: 'iDAM Smart Parking | இடம்',
-        description: `Parking Spot at ${params.locationTitle}`,
-        image: '/idam-logo.png',
-        handler: function (response: RazorpayPaymentSuccessResponse) {
-          resolve({
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_order_id: response.razorpay_order_id || params.orderId,
-            razorpay_signature: response.razorpay_signature,
-            amount: params.amount,
-            paymentMethod: 'Razorpay',
-            timestamp: new Date().toISOString(),
-            isSandbox: !isRealRazorpayKey(key)
-          });
-        },
-        prefill: {
-          name: params.driverName || 'iDAM Driver',
-          email: params.driverEmail || 'driver@idamparking.com',
-          contact: params.driverPhone || '9876543210'
-        },
-        notes: {
-          location: params.locationTitle,
-          vehicleNumber: params.vehicleNumber || 'TN 59 AB 1234',
-          vehicleType: params.vehicleType || 'car',
-          passCode: params.bookingPassCode || 'IDM-NEW'
-        },
-        theme: {
-          color: '#064e3b', // iDAM emerald-900 brand
-          backdrop_color: 'rgba(0, 0, 0, 0.65)'
-        },
-        modal: {
-          ondismiss: function () {
-            reject(new Error('PAYMENT_DISMISSED'));
-          }
+    const options: RazorpayOptions = {
+      key: order.keyId,
+      amount: order.amountPaise,
+      currency: order.currency,
+      order_id: order.orderId,
+      name: 'iDAM Smart Parking | இடம்',
+      description: `Parking Spot at ${params.locationTitle}`,
+      image: '/idam-logo.png',
+      handler: function (response: RazorpayPaymentSuccessResponse) {
+        resolve({
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_order_id: response.razorpay_order_id || order.orderId,
+          razorpay_signature: response.razorpay_signature,
+          amount: order.amountPaise / 100,
+          paymentMethod: 'Razorpay',
+          timestamp: new Date().toISOString()
+        });
+      },
+      prefill: {
+        name: params.driverName || '',
+        email: params.driverEmail || '',
+        contact: params.driverPhone || ''
+      },
+      notes: {
+        location: params.locationTitle,
+        vehicleNumber: params.vehicleNumber || '',
+        passCode: params.bookingPassCode || ''
+      },
+      theme: {
+        color: '#064e3b', // iDAM emerald-900 brand
+        backdrop_color: 'rgba(0, 0, 0, 0.65)'
+      },
+      modal: {
+        ondismiss: function () {
+          reject(new PaymentError('Payment was cancelled.', 'PAYMENT_DISMISSED'));
         }
-      };
+      }
+    };
 
+    try {
       const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (err) {

@@ -6,7 +6,12 @@ const testSuites = [
   { name: 'Phase 3: Booking Engine & Concurrency Locking', file: 'test/03_booking_concurrency.test.mjs' },
   { name: 'Phase 4: Payment Processing & HMAC Verification', file: 'test/04_payment_processing.test.mjs' },
   { name: 'Phase 5: QR Pass Verification & Check-In Lifecycle', file: 'test/05_qr_checkin_lifecycle.test.mjs' },
-  { name: 'Phase 6: Error Handling, 404 Pages & XML SEO', file: 'test/06_error_handling_and_xml.test.mjs' }
+  { name: 'Phase 6: Error Handling, 404 Pages & XML SEO', file: 'test/06_error_handling_and_xml.test.mjs' },
+  { name: 'Phase 7: Supabase Role Privileges', file: 'test/07_supabase_role_privileges.test.mjs' },
+  { name: 'Phase 8: Razorpay Edge Function Logic', file: 'test/08_razorpay_edge_logic.test.mjs' },
+  { name: 'Phase 9: Sign-in Return Path', file: 'test/09_auth_redirect.test.mjs' },
+  { name: 'Phase 10: Pass Codes & Gate Input', file: 'test/10_pass_codes.test.mjs' },
+  { name: 'Phase 11: Admin Console Functions', file: 'test/11_admin_console.test.mjs' }
 ];
 
 console.log('================================================================');

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { ArrowLeft, User, Car, Wallet, Plus, Trash2, ShieldCheck, Sparkles, LogOut, HelpCircle, Building2, Home, BookOpen, UserCheck, Shield, Zap, Star, Check, History, X } from 'lucide-react';
-import { Language, PassVerificationResult, Booking } from '@/types';
+import { Language, PassVerificationResult, Booking, CheckInCredentials } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { useRegisterModal } from '@/context/BackNavigationContext';
 import { OwnerDashboard } from './owner/OwnerDashboard';
@@ -10,6 +10,8 @@ import { OwnerScannerScreen } from './owner/OwnerScannerScreen';
 import { CurrentlyParkedScreen } from './owner/CurrentlyParkedScreen';
 import { ScanVerificationResultModal } from './owner/ScanVerificationResultModal';
 import { validateScannedPass, confirmBookingCheckIn } from '@/lib/parking/checkInService';
+import { fetchMySpaces, primarySpace, canScanAt, DEMO_OWNER_SPACE_ID, type OwnerSpace } from '@/lib/owner/service';
+import Link from 'next/link';
 import {
   Vehicle,
   WalletTransaction,
@@ -38,9 +40,30 @@ export const MyAccountScreen: React.FC<MyAccountScreenProps> = ({
   onNavigateToSupport,
   onNavigateToAuth
 }) => {
-  const { profile, signOut, switchRole, isDemoMode, exitDemo } = useAuth();
+  const { profile, supabaseUser, signOut, switchRole, isDemoMode, exitDemo } = useAuth();
   const [localRole, setLocalRole] = useState<'driver' | 'owner'>(profile?.role || 'driver');
-  const userRole = profile?.role || localRole;
+  // Demo mode follows the demo profile's role; real users switch views freely and are
+  // owners of whatever listings they have (listings themselves are approved by iDAM).
+  const userRole = isDemoMode ? (profile?.role || localRole) : localRole;
+  const [mySpaces, setMySpaces] = useState<OwnerSpace[]>([]);
+  const [spacesError, setSpacesError] = useState<string | null>(null);
+  const activeSpace = isDemoMode ? null : primarySpace(mySpaces);
+  const ownerSpaceId = isDemoMode ? DEMO_OWNER_SPACE_ID : activeSpace?.id;
+  const scannerAvailable = isDemoMode || canScanAt(activeSpace);
+
+  React.useEffect(() => {
+    if (isDemoMode || !supabaseUser) {
+      setMySpaces([]);
+      return;
+    }
+    let isMounted = true;
+    fetchMySpaces()
+      .then((spaces) => { if (isMounted) { setMySpaces(spaces); setSpacesError(null); } })
+      .catch((err) => { if (isMounted) setSpacesError(err?.message || 'Could not load your parking spaces.'); });
+    return () => {
+      isMounted = false;
+    };
+  }, [isDemoMode, supabaseUser?.id]);
   const [walletBalance, setWalletBalance] = useState(500);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
 
@@ -103,17 +126,17 @@ export const MyAccountScreen: React.FC<MyAccountScreenProps> = ({
 
   const handleRoleToggle = (newRole: 'driver' | 'owner') => {
     setLocalRole(newRole);
-    switchRole(newRole);
+    if (isDemoMode) switchRole(newRole);
     setOwnerSubView('dashboard');
   };
 
   const handleScanResult = async (rawPayload: string) => {
-    if (isVerifyingScan) return;
+    if (isVerifyingScan || !ownerSpaceId) return;
     setIsVerifyingScan(true);
     try {
       const res = await validateScannedPass({
         rawScannedText: rawPayload,
-        ownerSpaceId: 'loc-1',
+        ownerSpaceId,
         isDemoMode
       });
       setVerificationResult(res);
@@ -128,11 +151,14 @@ export const MyAccountScreen: React.FC<MyAccountScreenProps> = ({
     }
   };
 
-  const handleConfirmCheckIn = async (b: Booking) => {
+  // Credentials come from what was presented at the gate (scanned QR, or code + plate),
+  // never from the booking row, so a copied pass code alone cannot check a car in
+  const handleConfirmCheckIn = async (b: Booking, credentials: CheckInCredentials) => {
     return await confirmBookingCheckIn({
       bookingId: b.id,
-      passCode: b.passCode,
-      passTokenHash: b.passTokenHash,
+      passCode: credentials.passCode,
+      passTokenHash: credentials.tokenHash,
+      plateLast4: credentials.plateLast4,
       isDemoMode
     });
   };
@@ -170,7 +196,7 @@ export const MyAccountScreen: React.FC<MyAccountScreenProps> = ({
   };
 
   // If in scanner sub-view, render the dedicated OwnerScannerScreen
-  if (userRole === 'owner' && ownerSubView === 'scanner') {
+  if (userRole === 'owner' && ownerSubView === 'scanner' && scannerAvailable) {
     return (
       <div className="h-full flex flex-col relative">
         <OwnerScannerScreen
@@ -201,12 +227,13 @@ export const MyAccountScreen: React.FC<MyAccountScreenProps> = ({
   }
 
   // If in parked sub-view, render CurrentlyParkedScreen
-  if (userRole === 'owner' && ownerSubView === 'parked') {
+  if (userRole === 'owner' && ownerSubView === 'parked' && ownerSpaceId) {
     return (
       <div className="h-full flex flex-col relative">
         <CurrentlyParkedScreen
+          spaceId={ownerSpaceId}
           onBack={() => setOwnerSubView('dashboard')}
-          onNavigateToScanner={() => setOwnerSubView('scanner')}
+          onNavigateToScanner={scannerAvailable ? () => setOwnerSubView('scanner') : undefined}
           isDemoMode={isDemoMode}
         />
       </div>
@@ -252,11 +279,51 @@ export const MyAccountScreen: React.FC<MyAccountScreenProps> = ({
         </div>
 
         {/* If Owner Role: Render Owner Monetization Portal */}
-        {userRole === 'owner' ? (
-          <OwnerDashboard
-            onNavigateToScanner={() => setOwnerSubView('scanner')}
-            onNavigateToParked={() => setOwnerSubView('parked')}
-          />
+        {userRole === 'owner' && !ownerSpaceId ? (
+          <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-md space-y-3 text-center">
+            <Building2 className="w-8 h-8 text-amber-600 mx-auto" />
+            <h4 className="font-black text-sm text-slate-900">
+              {spacesError ? 'Could not load your spaces' : 'You have no parking space listed yet'}
+            </h4>
+            <p className="text-[11px] text-slate-500">
+              {spacesError || (supabaseUser
+                ? 'List your driveway or private lot. Once iDAM approves it, you can scan passes and earn here.'
+                : 'Sign in to list a parking space and manage it here.')}
+            </p>
+            {supabaseUser ? (
+              <Link
+                href="/list-your-space"
+                className="inline-block bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs px-4 py-2 rounded-xl"
+              >
+                + List your space
+              </Link>
+            ) : (
+              onNavigateToAuth && (
+                <button
+                  onClick={onNavigateToAuth}
+                  className="inline-block bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs px-4 py-2 rounded-xl"
+                >
+                  Sign in
+                </button>
+              )
+            )}
+          </div>
+        ) : userRole === 'owner' && ownerSpaceId ? (
+          <>
+            {activeSpace && !scannerAvailable && (
+              <div role="status" className="bg-amber-50 border border-amber-200 p-3 rounded-2xl text-[11px] text-amber-900 font-semibold">
+                {activeSpace.status === 'pending_review'
+                  ? `"${activeSpace.title}" is waiting for iDAM approval. Pass scanning unlocks once it is live.`
+                  : `"${activeSpace.title}" is not open for bookings right now (${activeSpace.status}). Reopen it to scan passes.`}
+              </div>
+            )}
+            <OwnerDashboard
+              spaceId={ownerSpaceId}
+              space={activeSpace}
+              onNavigateToScanner={scannerAvailable ? () => setOwnerSubView('scanner') : undefined}
+              onNavigateToParked={() => setOwnerSubView('parked')}
+            />
+          </>
         ) : (
           <>
             {/* Driver Profile Header */}

@@ -177,12 +177,13 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ locations, lan
                   bookingDetails={bookingDetails}
                   onBack={() => setCurrentStep(5)}
                   onPaySuccess={async (meta) => {
+                    // The simulator is a showcase: bookings are always local demo passes
                     try {
                       const booking = await createBooking(currentLoc, {
                         parkingLocationId: currentLoc.id,
                         vehicleType: 'car',
-                        bookingDate: bookingDetails.date,
-                        startTime: bookingDetails.time,
+                        bookingDate: new Date().toISOString().split('T')[0],
+                        startTime: '10:00',
                         durationHours: bookingDetails.duration,
                         basePrice: bookingDetails.total,
                         platformFee: 5,
@@ -190,23 +191,20 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ locations, lan
                         paymentMethod: meta?.paymentMethod || 'Razorpay',
                         paymentId: meta?.paymentId,
                         vehicleNumber: bookingDetails.vehicleNumber
-                      });
+                      }, { isDemoMode: true });
                       setBookingDetails(prev => ({
                         ...prev,
                         ...meta,
                         passCode: booking.passCode,
                         qrData: booking.qrData
                       } as any));
+                      setCurrentStep(7);
                     } catch (err) {
                       console.warn('Booking creation err:', err);
-                      if (meta) {
-                        setBookingDetails(prev => ({
-                          ...prev,
-                          ...meta
-                        }));
-                      }
                     }
-                    setCurrentStep(7);
+                  }}
+                  onLivePay={async () => {
+                    throw new Error('The simulator only supports demo mode. Use the app to make a real booking.');
                   }}
                   lang={lang}
                 />

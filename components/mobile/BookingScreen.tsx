@@ -12,12 +12,25 @@ interface BookingScreenProps {
   onNext: (bookingDetails: {
     date: string;
     time: string;
+    /** Machine-readable values for the booking request (date/time above are display text) */
+    bookingDate: string; // YYYY-MM-DD, local
+    startTime: string; // HH:mm, 24h
+    vehicleType: 'car' | 'bike';
     duration: number;
     total: number;
     vehicleNumber?: string;
     addons?: string[];
   }) => void;
   lang: Language;
+}
+
+/** '02:00 PM' -> '14:00' */
+function to24Hour(label: string): string {
+  const match = label.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return label;
+  let hour = Number(match[1]) % 12;
+  if (match[3].toUpperCase() === 'PM') hour += 12;
+  return `${String(hour).padStart(2, '0')}:${match[2]}`;
 }
 
 export const BookingScreen: React.FC<BookingScreenProps> = ({
@@ -36,7 +49,8 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       d.setDate(today.getDate() + i);
       const day = i === 0 ? 'Today' : d.toLocaleDateString('en-IN', { weekday: 'short' });
       const date = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-      return { day, date };
+      const isoDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      return { day, date, isoDate };
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -108,6 +122,10 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
     onNext({
       date: selectedDate,
       time: selectedTime,
+      bookingDate: dateOptions.find(o => o.date === selectedDate)?.isoDate ?? dateOptions[0].isoDate,
+      startTime: to24Hour(selectedTime),
+      // Capacity and pricing are per car/bike; SUVs and EVs park as cars
+      vehicleType: vehicleType === 'bike' ? 'bike' : 'car',
       duration,
       total: finalTotal,
       vehicleNumber,

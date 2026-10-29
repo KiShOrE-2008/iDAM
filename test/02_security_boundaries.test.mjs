@@ -139,6 +139,7 @@ try {
     ALTER TABLE profiles FORCE ROW LEVEL SECURITY;
     ALTER TABLE parking_spaces FORCE ROW LEVEL SECURITY;
     ALTER TABLE payments FORCE ROW LEVEL SECURITY;
+    ALTER TABLE booking_events FORCE ROW LEVEL SECURITY;
   `);
 
   // Carol creates Parking Space C
@@ -160,19 +161,61 @@ try {
     ON CONFLICT (id) DO NOTHING;
   `);
 
-  // Alice books Space C
+  // Owners asked for 'active' but listings must wait for review
+  const statusOf = (id) => queryJson(`SELECT status, is_approved FROM parking_spaces WHERE id = '${id}'`)[0];
+  setSession(carolId);
+  assert.deepStrictEqual(statusOf(spaceCId), { status: 'pending_review', is_approved: false },
+    'Owner-created listing must start in pending_review, not active');
+
+  // Carol cannot publish or approve her own listing
+  for (const sql of [
+    `UPDATE parking_spaces SET status = 'active' WHERE id = '${spaceCId}';`,
+    `UPDATE parking_spaces SET is_approved = TRUE WHERE id = '${spaceCId}';`
+  ]) {
+    assert.throws(() => execute(sql), /approved by iDAM|Only iDAM/, `Owner self-publish must be rejected: ${sql}`);
+  }
+  console.log('✅ Owners cannot publish or approve their own listings.');
+
+  // iDAM admin approves both listings (SQL editor: no JWT)
+  setSession(null, 'anon');
+  execute(`
+    ALTER TABLE parking_spaces NO FORCE ROW LEVEL SECURITY;
+    UPDATE parking_spaces SET is_approved = TRUE, status = 'active' WHERE id IN ('${spaceCId}', '${spaceDId}');
+    ALTER TABLE parking_spaces FORCE ROW LEVEL SECURITY;
+  `);
+
+  // Once approved, Carol can pause and reopen, but moving the listing sends it back to review
+  setSession(carolId);
+  execute(`UPDATE parking_spaces SET status = 'inactive' WHERE id = '${spaceCId}';`);
+  execute(`UPDATE parking_spaces SET status = 'active' WHERE id = '${spaceCId}';`);
+  assert.strictEqual(statusOf(spaceCId).status, 'active', 'Approved owner can reopen their listing');
+  execute(`UPDATE parking_spaces SET address = 'Somewhere else' WHERE id = '${spaceCId}';`);
+  assert.deepStrictEqual(statusOf(spaceCId), { status: 'pending_review', is_approved: false },
+    'Changing the address must send the listing back to review');
+  setSession(null, 'anon');
+  execute(`
+    ALTER TABLE parking_spaces NO FORCE ROW LEVEL SECURITY;
+    UPDATE parking_spaces SET address = '124 West Masi St', is_approved = TRUE, status = 'active' WHERE id = '${spaceCId}';
+    ALTER TABLE parking_spaces FORCE ROW LEVEL SECURITY;
+  `);
+  console.log('✅ Approved owners can pause/reopen; moving a listing requires re-review.');
+
+  // Seed Alice's paid booking for Space C. Clients cannot write bookings directly
+  // (only through RPCs), so the fixture is inserted as the table owner with RLS lifted.
   const bookingAId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
   setSession(aliceId);
   execute(`
+    ALTER TABLE bookings NO FORCE ROW LEVEL SECURITY;
     INSERT INTO bookings (
-      id, pass_code, pass_token_hash, driver_id, user_id, parking_space_id, 
+      id, pass_code, pass_token_hash, driver_id, user_id, parking_space_id,
       vehicle_type, vehicle_number, booking_date, start_time, duration_hours, end_time,
-      base_price, platform_fee, total_amount, booking_status, status, qr_data
+      base_price, platform_fee, total_amount, payment_status, booking_status, status, qr_data
     ) VALUES (
       '${bookingAId}', 'IDM-11111', 'token_hash_alice', '${aliceId}', '${aliceId}', '${spaceCId}',
       'car', 'TN 59 AA 1111', CURRENT_DATE, '10:00:00', 2, '12:00:00',
-      80.00, 5.00, 85.00, 'confirmed', 'confirmed', 'IDAM:v2:IDM-11111'
+      80.00, 5.00, 85.00, 'completed', 'confirmed', 'confirmed', 'IDAM:v2:IDM-11111'
     );
+    ALTER TABLE bookings FORCE ROW LEVEL SECURITY;
   `);
   console.log('✅ Baseline test entities created.');
 
@@ -300,8 +343,55 @@ try {
   assert.strictEqual(rowsCarol[0].pass_code, 'IDM-11111');
   console.log('  ✅ PASSED: Authorized space owner reads managed booking');
 
+  // TEST 8b: Profiles are private (email/phone) -> Bob sees only his own
+  console.log('\nTest 8b: Bob reads other users\' profiles (email, phone)');
+  setSession(bobId);
+  const visibleProfiles = queryJson(`SELECT id FROM profiles`);
+  assert.deepStrictEqual(visibleProfiles.map(p => p.id), [bobId], 'Users must only see their own profile');
+  setSession(null, 'anon');
+  assert.strictEqual(queryJson(`SELECT id FROM profiles`).length, 0, 'Anonymous visitors must see no profiles');
+  console.log('  ✅ PASSED: Profiles are visible only to their owner');
+
+  // TEST 8c: Nobody can forge audit-log entries from the client
+  console.log('\nTest 8c: Bob and Carol insert booking_events directly');
+  for (const actor of [bobId, carolId]) {
+    setSession(actor);
+    assert.throws(
+      () => execute(`INSERT INTO booking_events (booking_id, event_type, actor_id, details)
+                     VALUES ('${bookingAId}', 'checked_in', '${actor}', '{"forged": true}'::jsonb);`),
+      /row-level security/,
+      'Client inserts into booking_events must be rejected'
+    );
+  }
+  console.log('  ✅ PASSED: Audit log is server-written only');
+
+  // TEST 8d: Unapproved listings and unknown vehicle types cannot be booked
+  console.log('\nTest 8d: Alice books an unapproved listing / an unknown vehicle type');
+  const spacePendingId = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+  setSession(daveId);
+  execute(`
+    INSERT INTO parking_spaces (id, owner_id, title, address, latitude, longitude, price_per_hour_car, status)
+    VALUES ('${spacePendingId}', '${daveId}', 'Unreviewed Lot', 'Fake St', 9.93, 78.13, 1.00, 'active');
+  `);
+  setSession(aliceId);
+  const bookArgs = (space, vehicle) => `SELECT create_verified_booking('${space}'::uuid, '${vehicle}', NOW() + INTERVAL '1 hour', 2,
+    'TN 59 AA 2222', 'Alice', '9876543210', ARRAY[]::text[], 'hash_8d_${vehicle}', 'IDM-8D-${vehicle}', NULL) AS r`;
+  // SPACE_UNAVAILABLE on Supabase; SPACE_NOT_FOUND here when FORCE RLS hides the row from the
+  // function owner. Either way the booking is refused (Phase 7 checks the exact code).
+  assert.ok(['SPACE_UNAVAILABLE', 'SPACE_NOT_FOUND'].includes(queryJson(bookArgs(spacePendingId, 'car'))[0].r.error),
+    'Unapproved listing must not be bookable');
+  assert.strictEqual(queryJson(bookArgs(spaceCId, 'truck'))[0].r.error, 'INVALID_VEHICLE_TYPE');
+  console.log('  ✅ PASSED: Unapproved listing and unknown vehicle type rejected');
+
   // TEST 9: Carol verifies and checks in Alice booking with token hash -> SUCCEEDS
   console.log('\nTest 9: Carol verifies and checks in Alice booking');
+  // Bookings are written only by SECURITY DEFINER RPCs. On Supabase those run as the
+  // table owner `postgres` (BYPASSRLS, no FORCE), so lift FORCE here to match production
+  // when the local test role owns the tables without BYPASSRLS.
+  if (!runAsTestUser) {
+    execute(`ALTER TABLE bookings NO FORCE ROW LEVEL SECURITY;
+             ALTER TABLE booking_events NO FORCE ROW LEVEL SECURITY;`);
+  }
   setSession(carolId);
   const res9 = logResult(
     'Test 9 result',

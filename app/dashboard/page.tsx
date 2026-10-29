@@ -35,6 +35,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Language, UserProfile, ParkingInvoice } from '@/types';
 import { useAuth } from '@/context/AuthContext';
+import { loginUrlReturningTo } from '@/lib/auth/redirect';
 
 // Mock Previous Bookings & Invoices for Drivers
 const DRIVER_PREVIOUS_PARKINGS = [
@@ -199,7 +200,7 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center space-x-3 w-full pt-2">
             <Link
-              href="/login"
+              href={loginUrlReturningTo('/dashboard')}
               className="flex-1 bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 px-6 rounded-2xl text-xs shadow-md transition-all text-center"
             >
               Sign In

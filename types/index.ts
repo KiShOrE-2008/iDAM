@@ -38,6 +38,7 @@ export interface BookingRequest {
   vehicleNumber?: string;
   driverName?: string;
   driverPhone?: string;
+  addons?: string[];
 }
 
 export interface Booking {
@@ -61,7 +62,7 @@ export interface Booking {
   vehicleNumber?: string;
   driverName?: string;
   driverPhone?: string;
-  status: 'confirmed' | 'active' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled';
   qrData: string;
   createdAt: string;
   checkInAt?: string;
@@ -93,6 +94,18 @@ export interface PassVerificationResult {
   vehicleNumber?: string;
   checkInAt?: string;
   checkOutAt?: string;
+  /** 'qr' when the pass QR was scanned; 'code' when a pass code was typed or scanned without a token */
+  entryMethod?: 'qr' | 'code';
+  /** Token hash taken from the scanned QR itself (proves the driver's phone was presented) */
+  scannedTokenHash?: string;
+}
+
+/** What the gate presents to confirm a check-in. */
+export interface CheckInCredentials {
+  tokenHash?: string;
+  passCode?: string;
+  /** Last 4 letters/digits of the plate read off the vehicle; required for typed pass codes */
+  plateLast4?: string;
 }
 
 export interface SearchFilter {

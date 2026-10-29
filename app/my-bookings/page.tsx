@@ -8,6 +8,7 @@ import { Language } from '@/types';
 import { MOCK_PARKING_LOCATIONS } from '@/lib/data/mockData';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { loginUrlReturningTo } from '@/lib/auth/redirect';
 import { Calendar, Clock, MapPin, QrCode, Search, CheckCircle2, ChevronRight, Lock } from 'lucide-react';
 
 import { getAllBookings, fetchUserBookings } from '@/lib/booking/service';
@@ -104,7 +105,7 @@ export default function MyBookingsPage() {
           </div>
           <div className="flex items-center space-x-3 w-full pt-2">
             <Link
-              href="/login"
+              href={loginUrlReturningTo('/my-bookings')}
               className="flex-1 bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 px-6 rounded-2xl text-xs shadow-md transition-all text-center"
             >
               Sign In

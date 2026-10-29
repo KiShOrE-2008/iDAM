@@ -18,6 +18,7 @@ import { ParkingLocation, Language } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { RazorpayCheckoutModal } from '@/components/payment/RazorpayCheckoutModal';
 import { RazorpaySuccessResult } from '@/lib/payment/razorpay';
+import { checkoutErrorMessage } from '@/lib/payment/checkout';
 
 interface PaymentScreenProps {
   location: ParkingLocation;
@@ -32,7 +33,12 @@ interface PaymentScreenProps {
     paymentMethod?: string;
   };
   onBack: () => void;
+  /** Demo mode only: the simulated payment finished. */
   onPaySuccess: (meta?: { paymentId?: string; paymentMethod?: string }) => void;
+  /** Real payment: book the slot, take payment and confirm it. Throws on failure. */
+  onLivePay: () => Promise<void>;
+  /** Called instead of paying when a signed-out user taps Pay outside demo mode */
+  onRequireSignIn?: () => void;
   lang: Language;
 }
 
@@ -41,15 +47,19 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
   bookingDetails,
   onBack,
   onPaySuccess,
+  onLivePay,
+  onRequireSignIn,
   lang
 }) => {
-  const { profile, isDemoMode } = useAuth();
+  const { profile, isDemoMode, supabaseUser } = useAuth();
+  const mustSignIn = !isDemoMode && !supabaseUser;
   const [selectedMethod, setSelectedMethod] = useState<'razorpay' | 'upi' | 'card' | 'wallet'>('razorpay');
   const [selectedUpiApp, setSelectedUpiApp] = useState<'gpay' | 'phonepe' | 'paytm' | 'cred'>('gpay');
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccessModal, setPaymentSuccessModal] = useState(false);
   const [showRazorpayModal, setShowRazorpayModal] = useState(false);
   const [recordedPaymentId, setRecordedPaymentId] = useState<string>('');
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   // Card input states
   const [cardNumber, setCardNumber] = useState('4532 •••• •••• 8892');
@@ -68,7 +78,30 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
     }, 1200);
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
+    if (isProcessing) return;
+    setPaymentError(null);
+
+    // Real bookings need an account: send signed-out users (e.g. "Skip for now") to sign in
+    if (!isDemoMode && !supabaseUser) {
+      if (onRequireSignIn) onRequireSignIn();
+      else setPaymentError('Please sign in to book a parking spot.');
+      return;
+    }
+
+    // Real money: the parent books the slot, runs Razorpay checkout and server verification
+    if (!isDemoMode) {
+      setIsProcessing(true);
+      try {
+        await onLivePay();
+      } catch (err) {
+        setPaymentError(checkoutErrorMessage(err));
+      } finally {
+        setIsProcessing(false);
+      }
+      return;
+    }
+
     if (selectedMethod === 'razorpay') {
       setShowRazorpayModal(true);
       return;
@@ -166,6 +199,9 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
               </div>
             </div>
 
+            {/* Options 2-4 are simulations and only exist in demo mode; real
+                payments offer UPI, cards and net banking inside Razorpay checkout */}
+            {isDemoMode && (<>
             {/* Option 2: Instant UPI Apps */}
             <div
               onClick={() => setSelectedMethod('upi')}
@@ -302,7 +338,14 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
                 {selectedMethod === 'wallet' && <Check className="w-3 h-3 text-white stroke-[3]" />}
               </div>
             </div>
+            </>)}
           </div>
+
+          {paymentError && (
+            <div role="alert" className="text-xs font-semibold text-red-800 bg-red-50 border border-red-200 p-3 rounded-2xl">
+              {paymentError}
+            </div>
+          )}
 
           {/* Security Badge */}
           <div className="bg-emerald-50/70 p-3 rounded-2xl border border-emerald-100 flex items-center space-x-2 text-[11px] text-emerald-950 font-semibold">
@@ -332,7 +375,9 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
               <>
                 <Lock className="w-4 h-4 text-emerald-400" />
                 <span>
-                  {selectedMethod === 'razorpay'
+                  {mustSignIn
+                    ? 'Sign in to book'
+                    : selectedMethod === 'razorpay'
                     ? `Pay ₹${bookingDetails.total} via Razorpay`
                     : `Pay ₹${bookingDetails.total} via ${selectedMethod.toUpperCase()}`}
                 </span>
@@ -363,7 +408,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
 
       {/* Razorpay Interactive Modal for Mobile View */}
       <RazorpayCheckoutModal
-        isOpen={showRazorpayModal}
+        isOpen={isDemoMode && showRazorpayModal}
         amount={bookingDetails.total}
         locationTitle={location.title}
         bookingPassCode="IDM-MOBILE"

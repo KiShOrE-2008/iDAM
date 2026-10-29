@@ -3,16 +3,20 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Car, Clock, LogOut, CheckCircle2, AlertCircle, RefreshCw, Loader2, Sparkles, ShieldCheck } from 'lucide-react';
 import { Booking } from '@/types';
-import { getCurrentlyParkedBookings, confirmBookingCheckOut } from '@/lib/parking/checkInService';
+import { confirmBookingCheckOut } from '@/lib/parking/checkInService';
+import { fetchSpaceActivity } from '@/lib/owner/service';
 import { useRegisterModal } from '@/context/BackNavigationContext';
 
 interface CurrentlyParkedScreenProps {
+  /** Listing being managed ('loc-1' in demo mode) */
+  spaceId: string;
   onBack: () => void;
   onNavigateToScanner?: () => void;
   isDemoMode?: boolean;
 }
 
 export const CurrentlyParkedScreen: React.FC<CurrentlyParkedScreenProps> = ({
+  spaceId,
   onBack,
   onNavigateToScanner,
   isDemoMode = false
@@ -29,14 +33,19 @@ export const CurrentlyParkedScreen: React.FC<CurrentlyParkedScreenProps> = ({
     'checkout-confirm-modal'
   );
 
-  const loadData = () => {
-    const list = getCurrentlyParkedBookings('loc-1');
-    setParkedVehicles(list);
+  const loadData = async () => {
+    try {
+      const activity = await fetchSpaceActivity(spaceId, isDemoMode);
+      setParkedVehicles(activity.parked);
+    } catch (e: any) {
+      setCheckoutNotification({ message: e?.message || 'Could not load parked vehicles.', isError: true });
+    }
   };
 
   useEffect(() => {
     loadData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spaceId, isDemoMode]);
 
   const handleConfirmCheckout = async () => {
     if (!selectedBookingForCheckout || isCheckingOut) return;

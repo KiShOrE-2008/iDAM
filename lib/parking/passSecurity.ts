@@ -30,6 +30,25 @@ export function generatePassToken(): string {
   return `${Date.now().toString(16)}${Math.random().toString(16).substring(2, 10)}${Math.random().toString(16).substring(2, 10)}`;
 }
 
+// No 0/O, 1/I/L: pass codes are read aloud and typed by hand at the gate
+const PASS_CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+
+/**
+ * Generates a human-typeable pass code such as `IDM-7K2Q-9XMP`.
+ * 8 characters from a 31-letter alphabet (~8.5e11 codes) from a cryptographic source, so
+ * codes cannot be guessed and do not collide as bookings grow (unlike the old 5 digits).
+ */
+export function generatePassCode(): string {
+  const chars: string[] = [];
+  const buf = new Uint8Array(1);
+  while (chars.length < 8) {
+    crypto.getRandomValues(buf);
+    // Rejection sampling keeps every character equally likely
+    if (buf[0] < 248) chars.push(PASS_CODE_ALPHABET[buf[0] % PASS_CODE_ALPHABET.length]);
+  }
+  return `IDM-${chars.slice(0, 4).join('')}-${chars.slice(4).join('')}`;
+}
+
 /**
  * Computes the SHA-256 hex digest of a pass token string.
  */
@@ -121,7 +140,8 @@ export async function parseScannedQrPayload(raw: string): Promise<ParsedPassPayl
   }
 
   // 4. Raw Pass Code: IDM-XXXXX or alphanumeric reference
-  if (/^IDM-\d+/i.test(trimmed)) {
+  // Current codes (IDM-7K2Q-9XMP) and older all-digit codes (IDM-82931)
+  if (/^IDM(-[A-Z0-9]+)+$/i.test(trimmed)) {
     return {
       isValidFormat: true,
       type: 'legacy_raw',

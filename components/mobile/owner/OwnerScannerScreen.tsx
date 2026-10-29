@@ -344,7 +344,7 @@ export const OwnerScannerScreen: React.FC<OwnerScannerScreenProps> = ({
                 type="text"
                 value={manualCode}
                 onChange={(e) => setManualCode(e.target.value.toUpperCase())}
-                placeholder="Enter Pass Code (e.g. IDM-82931)"
+                placeholder="Enter Pass Code (e.g. IDM-7K2Q-9XMP)"
                 className="w-full pl-9 pr-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs font-black text-white placeholder-slate-500 uppercase focus:outline-none focus:ring-2 focus:ring-emerald-400"
                 autoFocus
               />

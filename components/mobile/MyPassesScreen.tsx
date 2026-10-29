@@ -5,7 +5,8 @@ import { ArrowLeft, Ticket, Calendar, Clock, MapPin, XCircle } from 'lucide-reac
 import { Download, Share2, Navigation, Eye, CheckCircle2, FileText, Home, BookOpen, UserCheck, ShieldCheck, Sparkles } from 'lucide-react';
 import { QRCodeSVG as QR } from 'qrcode.react';
 import { Language, Booking } from '@/types';
-import { getAllBookings } from '@/lib/booking/service';
+import { getAllBookings, fetchUserBookings } from '@/lib/booking/service';
+import { useAuth } from '@/context/AuthContext';
 import { cancelBooking } from '@/lib/parking/service';
 
 interface MyPassesScreenProps {
@@ -25,14 +26,34 @@ export const MyPassesScreen: React.FC<MyPassesScreenProps> = ({
   const [userBookings, setUserBookings] = useState<Booking[]>([]);
   const [cancelMessage, setCancelMessage] = useState<string | null>(null);
 
-  const loadPasses = () => {
-    const list = getAllBookings();
+  const { isDemoMode, supabaseUser } = useAuth();
+
+  // Demo passes live on the device; real passes come from the server (status, payment)
+  const loadPasses = async (): Promise<Booking[]> => {
+    const list = isDemoMode ? getAllBookings() : supabaseUser ? await fetchUserBookings(supabaseUser.id) : [];
     setUserBookings(list);
+    return list;
   };
 
   useEffect(() => {
-    loadPasses();
-  }, []);
+    let isMounted = true;
+    let pollTimer: ReturnType<typeof setTimeout> | undefined;
+    let polls = 0;
+    const refresh = async () => {
+      const list = await loadPasses();
+      // A just-paid booking is confirmed by the payment webhook shortly after: keep checking
+      if (isMounted && list.some(b => b.status === 'pending') && polls < 24) {
+        polls++;
+        pollTimer = setTimeout(refresh, 5000);
+      }
+    };
+    refresh();
+    return () => {
+      isMounted = false;
+      if (pollTimer) clearTimeout(pollTimer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDemoMode, supabaseUser?.id]);
 
   const SEED_PASSES = [
     {
@@ -67,32 +88,39 @@ export const MyPassesScreen: React.FC<MyPassesScreenProps> = ({
 
   const mappedLivePasses = userBookings.map((b) => {
     const isLiveActive = b.status === 'confirmed' || b.status === 'active';
+    const isAwaitingPayment = b.status === 'pending' || (b.paymentStatus === 'pending' && b.status !== 'cancelled');
     const isCancelled = b.status === 'cancelled';
-    const statusText = isLiveActive ? 'ACTIVE' : (isCancelled ? 'CANCELLED' : 'COMPLETED');
-    const statusColor = isLiveActive
+    const statusText = isAwaitingPayment
+      ? 'PAYMENT PENDING'
+      : isLiveActive ? 'ACTIVE' : (isCancelled ? 'CANCELLED' : 'COMPLETED');
+    const statusColor = isAwaitingPayment
+      ? 'bg-amber-100 text-amber-900 border-amber-300 font-black'
+      : isLiveActive
       ? 'bg-emerald-100 text-emerald-900 border-emerald-300 font-black'
       : (isCancelled ? 'bg-rose-100 text-rose-800 border-rose-300 font-bold' : 'bg-slate-100 text-slate-700 border-slate-300');
 
     return {
       id: b.passCode,
       bookingId: b.id,
-      title: b.parkingLocation?.title || 'Madurai Smart Parking',
-      address: b.parkingLocation?.address || 'Madurai Central',
-      vehicle: `${b.vehicleNumber || 'TN 59 AZ 8899'} (${b.vehicleType.toUpperCase()})`,
-      slot: 'Spot A-02',
+      title: b.parkingLocation?.title || 'Parking space',
+      address: b.parkingLocation?.address || '',
+      vehicle: `${b.vehicleNumber || '—'} (${b.vehicleType.toUpperCase()})`,
+      slot: 'Any free bay',
       time: `${b.startTime} - ${b.endTime}`,
       date: b.bookingDate,
       amount: `₹${b.totalAmount}`,
       status: statusText,
       statusColor,
-      qrValue: b.qrData || `IDAM:v2:${b.passCode}`,
-      canCancel: isLiveActive
+      // No entry QR until the payment is confirmed
+      qrValue: isLiveActive && !isAwaitingPayment ? (b.qrData || `IDAM:v2:${b.passCode}`) : null,
+      canCancel: isLiveActive && !isAwaitingPayment
     };
   });
 
-  const combinedPasses = mappedLivePasses.length > 0 ? mappedLivePasses : SEED_PASSES;
+  // Sample passes are only for the demo; real users see exactly their own bookings
+  const combinedPasses = isDemoMode && mappedLivePasses.length === 0 ? SEED_PASSES : mappedLivePasses;
 
-  const activePasses = combinedPasses.filter(p => p.status === 'ACTIVE');
+  const activePasses = combinedPasses.filter(p => p.status === 'ACTIVE' || p.status === 'PAYMENT PENDING');
   const pastPasses = combinedPasses.filter(p => p.status === 'COMPLETED' || p.status === 'CANCELLED');
   const displayPasses = activeFilter === 'active' ? activePasses : pastPasses;
 
@@ -171,7 +199,11 @@ export const MyPassesScreen: React.FC<MyPassesScreenProps> = ({
                 </div>
 
                 <div className="bg-emerald-50 border border-emerald-200 p-2 rounded-2xl flex flex-col items-center justify-center">
-                  <QR value={pass.qrValue} size={50} />
+                  {pass.qrValue ? (
+                    <QR value={pass.qrValue} size={50} />
+                  ) : (
+                    <div className="w-[50px] h-[50px] flex items-center justify-center text-[8px] font-bold text-amber-800 text-center leading-tight">No QR yet</div>
+                  )}
                   <span className="text-[9px] font-mono font-black text-emerald-900 mt-1">
                     {pass.slot}
                   </span>
@@ -229,7 +261,13 @@ export const MyPassesScreen: React.FC<MyPassesScreenProps> = ({
             ) : (
               <>
                 <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl inline-block mx-auto">
-                  <QR value={selectedPass.qrValue} size={110} />
+                  {selectedPass.qrValue ? (
+                    <QR value={selectedPass.qrValue} size={110} />
+                  ) : (
+                    <div className="w-[110px] h-[110px] flex items-center justify-center text-[10px] font-bold text-amber-800 text-center">
+                      Entry QR appears once payment is confirmed
+                    </div>
+                  )}
                 </div>
 
                 <div>

@@ -5,30 +5,60 @@ import { TrendingUp, Users, Calendar, Star, Building2, Plus, QrCode, Car, Clock,
 import { OwnerParkingCard } from './OwnerParkingCard';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { getCurrentlyParkedBookings, getExpectedArrivalBookings } from '@/lib/parking/checkInService';
+import { fetchSpaceActivity, type OwnerSpace } from '@/lib/owner/service';
 import { Booking } from '@/types';
 
 interface OwnerDashboardProps {
+  /** Listing being managed ('loc-1' in demo mode) */
+  spaceId: string;
+  /** Real listing details; absent in demo mode */
+  space?: OwnerSpace | null;
   onNavigateToExplore?: () => void;
+  /** Omitted when this listing cannot verify passes yet (not approved / paused) */
   onNavigateToScanner?: () => void;
   onNavigateToParked?: () => void;
 }
 
+const SPACE_STATUS_LABEL: Record<OwnerSpace['status'], string> = {
+  active: 'Open',
+  inactive: 'Paused',
+  pending_review: 'Awaiting approval',
+  draft: 'Draft',
+  suspended: 'Suspended'
+};
+
 export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
+  spaceId,
+  space,
   onNavigateToExplore,
   onNavigateToScanner,
   onNavigateToParked
 }) => {
   const { isDemoMode } = useAuth();
-  const [parkedCount, setParkedCount] = useState<number>(1);
+  const [parkedCount, setParkedCount] = useState<number>(0);
   const [expectedArrivals, setExpectedArrivals] = useState<Booking[]>([]);
+  const [todayRevenue, setTodayRevenue] = useState<number>(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    const parked = getCurrentlyParkedBookings('loc-1');
-    const arrivals = getExpectedArrivalBookings('loc-1');
-    setParkedCount(parked.length);
-    setExpectedArrivals(arrivals);
-  }, []);
+    let isMounted = true;
+    fetchSpaceActivity(spaceId, isDemoMode)
+      .then((activity) => {
+        if (!isMounted) return;
+        setParkedCount(activity.parked.length);
+        setExpectedArrivals(activity.arrivals);
+        setTodayRevenue(activity.todayRevenue);
+        setLoadError(null);
+      })
+      .catch((err) => {
+        if (isMounted) setLoadError(err?.message || 'Could not load bookings for this space.');
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [spaceId, isDemoMode]);
+
+  const totalSpots = space ? space.carCapacity + space.bikeCapacity : 35;
 
   return (
     <div className="space-y-4 animate-fade-in font-sans">
@@ -81,7 +111,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       <div className="grid grid-cols-4 gap-2 text-center">
         <div className="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-2xs">
           <p className="text-[9px] font-extrabold text-slate-400 uppercase">Today Rev</p>
-          <p className="text-sm font-black text-emerald-800">₹1,240</p>
+          <p className="text-sm font-black text-emerald-800">₹{todayRevenue.toLocaleString('en-IN')}</p>
         </div>
         
         {/* Clickable Currently Parked Metric Tile */}
@@ -99,16 +129,22 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
         <div className="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-2xs">
           <p className="text-[9px] font-extrabold text-slate-400 uppercase">Total Spots</p>
-          <p className="text-sm font-black text-slate-900">35</p>
+          <p className="text-sm font-black text-slate-900">{totalSpots}</p>
         </div>
         <div className="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-2xs">
           <p className="text-[9px] font-extrabold text-slate-400 uppercase">Rating</p>
           <p className="text-sm font-black text-amber-600 flex items-center justify-center space-x-0.5">
             <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
-            <span>4.8</span>
+            <span>{isDemoMode ? '4.8' : '—'}</span>
           </p>
         </div>
       </div>
+
+      {loadError && (
+        <div role="alert" className="text-[11px] font-semibold text-red-800 bg-red-50 border border-red-200 p-3 rounded-2xl">
+          {loadError}
+        </div>
+      )}
 
       {/* Currently Parked Quick Bar */}
       {onNavigateToParked && (
@@ -135,7 +171,19 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       )}
 
       {/* Owner Parking Property Card */}
-      <OwnerParkingCard />
+      {space ? (
+        <OwnerParkingCard
+          title={space.title}
+          address={space.address}
+          status={SPACE_STATUS_LABEL[space.status] || space.status}
+          occupied={parkedCount}
+          total={totalSpots}
+          rateCar={space.rateCar}
+          rateBike={space.rateBike}
+        />
+      ) : (
+        <OwnerParkingCard />
+      )}
 
       {/* EXPECTED ARRIVALS SECTION (Populated from booking data) */}
       <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs space-y-3">

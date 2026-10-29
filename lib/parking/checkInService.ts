@@ -1,6 +1,19 @@
 import type { Booking, PassVerificationResult, PassValidationStatus } from '../../types/index.ts';
 import { supabase, isSupabaseConfigured } from '../supabase.ts';
 import { parseScannedQrPayload, hashPassToken } from './passSecurity.ts';
+import { mapDbRowToBooking } from '../booking/service.ts';
+
+/** verify_parking_pass returns a snake_case summary; the gate UI works with Booking objects. */
+function mapVerifiedBooking(b: any): Booking {
+  return mapDbRowToBooking({
+    ...b,
+    start_timestamptz: b.start_at,
+    end_timestamptz: b.end_at,
+    parking_spaces: { title: b.location_title, address: b.location_address },
+    // Verification only succeeds for paid passes
+    payment_status: b.payment_status || 'completed'
+  });
+}
 
 const LOCAL_STORAGE_BOOKINGS_KEY = 'idam_user_bookings';
 const LOCAL_STORAGE_AUDIT_KEY = 'idam_booking_events';
@@ -306,12 +319,17 @@ export async function validateScannedPass(params: {
           };
         }
 
+        const booking = mapVerifiedBooking(data.booking);
         return {
           isValid: true,
           statusCode: 'valid',
           message: 'Valid parking pass ready for check-in',
-          booking: data.booking,
-          rawPayload: rawScannedText
+          booking,
+          passCode: booking.passCode,
+          vehicleNumber: booking.vehicleNumber,
+          rawPayload: rawScannedText,
+          entryMethod: parsed.type === 'v2_token' ? 'qr' : 'code',
+          scannedTokenHash: parsed.type === 'v2_token' ? parsed.tokenHash : undefined
         };
       }
     } catch (err: any) {
@@ -421,7 +439,9 @@ export async function validateScannedPass(params: {
     statusCode: 'valid',
     message: 'Valid parking pass ready for check-in',
     booking: matched,
-    rawPayload: rawScannedText
+    rawPayload: rawScannedText,
+    entryMethod: parsed.type === 'v2_token' ? 'qr' : 'code',
+    scannedTokenHash: parsed.type === 'v2_token' ? parsed.tokenHash : undefined
   };
 }
 
@@ -433,10 +453,13 @@ export async function validateScannedPass(params: {
 export async function confirmBookingCheckIn(params: {
   bookingId: string;
   passCode?: string;
+  /** Hash of the token in the scanned QR (not a hash read from the database) */
   passTokenHash?: string;
+  /** Last 4 letters/digits of the vehicle plate; required when no QR token is presented */
+  plateLast4?: string;
   isDemoMode?: boolean;
 }): Promise<{ success: boolean; message: string; checkInAt?: string; booking?: Booking }> {
-  const { bookingId, passCode, passTokenHash, isDemoMode = false } = params;
+  const { bookingId, passCode, passTokenHash, plateLast4, isDemoMode = false } = params;
 
   if (inFlightRequests.has(bookingId)) {
     return { success: false, message: 'Check-in request is already processing...' };
@@ -453,7 +476,8 @@ export async function confirmBookingCheckIn(params: {
         const { data, error } = await supabase.rpc('confirm_booking_check_in', {
           p_booking_id: bookingId,
           p_pass_token_hash: passTokenHash || null,
-          p_pass_code: passCode || null
+          p_pass_code: passCode || null,
+          p_plate_last4: plateLast4 || null
         });
 
         if (error) {

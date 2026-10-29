@@ -5,9 +5,10 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { OwnerModal } from '@/components/OwnerModal';
 import { MOCK_PARKING_LOCATIONS } from '@/lib/data/mockData';
-import { Language } from '@/types';
+import { Language, CheckInCredentials } from '@/types';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { loginUrlReturningTo } from '@/lib/auth/redirect';
 import { Building2, PlusCircle, DollarSign, Users, Car, CheckCircle2, AlertCircle, Clock, ShieldCheck, QrCode, Lock, X } from 'lucide-react';
 import { PassVerificationResult, Booking } from '@/types';
 import { OwnerScannerScreen } from '@/components/mobile/owner/OwnerScannerScreen';
@@ -129,11 +130,14 @@ export default function OwnerPortalPage() {
     }
   };
 
-  const handleConfirmCheckIn = async (b: Booking) => {
+  // Credentials come from what was presented at the gate (scanned QR, or code + plate),
+  // never from the booking row, so a copied pass code alone cannot check a car in
+  const handleConfirmCheckIn = async (b: Booking, credentials: CheckInCredentials) => {
     return await confirmBookingCheckIn({
       bookingId: b.id,
-      passCode: b.passCode,
-      passTokenHash: b.passTokenHash,
+      passCode: credentials.passCode,
+      passTokenHash: credentials.tokenHash,
+      plateLast4: credentials.plateLast4,
       isDemoMode
     });
   };
@@ -145,7 +149,7 @@ export default function OwnerPortalPage() {
       try {
         const { error } = await supabase
           .from('parking_spaces')
-          .update({ status: nextState ? 'active' : 'paused' })
+          .update({ status: nextState ? 'active' : 'inactive' })
           .eq('id', activeSpace.id);
 
         if (error) {
@@ -219,7 +223,7 @@ export default function OwnerPortalPage() {
           </div>
           <div className="flex items-center space-x-3 w-full pt-2">
             <Link
-              href="/login"
+              href={loginUrlReturningTo('/owner')}
               className="flex-1 bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 px-6 rounded-2xl text-xs shadow-md transition-all text-center"
             >
               Sign In

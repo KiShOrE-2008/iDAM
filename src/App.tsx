@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { AuthProvider } from '@/context/AuthContext';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { BackNavigationProvider } from '@/context/BackNavigationContext';
 import { CapacitorBackButtonHandler } from '@/components/shared/CapacitorBackButtonHandler';
 
@@ -34,11 +34,30 @@ import CookiePolicyPage from '@/app/cookie-policy/page';
 import AccessibilityPage from '@/app/accessibility/page';
 import SecurityPage from '@/app/security/page';
 import PrivacyRequestsPage from '@/app/privacy-requests/page';
+import AdminSummaryPage from '@/app/admin/page';
+import AdminRequestsPage from '@/app/admin/requests/page';
+import AdminAnalyticsPage from '@/app/admin/analytics/page';
+import AdminBookingsPage from '@/app/admin/bookings/page';
+import AdminUsersPage from '@/app/admin/users/page';
 import { DigitalPassClient } from '@/components/web/DigitalPassClient';
 import { NotFoundPage } from '@/components/web/NotFoundPage';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { NetworkStatus } from '@/components/shared/NetworkStatus';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
+
+// Password-reset links can land on any page (Supabase falls back to the Site URL):
+// always finish the reset on the page that lets the user set a new password.
+function PasswordRecoveryRedirect() {
+  const { isPasswordRecovery } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  React.useEffect(() => {
+    if (isPasswordRecovery && location.pathname !== '/forgot-password') {
+      navigate('/forgot-password', { replace: true });
+    }
+  }, [isPasswordRecovery, location.pathname, navigate]);
+  return null;
+}
 
 function PassRouteWrapper() {
   const { id } = useParams<{ id: string }>();
@@ -51,6 +70,7 @@ export default function App() {
       <AuthProvider>
         <BackNavigationProvider>
           <CapacitorBackButtonHandler />
+          <PasswordRecoveryRedirect />
           <NetworkStatus />
           <Routes>
             <Route path="/" element={<HomePage />} />
@@ -83,6 +103,12 @@ export default function App() {
             <Route path="/privacy-requests" element={<PrivacyRequestsPage />} />
             <Route path="/owner-policy" element={<OwnerPolicyPage />} />
             <Route path="/user-rules" element={<UserRulesPage />} />
+            {/* Admin console (access is checked by the server; see AdminLayout) */}
+            <Route path="/admin" element={<AdminSummaryPage />} />
+            <Route path="/admin/requests" element={<AdminRequestsPage />} />
+            <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
+            <Route path="/admin/bookings" element={<AdminBookingsPage />} />
+            <Route path="/admin/users" element={<AdminUsersPage />} />
             {/* Catch-all 404 Route */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

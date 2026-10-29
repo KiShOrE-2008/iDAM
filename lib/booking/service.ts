@@ -1,6 +1,6 @@
 import type { Booking, BookingRequest, ParkingLocation } from '../../types/index.ts';
 import { supabase, isSupabaseConfigured } from '../supabase.ts';
-import { generatePassToken, hashPassToken, formatSecureQrPayload } from '../parking/passSecurity.ts';
+import { generatePassToken, generatePassCode, hashPassToken, formatSecureQrPayload } from '../parking/passSecurity.ts';
 
 const LOCAL_STORAGE_KEY = 'idam_user_bookings';
 
@@ -83,8 +83,7 @@ export async function createBooking(
   request: BookingRequest,
   options?: { isDemoMode?: boolean }
 ): Promise<Booking> {
-  const randomNum = Math.floor(10000 + Math.random() * 90000);
-  const passCode = `IDM-${randomNum}`;
+  const passCode = generatePassCode();
   
   // Build authoritative reservation start and end times from bookingDate and startTime
   const dateStr = request.bookingDate || new Date().toISOString().split('T')[0];
@@ -115,7 +114,7 @@ export async function createBooking(
     location,
     request.vehicleType === 'bike' ? 'bike' : 'car',
     request.durationHours,
-    []
+    request.addons || []
   );
 
   const finalTotal = quote.totalAmount;
@@ -148,7 +147,7 @@ export async function createBooking(
 
   const isDemo = options?.isDemoMode !== undefined
     ? options.isDemoMode
-    : (getStorage()?.getItem('idam_demo_mode') === 'true' || Boolean(request.paymentId?.startsWith('demo_pay_') || request.paymentId?.startsWith('mock_')));
+    : getStorage()?.getItem('idam_demo_mode') === 'true';
 
   if (!isDemo) {
     if (!isSupabaseConfigured || !supabase) {
@@ -164,7 +163,7 @@ export async function createBooking(
       p_vehicle_number: request.vehicleNumber,
       p_driver_name: request.driverName || 'Driver',
       p_driver_phone: request.driverPhone || '',
-      p_addons: [],
+      p_addons: request.addons || [],
       p_pass_token_hash: passTokenHash,
       p_pass_code: passCode,
       p_payment_ref: request.paymentId || null
@@ -175,55 +174,17 @@ export async function createBooking(
     }
 
     if (!rpcError && rpcData?.success && rpcData?.booking_id) {
+      // The server starts every booking unpaid; it is confirmed only after verified payment
       bookingData.id = rpcData.booking_id;
+      bookingData.totalAmount = Number(rpcData.total_amount ?? bookingData.totalAmount);
+      bookingData.paymentStatus = 'pending';
+      bookingData.status = 'pending';
+      bookingData.paymentId = undefined;
       saveBookingLocally(bookingData);
       return bookingData;
     }
 
-    // Only fallback to direct table insert if RPC is missing (code 42883)
-    if (rpcError && rpcError.code === '42883') {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData?.user?.id;
-      const { data: insertData, error: insertError } = await supabase.from('bookings').insert([{
-        pass_code: passCode,
-        pass_token_hash: passTokenHash,
-        parking_space_id: location.id,
-        parking_location_id: location.id,
-        driver_id: userId,
-        user_id: userId,
-        vehicle_type: request.vehicleType,
-        vehicle_number: request.vehicleNumber,
-        driver_name: request.driverName || 'Driver',
-        driver_phone: request.driverPhone || '',
-        booking_date: dateStr,
-        start_time: startTimeIso,
-        duration_hours: request.durationHours,
-        end_time: endDate.toISOString(),
-        base_price: bookingData.basePrice,
-        platform_fee: bookingData.platformFee,
-        total_amount: bookingData.totalAmount,
-        payment_method: request.paymentMethod || 'Razorpay',
-        payment_status: 'completed',
-        payment_id: request.paymentId,
-        booking_status: 'confirmed',
-        status: 'confirmed',
-        qr_data: secureQrData
-      }]).select().single();
-
-      if (insertError) {
-        throw new Error(insertError.message || 'Failed to save booking to database.');
-      }
-
-      if (insertData?.id) {
-        bookingData.id = insertData.id;
-      }
-      saveBookingLocally(bookingData);
-      return bookingData;
-    }
-
-    if (rpcError) {
-      throw new Error(rpcError.message || 'Booking creation RPC error.');
-    }
+    throw new Error(rpcError?.message || 'Booking could not be created. Please try again.');
   }
 
   // Demo mode: persist locally and return
@@ -248,6 +209,15 @@ function saveBookingLocally(booking: Booking): void {
   } catch (err) {
     console.warn('Failed to save booking to storage:', err);
   }
+}
+
+/**
+ * Updates this device's copy of a booking once the server has confirmed its payment.
+ */
+export function markBookingPaidLocally(booking: Booking, paymentId: string): Booking {
+  const paid: Booking = { ...booking, paymentStatus: 'completed', status: 'confirmed', paymentId };
+  saveBookingLocally(paid);
+  return paid;
 }
 
 /**
@@ -283,12 +253,24 @@ export function getAllBookings(): Booking[] {
 /**
  * Maps a database row from public.bookings to the application Booking type.
  */
+/** Local-time 'YYYY-MM-DD' and 'HH:mm' for an absolute timestamp. */
+function localDateAndTime(iso: string): { date: string; time: string } | null {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return {
+    date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+    time: `${pad(d.getHours())}:${pad(d.getMinutes())}`
+  };
+}
+
 export function mapDbRowToBooking(row: any, space?: any): Booking {
-  const s = space || row.parking_spaces || {};
+  // A booking points at a listing (parking_spaces) or a legacy lot (parking_locations)
+  const s = space || row.parking_spaces || row.parking_locations || {};
   const parkingLocation: ParkingLocation = {
     id: row.parking_space_id || row.parking_location_id || s.id || '',
-    title: s.title || 'Madurai Parking Space',
-    address: s.address || 'Madurai',
+    title: s.title || 'Parking space',
+    address: s.address || '',
     latitude: Number(s.latitude || 9.92),
     longitude: Number(s.longitude || 78.12),
     hourlyRateCar: Number(s.hourly_rate_car || s.price_per_hour_car || 30),
@@ -303,9 +285,13 @@ export function mapDbRowToBooking(row: any, space?: any): Booking {
     isVerified: true
   };
 
-  const bookingDate = row.booking_date || (row.start_time ? String(row.start_time).split('T')[0] : new Date().toISOString().split('T')[0]);
-  const startTime = row.start_time ? (String(row.start_time).includes('T') ? String(row.start_time).split('T')[1].slice(0, 5) : String(row.start_time).slice(0, 5)) : '10:00';
-  const endTime = row.end_time ? (String(row.end_time).includes('T') ? String(row.end_time).split('T')[1].slice(0, 5) : String(row.end_time).slice(0, 5)) : '12:00';
+  // booking_date/start_time/end_time are stored in the database's time zone (UTC on Supabase);
+  // the absolute start/end timestamps give the slot in the viewer's local time.
+  const start = row.start_timestamptz ? localDateAndTime(row.start_timestamptz) : null;
+  const end = row.end_timestamptz ? localDateAndTime(row.end_timestamptz) : null;
+  const bookingDate = start?.date || row.booking_date || (row.start_time ? String(row.start_time).split('T')[0] : new Date().toISOString().split('T')[0]);
+  const startTime = start?.time || (row.start_time ? (String(row.start_time).includes('T') ? String(row.start_time).split('T')[1].slice(0, 5) : String(row.start_time).slice(0, 5)) : '10:00');
+  const endTime = end?.time || (row.end_time ? (String(row.end_time).includes('T') ? String(row.end_time).split('T')[1].slice(0, 5) : String(row.end_time).slice(0, 5)) : '12:00');
 
   return {
     id: row.id,
@@ -322,7 +308,7 @@ export function mapDbRowToBooking(row: any, space?: any): Booking {
     platformFee: Number(row.platform_fee || 5),
     totalAmount: Number(row.total_amount || 0),
     paymentMethod: row.payment_method || 'Razorpay',
-    paymentStatus: (row.payment_status as 'completed' | 'pending' | 'failed') || 'completed',
+    paymentStatus: (row.payment_status as 'completed' | 'pending' | 'failed') || 'pending',
     paymentId: row.payment_id,
     razorpayOrderId: row.razorpay_order_id,
     vehicleNumber: row.vehicle_number || '',
@@ -356,16 +342,19 @@ export async function fetchUserBookings(userId?: string): Promise<Booking[]> {
       if (uid) {
         const { data, error } = await supabase
           .from('bookings')
-          .select('*, parking_spaces(*)')
+          .select('*, parking_spaces(*), parking_locations(*)')
           .or(`user_id.eq.${uid},driver_id.eq.${uid}`)
           .order('created_at', { ascending: false });
 
-        if (!error && data && data.length > 0) {
-          const dbBookings = data.map((row: any) => mapDbRowToBooking(row, row.parking_spaces));
-          // Merge with any local bookings not yet synced or created in demo mode
-          const seenPassCodes = new Set(dbBookings.map(b => b.passCode.toLowerCase()));
-          const remainingLocal = localList.filter(l => !seenPassCodes.has(l.passCode.toLowerCase()));
-          return [...dbBookings, ...remainingLocal];
+        if (!error && data) {
+          // The server is the source of truth for signed-in users (status, payment). Only the
+          // scannable pass token lives on the device that booked, so carry it over from there.
+          const localByCode = new Map(localList.map(l => [l.passCode.toLowerCase(), l]));
+          return data.map((row: any) => {
+            const booking = mapDbRowToBooking(row, row.parking_spaces);
+            const local = localByCode.get(booking.passCode.toLowerCase());
+            return local?.passToken ? { ...booking, passToken: local.passToken, qrData: local.qrData } : booking;
+          });
         }
       }
     } catch (e) {
@@ -387,7 +376,7 @@ export async function fetchBookingByPassCode(passCode: string): Promise<Booking 
     try {
       const { data, error } = await supabase
         .from('bookings')
-        .select('*, parking_spaces(*)')
+        .select('*, parking_spaces(*), parking_locations(*)')
         .ilike('pass_code', trimmed)
         .maybeSingle();
 

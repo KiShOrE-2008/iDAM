@@ -1,34 +1,59 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { safeNextPath } from '@/lib/auth/redirect';
 import { Eye, EyeOff, ArrowRight, Lock, Mail, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { DemoMode } from './DemoMode';
 
 export const LoginForm: React.FC = () => {
   const router = useRouter();
-  const { signIn } = useAuth();
-  
+  const searchParams = useSearchParams();
+  const nextPath = safeNextPath(searchParams.get('next'));
+  const { signIn, resendConfirmation, supabaseUser } = useAuth();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle');
+
+  // Already signed in (e.g. opened /login from a bookmark): continue where they were going
+  useEffect(() => {
+    if (supabaseUser) router.replace(nextPath);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabaseUser]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMessage(null);
+    setNeedsConfirmation(false);
+    setResendState('idle');
 
     const res = await signIn(email, password);
     setIsLoading(false);
 
     if (res.success) {
-      router.push('/');
+      router.push(nextPath);
     } else {
+      setNeedsConfirmation(res.code === 'EMAIL_NOT_CONFIRMED');
       setErrorMessage(res.error || 'Failed to sign in. Please check your credentials.');
+    }
+  };
+
+  const handleResend = async () => {
+    setResendState('sending');
+    const res = await resendConfirmation(email);
+    if (res.success) {
+      setResendState('sent');
+    } else {
+      setResendState('idle');
+      setErrorMessage(res.error || 'Could not resend the confirmation email.');
     }
   };
 
@@ -49,6 +74,19 @@ export const LoginForm: React.FC = () => {
           <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
           <span>{errorMessage}</span>
         </div>
+      )}
+
+      {needsConfirmation && (
+        <button
+          type="button"
+          onClick={handleResend}
+          disabled={resendState !== 'idle'}
+          className="w-full text-xs font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl py-2.5 hover:bg-emerald-100 disabled:opacity-70"
+        >
+          {resendState === 'sent'
+            ? `Confirmation email sent to ${email}. Check your inbox and spam folder.`
+            : resendState === 'sending' ? 'Sending...' : 'Resend confirmation email'}
+        </button>
       )}
 
       {/* Login Form */}
