@@ -14,6 +14,7 @@ import LoginPage from '@/app/login/page';
 import SignupPage from '@/app/signup/page';
 import ForgotPasswordPage from '@/app/forgot-password/page';
 import OwnerPage from '@/app/owner/page';
+import OwnerPayoutsPage from '@/app/owner/payouts/page';
 import AboutPage from '@/app/about/page';
 import ContactPage from '@/app/contact/page';
 import HelpPage from '@/app/help/page';
@@ -39,6 +40,7 @@ import AdminRequestsPage from '@/app/admin/requests/page';
 import AdminAnalyticsPage from '@/app/admin/analytics/page';
 import AdminBookingsPage from '@/app/admin/bookings/page';
 import AdminUsersPage from '@/app/admin/users/page';
+import AdminPayoutsPage from '@/app/admin/payouts/page';
 import { DigitalPassClient } from '@/components/web/DigitalPassClient';
 import { NotFoundPage } from '@/components/web/NotFoundPage';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
@@ -83,6 +85,7 @@ export default function App() {
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/owner" element={<OwnerPage />} />
+            <Route path="/owner/payouts" element={<OwnerPayoutsPage />} />
             <Route path="/owners" element={<OwnersPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/features" element={<FeaturesPage />} />
@@ -109,6 +112,7 @@ export default function App() {
             <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
             <Route path="/admin/bookings" element={<AdminBookingsPage />} />
             <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin/payouts" element={<AdminPayoutsPage />} />
             {/* Catch-all 404 Route */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

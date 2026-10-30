@@ -1,21 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  X,
-  Calendar,
-  Clock,
-  Car,
-  Bike,
-  CreditCard,
-  ShieldCheck,
-  CheckCircle2,
-  MapPin,
-  ArrowRight,
-  Lock,
-  Smartphone,
-  Sparkles
-} from 'lucide-react';
+import { X, Car, Bike, CreditCard, ShieldCheck, MapPin, Lock } from 'lucide-react';
 import { ParkingLocation, Language, BookingRequest } from '@/types';
 import { createBooking } from '@/lib/booking/service';
 import { useRouter } from 'next/navigation';
@@ -145,273 +131,203 @@ export const WebBookingModal: React.FC<WebBookingModalProps> = ({
     }
   };
 
+  const label = 'block text-sm text-slate-600 mb-1.5';
+  const field = 'w-full px-3 py-2.5 rounded-md border border-slate-300 bg-white text-[15px] text-ink focus:outline-none focus:border-ink focus:ring-4 focus:ring-amber-300/50';
+  const timeLabel = (t: string) => {
+    const [h] = t.split(':').map(Number);
+    return `${h > 12 ? h - 12 : h === 0 ? 12 : h}:00 ${h >= 12 ? 'PM' : 'AM'}`;
+  };
+
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-        <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative border border-gray-100 overflow-hidden max-h-[92vh] overflow-y-auto">
-          
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="absolute top-5 right-5 w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-
-          {/* Modal Header */}
-          <div className="flex items-center space-x-3 pb-4 border-b border-gray-100">
-            <div className="w-12 h-12 rounded-2xl overflow-hidden shrink-0">
-              <img src={location.imageUrl} alt={location.title} className="w-full h-full object-cover" />
-            </div>
-            <div>
-              <h3 className="font-extrabold text-gray-900 text-lg leading-tight">{location.title}</h3>
-              <p className="text-xs text-gray-500 flex items-center space-x-1 mt-0.5">
-                <MapPin className="w-3.5 h-3.5 text-emerald-700" />
-                <span>{location.landmark || location.address}</span>
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-ink/60 animate-fade-in" role="dialog" aria-modal="true" aria-labelledby="booking-title">
+        <div className="bg-limewash w-full sm:max-w-xl rounded-t-xl sm:rounded-xl shadow-2xl relative max-h-[94vh] overflow-y-auto animate-slide-up">
+          <div className="sticky top-0 z-10 bg-limewash border-b border-slate-300 px-5 sm:px-6 pt-5 pb-4 flex items-start gap-4">
+            <img src={location.imageUrl} alt="" className="w-14 h-14 rounded-md object-cover shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-slate-500">{step === 'details' ? 'Step 1 of 2: your visit' : 'Step 2 of 2: payment'}</p>
+              <h2 id="booking-title" className="font-black text-xl leading-tight truncate">{location.title}</h2>
+              <p className="text-sm text-slate-600 truncate flex items-center gap-1 mt-0.5">
+                <MapPin className="w-3.5 h-3.5 shrink-0" aria-hidden />
+                {location.landmark || location.address}
               </p>
             </div>
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="w-9 h-9 -mr-1 rounded-md text-slate-600 hover:bg-slate-200 flex items-center justify-center cursor-pointer shrink-0"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
           {step === 'details' ? (
-            <div className="space-y-5 pt-4">
-              
-              {/* Vehicle Type Switcher */}
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">Select Vehicle</label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setVehicleType('car')}
-                    className={`p-3 rounded-2xl border flex items-center space-x-3 transition-all ${
-                      vehicleType === 'car'
-                        ? 'bg-emerald-50 border-emerald-700 ring-2 ring-emerald-700/20 text-emerald-950 font-bold'
-                        : 'bg-white border-gray-200 text-gray-700'
-                    }`}
-                  >
-                    <Car className="w-5 h-5 text-emerald-700" />
-                    <div className="text-left">
-                      <div className="text-xs">Car</div>
-                      <div className="text-[11px] text-gray-500 font-normal">₹{location.hourlyRateCar}/hr</div>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setVehicleType('bike')}
-                    className={`p-3 rounded-2xl border flex items-center space-x-3 transition-all ${
-                      vehicleType === 'bike'
-                        ? 'bg-emerald-50 border-emerald-700 ring-2 ring-emerald-700/20 text-emerald-950 font-bold'
-                        : 'bg-white border-gray-200 text-gray-700'
-                    }`}
-                  >
-                    <Bike className="w-5 h-5 text-emerald-700" />
-                    <div className="text-left">
-                      <div className="text-xs">Bike</div>
-                      <div className="text-[11px] text-gray-500 font-normal">₹{location.hourlyRateBike}/hr</div>
-                    </div>
-                  </button>
+            <div className="px-5 sm:px-6 py-5 space-y-5">
+              <fieldset>
+                <legend className={label}>Vehicle</legend>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    ['car', 'Car', location.hourlyRateCar, Car],
+                    ['bike', 'Bike', location.hourlyRateBike, Bike],
+                  ] as const).map(([id, name, r, Icon]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setVehicleType(id)}
+                      aria-pressed={vehicleType === id}
+                      className={`px-3.5 py-3 rounded-md border flex items-center gap-3 text-left cursor-pointer ${
+                        vehicleType === id ? 'bg-ink text-white border-ink' : 'bg-white border-slate-300 hover:border-slate-400'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5 shrink-0" aria-hidden />
+                      <span className="flex-1 font-bold">{name}</span>
+                      <span className={`text-sm tabular ${vehicleType === id ? 'text-white/75' : 'text-slate-500'}`}>₹{r}/hr</span>
+                    </button>
+                  ))}
                 </div>
-              </div>
+              </fieldset>
 
-              {/* Date & Start Time */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Booking Date</label>
+                  <label htmlFor="bk-date" className={label}>Date</label>
                   <input
+                    id="bk-date"
                     type="date"
                     value={bookingDate}
                     min={new Date().toISOString().split('T')[0]}
                     onChange={(e) => setBookingDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-800 focus:ring-2 focus:ring-emerald-700 outline-none"
+                    className={`${field} tabular`}
                   />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Arrival Time</label>
-                  <select
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-800 focus:ring-2 focus:ring-emerald-700 outline-none"
-                  >
-                    {['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'].map(t => {
-                      const [h] = t.split(':').map(Number);
-                      const period = h >= 12 ? 'PM' : 'AM';
-                      const display = h > 12 ? h - 12 : h === 0 ? 12 : h;
-                      return (
-                        <option key={t} value={t}>{display}:00 {period}</option>
-                      );
-                    })}
+                  <label htmlFor="bk-time" className={label}>Arriving at</label>
+                  <select id="bk-time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className={`${field} tabular`}>
+                    {['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'].map((t) => (
+                      <option key={t} value={t}>{timeLabel(t)}</option>
+                    ))}
                   </select>
                 </div>
               </div>
 
-              {/* Vehicle Number & Driver Info */}
+              <fieldset>
+                <legend className={label}>How long</legend>
+                <div className="grid grid-cols-5 border border-slate-300 rounded-md overflow-hidden bg-white">
+                  {[1, 2, 3, 4, 6].map((h) => (
+                    <button
+                      key={h}
+                      type="button"
+                      onClick={() => setDuration(h)}
+                      aria-pressed={duration === h}
+                      className={`py-2.5 text-[15px] font-bold tabular border-r border-slate-300 last:border-r-0 cursor-pointer ${
+                        duration === h ? 'bg-ink text-white' : 'hover:bg-slate-50'
+                      }`}
+                    >
+                      {h} h
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <div>
+                <label htmlFor="bk-plate" className={label}>Number plate</label>
+                <input
+                  id="bk-plate"
+                  type="text"
+                  required
+                  placeholder="TN 59 AB 1234"
+                  value={vehicleNo}
+                  onChange={(e) => setVehicleNo(e.target.value.toUpperCase())}
+                  className="plate w-full text-center text-2xl py-2.5 uppercase placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-amber-300/60"
+                />
+                <p className="text-sm text-slate-500 mt-1.5">The owner checks this plate at the gate.</p>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Vehicle Plate Number</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. TN 59 AB 1234"
-                    value={vehicleNo}
-                    onChange={(e) => setVehicleNo(e.target.value.toUpperCase())}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-bold uppercase tracking-wider text-gray-800 focus:ring-2 focus:ring-emerald-700 outline-none"
-                  />
+                  <label htmlFor="bk-name" className={label}>Your name</label>
+                  <input id="bk-name" type="text" autoComplete="name" value={driverName} onChange={(e) => setDriverName(e.target.value)} className={field} />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Duration (Hours)</label>
-                  <div className="flex items-center space-x-2 bg-gray-100 p-1.5 rounded-xl">
-                    {[1, 2, 3, 4, 6].map(h => (
-                      <button
-                        key={h}
-                        type="button"
-                        onClick={() => setDuration(h)}
-                        className={`flex-1 py-1 rounded-lg text-xs font-bold transition-all ${
-                          duration === h ? 'bg-emerald-950 text-white shadow-xs' : 'text-gray-600'
-                        }`}
-                      >
-                        {h}h
-                      </button>
-                    ))}
-                  </div>
+                  <label htmlFor="bk-phone" className={label}>Phone</label>
+                  <input id="bk-phone" type="tel" autoComplete="tel" placeholder="98765 43210" value={driverPhone} onChange={(e) => setDriverPhone(e.target.value)} className={`${field} tabular`} />
                 </div>
               </div>
 
-              {/* Driver Contact Info */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Driver Name</label>
-                  <input
-                    type="text"
-                    placeholder="Driver Name"
-                    value={driverName}
-                    onChange={(e) => setDriverName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-800 focus:ring-2 focus:ring-emerald-700 outline-none"
-                  />
+              <dl className="text-[15px] border-t-2 border-ink">
+                <div className="flex justify-between py-2.5 border-b border-slate-300">
+                  <dt className="text-slate-600 tabular">Parking, {duration} h × ₹{rate}</dt>
+                  <dd className="font-bold tabular">₹{basePrice}</dd>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Phone Number</label>
-                  <input
-                    type="tel"
-                    placeholder="9876543210"
-                    value={driverPhone}
-                    onChange={(e) => setDriverPhone(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-800 focus:ring-2 focus:ring-emerald-700 outline-none"
-                  />
+                <div className="flex justify-between py-2.5 border-b border-slate-300">
+                  <dt className="text-slate-600">Platform fee</dt>
+                  <dd className="font-bold tabular">₹{platformFee}</dd>
                 </div>
-              </div>
-
-              {/* Cost Breakdown */}
-              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-1.5 text-xs">
-                <div className="flex justify-between text-gray-600">
-                  <span>Parking fee (₹{rate} × {duration} hrs)</span>
-                  <span className="font-semibold text-gray-900">₹{basePrice}</span>
+                <div className="flex justify-between pt-3 text-lg">
+                  <dt className="font-black">Total</dt>
+                  <dd className="font-black tabular">₹{totalAmount}</dd>
                 </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Platform reservation fee</span>
-                  <span className="font-semibold text-gray-900">₹{platformFee}</span>
-                </div>
-                <div className="flex justify-between text-sm font-extrabold text-gray-900 pt-2 border-t border-gray-200">
-                  <span>Total Payment</span>
-                  <span className="text-emerald-800 text-base">₹{totalAmount}</span>
-                </div>
-              </div>
+              </dl>
 
               <button
                 onClick={() => setStep('payment')}
                 disabled={!vehicleNo.trim()}
-                className="w-full bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 rounded-2xl text-sm shadow-md transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-brand-700 hover:bg-brand-800 text-white font-black py-3.5 rounded-lg text-base disabled:bg-slate-300 disabled:text-slate-600 disabled:cursor-not-allowed cursor-pointer"
               >
-                <span>{vehicleNo.trim() ? 'Proceed to Payment' : 'Enter your vehicle number'}</span>
-                <ArrowRight className="w-4 h-4" />
+                {vehicleNo.trim() ? 'Continue to payment' : 'Add your number plate to continue'}
               </button>
             </div>
           ) : (
-            <form onSubmit={handlePaymentSubmit} className="space-y-4 pt-4">
-              
-              <div className="bg-gradient-to-r from-emerald-950 to-slate-900 text-white p-4 rounded-2xl border border-emerald-900/50 flex items-center justify-between shadow-md">
+            <form onSubmit={handlePaymentSubmit} className="px-5 sm:px-6 py-5 space-y-5">
+              <div className="flex items-end justify-between gap-4 border-b-2 border-ink pb-4">
+                <div className="min-w-0">
+                  <span className="plate inline-block text-base px-2.5 py-0.5">{vehicleNo}</span>
+                  <p className="text-sm text-slate-600 mt-2 tabular">
+                    {bookingDate}, {timeLabel(startTime)}, for {duration} {duration === 1 ? 'hour' : 'hours'}
+                  </p>
+                </div>
+                <p className="text-[2.4rem] font-black leading-none tabular">₹{totalAmount}</p>
+              </div>
+
+              <div className="bg-white border border-slate-300 rounded-md px-4 py-3.5 flex items-center gap-3">
+                <CreditCard className="w-5 h-5 text-slate-500 shrink-0" aria-hidden />
                 <div>
-                  <div className="text-xs font-bold text-white">Reserved for {vehicleNo}</div>
-                  <div className="text-[11px] text-emerald-300">{bookingDate} • {startTime} ({duration} hrs)</div>
-                </div>
-                <div className="text-xl font-black text-white">₹{totalAmount}</div>
-              </div>
-
-              {/* Razorpay checkout handles UPI, cards, net banking and wallets itself */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-700">Payment</label>
-
-                <div className="p-3.5 rounded-2xl border transition-all relative overflow-hidden bg-blue-50/60 border-blue-600 ring-2 ring-blue-500/20 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-base shadow-xs">
-                        <span className="italic tracking-tighter">R</span>
-                      </div>
-                      <div>
-                        <div className="flex items-center space-x-1.5">
-                          <span className="text-xs font-extrabold text-gray-900">Razorpay</span>
-                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-100 text-blue-800">
-                            Recommended
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-gray-600 mt-0.5">
-                          Instant UPI, Google Pay, PhonePe, Cards, NetBanking
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 border-blue-600 bg-blue-600">
-                      <CheckCircle2 className="w-3 h-3 text-white fill-current" />
-                    </div>
-                  </div>
+                  <p className="font-bold">Pay with Razorpay</p>
+                  <p className="text-sm text-slate-600">UPI, Google Pay, PhonePe, cards or net banking</p>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2 text-[11px] text-gray-500 bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
-                <span>
-                  {isDemoMode
-                    ? 'Demo mode: payment is simulated and no money is charged.'
-                    : 'Your slot is held while you pay. The final amount is confirmed by our server in the Razorpay window.'}
-                </span>
-              </div>
+              <p className="text-sm text-slate-600 flex items-start gap-2">
+                <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0" aria-hidden />
+                {isDemoMode
+                  ? 'Demo mode: the payment is simulated and no money is charged.'
+                  : 'Your space is held while you pay. Cancel up to 30 minutes before you arrive for a full refund.'}
+              </p>
 
               {paymentError && (
-                <div role="alert" className="text-xs font-semibold text-red-800 bg-red-50 border border-red-200 p-3 rounded-xl">
+                <div role="alert" className="text-sm text-rose-800 bg-rose-50 border-l-4 border-rose-600 p-3 rounded">
                   {paymentError}
                 </div>
               )}
 
-              <div className="flex items-center space-x-3 pt-2">
+              <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => setStep('details')}
-                  className="w-1/3 border border-gray-300 py-3.5 rounded-2xl text-xs font-bold text-gray-700 hover:bg-gray-50"
+                  className="px-5 border border-slate-300 bg-white py-3.5 rounded-lg font-bold hover:border-slate-400 cursor-pointer"
                 >
                   Back
                 </button>
-
                 <button
                   type="submit"
                   disabled={isProcessing}
-                  className="w-2/3 py-3.5 rounded-2xl text-xs font-black shadow-md transition-all flex items-center justify-center space-x-2 disabled:opacity-75 bg-blue-700 hover:bg-blue-800 text-white shadow-blue-700/20"
+                  className="flex-1 py-3.5 rounded-lg text-base font-black flex items-center justify-center gap-2 disabled:opacity-75 bg-brand-700 hover:bg-brand-800 text-white cursor-pointer"
                 >
-                  <Lock className="w-4 h-4" />
-                  <span>
-                    {isProcessing
-                      ? 'Processing...'
-                      : !isDemoMode && !supabaseUser
-                      ? 'Sign in to book'
-                      : `Pay ₹${totalAmount} via Razorpay`}
-                  </span>
+                  <Lock className="w-4 h-4" aria-hidden />
+                  {isProcessing ? 'Confirming payment…' : !isDemoMode && !supabaseUser ? 'Sign in to book' : `Pay ₹${totalAmount}`}
                 </button>
               </div>
-
             </form>
           )}
-
         </div>
       </div>
 

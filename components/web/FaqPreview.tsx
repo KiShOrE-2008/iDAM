@@ -2,95 +2,77 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { ChevronDown, ArrowRight, HelpCircle } from 'lucide-react';
+import { Plus, Minus } from 'lucide-react';
 import { Language } from '@/types';
 
 interface FaqPreviewProps {
   lang: Language;
 }
 
+const previewFaqs = [
+  {
+    q: 'Is my space really held when I arrive?',
+    a: 'Yes. Once payment goes through, one space is set aside for your vehicle for the hours you booked. The owner sees your booking and your number plate before you arrive.',
+  },
+  {
+    q: 'Can I cancel if my plans change?',
+    a: 'Cancel up to 30 minutes before your start time and the full amount goes back to the payment method you used.',
+  },
+  {
+    q: 'What do I show at the gate?',
+    a: 'Open your pass in the app or on the website. The owner scans the QR code with the iDAM app, which checks the pass and matches your number plate.',
+  },
+  {
+    q: 'How do I list my own parking space?',
+    a: 'Use “List your space” and add the address, how many cars and bikes fit, your hourly rates and a few photos. We review each listing before drivers can book it.',
+  },
+];
+
 export const FaqPreview: React.FC<FaqPreviewProps> = ({ lang }) => {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
-  const previewFaqs = [
-    {
-      q: 'How does advance parking discovery and reservation work on iDAM?',
-      a: 'iDAM maps verified parking lots, commercial basements, and private driveways in real-time. Simply search your destination, pick your preferred slot, choose duration, and pay instantly. Your slot is guaranteed when you arrive.'
-    },
-    {
-      q: 'Can I cancel my reservation if my plans change?',
-      a: 'Yes. iDAM provides free cancellation up to 30 minutes before your reserved start time. 100% of your booking amount is instantly refunded back to your original payment method.'
-    },
-    {
-      q: 'How do space owners verify my booking at the entrance?',
-      a: 'When you arrive, display the digital QR pass from the app. The attendant or space owner scans your pass using the iDAM Owner Scanner, performing an instant cryptographic check against your vehicle plate.'
-    },
-    {
-      q: 'How do property owners list empty spaces and monetize them?',
-      a: 'Property owners can apply via our "List Your Space" wizard in under 3 minutes. Specify your address, capacity (cars/bikes), hourly rates, and photos. Once reviewed, your space goes live to thousands of Madurai drivers.'
-    }
-  ];
-
   return (
-    <section className="py-16 sm:py-20 bg-white border-t border-slate-200/80">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-        
-        {/* Section Header */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center space-x-2 bg-emerald-100 text-emerald-900 border border-emerald-300 px-3.5 py-1.5 rounded-full text-xs font-black">
-            <HelpCircle className="w-3.5 h-3.5" />
-            <span>Got Questions?</span>
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            Frequently Asked Questions
+    <section className="border-t border-slate-300/70 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div className="lg:col-span-4">
+          <h2 className={`text-3xl sm:text-[2.5rem] font-black tracking-tight text-ink leading-tight ${lang === 'ta' ? 'font-tamil' : ''}`}>
+            {lang === 'ta' ? 'அடிக்கடி கேட்கப்படும் கேள்விகள்' : 'Questions drivers ask'}
           </h2>
-          <p className="text-sm text-slate-500 font-medium max-w-xl mx-auto">
-            Everything you need to know about finding guaranteed spots, digital QR passes, and owner monetization.
+          <p className="mt-3 text-slate-600">
+            More answers on{' '}
+            <Link href="/faq" className="font-bold text-brand-700 underline underline-offset-4">
+              the help page
+            </Link>
+            .
           </p>
         </div>
 
-        {/* Accordion List */}
-        <div className="space-y-3 max-w-3xl mx-auto">
+        <div className="lg:col-span-8 border-t-2 border-ink">
           {previewFaqs.map((faq, idx) => {
             const isOpen = openIndex === idx;
             return (
-              <div
-                key={idx}
-                className="bg-[#F8F8F5] rounded-2xl border border-slate-200 overflow-hidden transition-all shadow-2xs"
-              >
-                <button
-                  type="button"
-                  onClick={() => setOpenIndex(isOpen ? null : idx)}
-                  className="w-full p-4 sm:p-5 flex items-center justify-between text-left text-xs sm:text-sm font-black text-slate-900 hover:bg-slate-100/60 transition-colors cursor-pointer"
-                >
-                  <span className="pr-4">{faq.q}</span>
-                  <ChevronDown
-                    className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
-                      isOpen ? 'rotate-180 text-emerald-700' : ''
-                    }`}
-                  />
-                </button>
+              <div key={idx} className="border-b border-slate-300">
+                <h3>
+                  <button
+                    type="button"
+                    onClick={() => setOpenIndex(isOpen ? null : idx)}
+                    aria-expanded={isOpen}
+                    aria-controls={`faq-${idx}`}
+                    className="w-full py-5 flex items-center justify-between gap-6 text-left text-lg font-bold text-ink cursor-pointer hover:text-brand-700"
+                  >
+                    {faq.q}
+                    {isOpen ? <Minus className="w-5 h-5 shrink-0" aria-hidden /> : <Plus className="w-5 h-5 shrink-0" aria-hidden />}
+                  </button>
+                </h3>
                 {isOpen && (
-                  <div className="px-4 sm:px-5 pb-5 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-200/60 pt-3">
+                  <p id={`faq-${idx}`} className="pb-6 -mt-1 text-[15px] text-slate-600 leading-relaxed max-w-2xl animate-fade-in">
                     {faq.a}
-                  </div>
+                  </p>
                 )}
               </div>
             );
           })}
         </div>
-
-        {/* View All FAQ CTA */}
-        <div className="text-center pt-2">
-          <Link
-            href="/faq"
-            className="inline-flex items-center space-x-2 bg-slate-950 hover:bg-slate-900 text-white font-black text-xs px-6 py-3 rounded-full shadow-md transition-all active:scale-95"
-          >
-            <span>View All Help & FAQ Categories</span>
-            <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
-          </Link>
-        </div>
-
       </div>
     </section>
   );

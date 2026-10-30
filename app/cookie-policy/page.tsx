@@ -31,7 +31,7 @@ export default function CookiePolicyPage() {
         {/* 1. What Are Cookies and Local Storage */}
         <section className="space-y-2">
           <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-            <Cookie className="w-5 h-5 text-emerald-600" />
+            <Cookie className="w-5 h-5 text-brand-600" />
             1. What Are Cookies & Local Browser Storage?
           </h2>
           <p>
@@ -40,11 +40,11 @@ export default function CookiePolicyPage() {
         </section>
 
         {/* 2. Our No-Ad Tracking Guarantee */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200/60 flex items-start gap-3">
-          <ShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-          <div className="text-xs sm:text-sm text-emerald-950">
+        <div className="p-4 sm:p-5 rounded-2xl bg-brand-50/70 border border-brand-200/60 flex items-start gap-3">
+          <ShieldCheck className="w-5 h-5 text-brand-600 flex-shrink-0 mt-0.5" />
+          <div className="text-xs sm:text-sm text-brand-950">
             <strong className="font-black">Our Zero Third-Party Advertising Guarantee:</strong>
-            <p className="mt-1 text-emerald-800">
+            <p className="mt-1 text-brand-800">
               iDAM does not use cross-site tracking pixels, third-party advertising cookies, or behavioral profiling trackers (such as Facebook Pixel or third-party ad networks). We only use strictly necessary and functional storage required to operate parking reservations safely.
             </p>
           </div>
@@ -56,7 +56,7 @@ export default function CookiePolicyPage() {
           
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left border border-slate-200 rounded-xl overflow-hidden">
-              <thead className="bg-slate-50 text-slate-900 font-black text-xs uppercase tracking-wider">
+              <thead className="bg-slate-50 text-slate-900 font-black text-xs">
                 <tr>
                   <th className="p-3 border-b border-slate-200">Category</th>
                   <th className="p-3 border-b border-slate-200">Storage Key / Name</th>
@@ -67,25 +67,25 @@ export default function CookiePolicyPage() {
               <tbody className="divide-y divide-slate-100 text-xs text-slate-600">
                 <tr>
                   <td className="p-3 font-bold text-slate-900">Strictly Necessary</td>
-                  <td className="p-3 font-mono text-emerald-700">sb-auth-token</td>
+                  <td className="p-3 tabular text-brand-700">sb-auth-token</td>
                   <td className="p-3">Maintains authenticated Supabase session and JWT for secure API calls.</td>
                   <td className="p-3">Session / Refresh Token</td>
                 </tr>
                 <tr>
                   <td className="p-3 font-bold text-slate-900">Preferences</td>
-                  <td className="p-3 font-mono text-emerald-700">idam_language</td>
+                  <td className="p-3 tabular text-brand-700">idam_language</td>
                   <td className="p-3">Remembers language selection (English vs Tamil) across navigation.</td>
                   <td className="p-3">Persistent (LocalStorage)</td>
                 </tr>
                 <tr>
                   <td className="p-3 font-bold text-slate-900">Functional</td>
-                  <td className="p-3 font-mono text-emerald-700">idam_saved_vehicles</td>
+                  <td className="p-3 tabular text-brand-700">idam_saved_vehicles</td>
                   <td className="p-3">Saves registered license plates in your local Garage for one-tap slot booking.</td>
                   <td className="p-3">Persistent (LocalStorage)</td>
                 </tr>
                 <tr>
                   <td className="p-3 font-bold text-slate-900">Demo State</td>
-                  <td className="p-3 font-mono text-emerald-700">idam_demo_mode</td>
+                  <td className="p-3 tabular text-brand-700">idam_demo_mode</td>
                   <td className="p-3">Differentiates sandboxed demo sessions from production live data.</td>
                   <td className="p-3">Browser Session</td>
                 </tr>
@@ -97,7 +97,7 @@ export default function CookiePolicyPage() {
         {/* 4. Managing Your Cookies */}
         <section className="space-y-3">
           <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-            <Settings className="w-5 h-5 text-emerald-600" />
+            <Settings className="w-5 h-5 text-brand-600" />
             3. How to Control and Manage Cookies
           </h2>
           <p>
@@ -128,7 +128,7 @@ export default function CookiePolicyPage() {
             </Link>
             <Link
               href="/privacy-requests"
-              className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition-colors text-xs"
+              className="px-4 py-2 rounded-xl bg-brand-600 text-white font-bold hover:bg-brand-700 transition-colors text-xs"
             >
               Privacy Requests
             </Link>

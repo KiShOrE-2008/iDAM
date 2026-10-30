@@ -133,7 +133,7 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
 
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(
-      `🚗 My iDAM Parking Pass: ${passId}\n📍 Location: ${location.title}\n🕒 ${passDate} (${passTimeSlot})\n💳 Payment: ${passPayment} (${passPaymentId})\nStatus: ${isCancelled ? 'CANCELLED' : isAwaitingPayment ? 'AWAITING PAYMENT' : 'CONFIRMED'}`
+      `My iDAM Parking Pass: ${passId}\nLocation: ${location.title}\n${passDate} (${passTimeSlot})\nPayment: ${passPayment} (${passPaymentId})\nStatus: ${isCancelled ? 'CANCELLED' : isAwaitingPayment ? 'AWAITING PAYMENT' : 'CONFIRMED'}`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
@@ -155,7 +155,7 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
       <div className="min-h-screen bg-gray-50 flex flex-col justify-between font-sans">
         <Navbar lang={lang} onLanguageToggle={setLang} activeView="web" onViewChange={() => {}} onOpenOwnerModal={() => {}} />
         <main className="max-w-md mx-auto px-4 py-20 text-center space-y-4 flex-1 flex flex-col items-center justify-center">
-          <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
+          <div className="w-12 h-12 border-4 border-brand-600 border-t-transparent rounded-full animate-spin mx-auto" />
           <h2 className="text-lg font-bold text-gray-800">Loading your digital pass...</h2>
           <p className="text-xs text-gray-500">Retrieving confirmed booking records</p>
         </main>
@@ -175,13 +175,13 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
           <div className="space-y-2">
             <h1 className="text-2xl font-extrabold text-gray-900">Pass Not Found</h1>
             <p className="text-sm text-gray-600">
-              No active or valid parking pass found for reference <span className="font-mono font-bold text-gray-800">{passId}</span>.
+              No active or valid parking pass found for reference <span className="tabular font-bold text-gray-800">{passId}</span>.
             </p>
           </div>
           <div className="flex items-center space-x-3 w-full pt-2">
             <button
               onClick={() => router.push('/my-bookings')}
-              className="flex-1 bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 px-6 rounded-2xl text-xs shadow-md transition-all text-center cursor-pointer"
+              className="flex-1 bg-brand-950 hover:bg-brand-900 text-white font-bold py-3.5 px-6 rounded-2xl text-xs shadow-md transition-all text-center cursor-pointer"
             >
               My Bookings
             </button>
@@ -218,7 +218,7 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
         <div className="flex items-center justify-between print:hidden">
           <button
             onClick={() => router.push('/')}
-            className="inline-flex items-center space-x-2 text-xs font-bold text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer"
+            className="inline-flex items-center space-x-2 text-xs font-bold text-gray-500 hover:text-brand-800 transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Map Discovery</span>
@@ -234,9 +234,9 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
             </button>
             <button
               onClick={handleShareWhatsApp}
-              className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 text-xs font-semibold flex items-center space-x-1.5 shadow-2xs transition-all cursor-pointer"
+              className="p-2 rounded-xl bg-brand-50 border border-brand-200 text-brand-800 hover:bg-brand-100 text-xs font-semibold flex items-center space-x-1.5 shadow-2xs transition-all cursor-pointer"
             >
-              <Share2 className="w-4 h-4 text-emerald-700" />
+              <Share2 className="w-4 h-4 text-brand-700" />
               <span>Share Pass</span>
             </button>
           </div>
@@ -257,9 +257,9 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
 
         {/* Confirmed Banner */}
         {!isAwaitingPayment && !isCancelled && (
-        <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-900 text-white rounded-3xl p-6 shadow-xl flex items-center justify-between">
+        <div className="bg-gradient-to-r from-brand-950 via-slate-900 to-brand-900 text-white rounded-3xl p-6 shadow-xl flex items-center justify-between">
           <div className="space-y-1">
-            <div className="inline-flex items-center space-x-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-3 py-1 rounded-full text-xs font-bold">
+            <div className="inline-flex items-center space-x-1.5 bg-brand-500/20 text-brand-300 border border-brand-400/30 px-3 py-1 rounded-full text-xs font-bold">
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>Booking Confirmed</span>
             </div>
@@ -267,7 +267,7 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
             <p className="text-xs text-gray-300">Show this QR code at the entrance boom barrier</p>
           </div>
 
-          <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-xs flex items-center justify-center text-emerald-300 shrink-0 border border-white/10">
+          <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-brand-300 shrink-0 border border-white/10">
             <ShieldCheck className="w-7 h-7" />
           </div>
         </div>
@@ -276,7 +276,7 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
         {/* Main Pass Card */}
         <div className="bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden relative print:shadow-none print:break-inside-avoid">
           
-          <div className="h-2 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-700" />
+          <div className="h-2 bg-gradient-to-r from-brand-600 via-brand-500 to-brand-700" />
 
           <div className="p-6 sm:p-8 space-y-6">
             
@@ -284,7 +284,7 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
               
               {/* QR Code Column */}
               <div className="md:col-span-5 text-center">
-                <div className="bg-emerald-50/60 p-5 rounded-3xl border border-emerald-100 inline-block shadow-inner">
+                <div className="bg-brand-50/60 p-5 rounded-3xl border border-brand-100 inline-block shadow-inner">
                   {isAwaitingPayment || isCancelled ? (
                     <div className="w-40 h-40 mx-auto flex items-center justify-center text-center text-xs font-semibold text-gray-500">
                       {isCancelled ? 'Pass cancelled' : 'QR available after payment is confirmed'}
@@ -297,7 +297,7 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
                       className="mx-auto"
                     />
                   )}
-                  <div className="font-mono text-xs font-bold text-gray-900 mt-3 tracking-widest">
+                  <div className="tabular text-xs font-bold text-gray-900 mt-3">
                     {passId}
                   </div>
                 </div>
@@ -309,9 +309,9 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
               {/* Reservation Details Column */}
               <div className="md:col-span-7 space-y-4 text-sm">
                 <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Parking Spot</label>
+                  <label className="text-xs font-bold text-gray-400 block">Parking Spot</label>
                   <div className="font-extrabold text-gray-900 text-lg flex items-center space-x-1.5 mt-0.5">
-                    <MapPin className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <MapPin className="w-4 h-4 text-brand-700 shrink-0" />
                     <span>{location.title}</span>
                   </div>
                   <div className="text-xs text-gray-500 pl-5">{location.address}</div>
@@ -319,7 +319,7 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
 
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Date</label>
+                      <label className="text-xs font-bold text-gray-400 block">Date</label>
                       <div className="font-bold text-gray-800 flex items-center space-x-1 mt-0.5">
                         <Calendar className="w-3.5 h-3.5 text-gray-500" />
                         <span>{passDate}</span>
@@ -327,7 +327,7 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
                     </div>
 
                     <div>
-                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Time Slot</label>
+                      <label className="text-xs font-bold text-gray-400 block">Time Slot</label>
                       <div className="font-bold text-gray-800 flex items-center space-x-1 mt-0.5">
                         <Clock className="w-3.5 h-3.5 text-gray-500" />
                         <span>{passTimeSlot}</span>
@@ -337,15 +337,15 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
 
                 <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
                     <div>
-                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Vehicle Plate</label>
-                      <div className="font-mono font-extrabold text-gray-900 text-base mt-0.5">
+                      <label className="text-xs font-bold text-gray-400 block">Vehicle Plate</label>
+                      <div className="tabular font-extrabold text-gray-900 text-base mt-0.5">
                         {passVehicle}
                       </div>
                     </div>
 
                     <div>
-                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">{isAwaitingPayment ? 'Amount' : 'Amount Paid'}</label>
-                      <div className="font-extrabold text-emerald-800 text-base mt-0.5">
+                      <label className="text-xs font-bold text-gray-400 block">{isAwaitingPayment ? 'Amount' : 'Amount Paid'}</label>
+                      <div className="font-extrabold text-brand-800 text-base mt-0.5">
                         {passAmount}
                       </div>
                       
@@ -358,11 +358,11 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
                           <button
                             type="button"
                             onClick={handleCopyPaymentId}
-                            className="text-[10px] font-mono text-gray-500 hover:text-gray-800 flex items-center space-x-0.5 bg-gray-100 px-1.5 py-0.2 rounded transition-colors"
+                            className="text-[10px] tabular text-gray-500 hover:text-gray-800 flex items-center space-x-0.5 bg-gray-100 px-1.5 py-0.2 rounded transition-colors"
                             title="Click to copy transaction ID"
                           >
                             <span className="truncate max-w-[90px]">{passPaymentId}</span>
-                            {copiedTxn ? <Check className="w-2.5 h-2.5 text-emerald-600" /> : <Copy className="w-2.5 h-2.5" />}
+                            {copiedTxn ? <Check className="w-2.5 h-2.5 text-brand-600" /> : <Copy className="w-2.5 h-2.5" />}
                           </button>
                         )}
                       </div>
@@ -374,16 +374,16 @@ export function DigitalPassClient({ passId }: DigitalPassClientProps) {
 
             {/* Bottom Actions */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center space-x-2 text-xs font-semibold text-emerald-900">
-                <ShieldCheck className="w-4 h-4 text-emerald-700" />
+              <div className="flex items-center space-x-2 text-xs font-semibold text-brand-900">
+                <ShieldCheck className="w-4 h-4 text-brand-700" />
                 <span>Authorized Parking Guarantee • Real-time Gate Sync</span>
               </div>
 
               <button
                 onClick={() => window.open(`https://maps.google.com/?q=${location.latitude},${location.longitude}`, '_blank')}
-                className="print:hidden w-full sm:w-auto bg-emerald-950 hover:bg-emerald-900 text-white font-bold px-6 py-3 rounded-2xl text-xs shadow-md flex items-center justify-center space-x-2 transition-all"
+                className="print:hidden w-full sm:w-auto bg-brand-950 hover:bg-brand-900 text-white font-bold px-6 py-3 rounded-2xl text-xs shadow-md flex items-center justify-center space-x-2 transition-all"
               >
-                <Navigation className="w-4 h-4 text-emerald-300" />
+                <Navigation className="w-4 h-4 text-brand-300" />
                 <span>Navigate in Google Maps &rarr;</span>
               </button>
             </div>

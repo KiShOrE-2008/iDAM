@@ -77,7 +77,7 @@ export default function ContactPage() {
           <div className="lg:col-span-5 space-y-6">
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-md space-y-6">
               <div className="space-y-2">
-                <span className="text-xs font-black text-emerald-800 uppercase tracking-wider bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
+                <span className="text-xs font-black text-brand-800 bg-brand-100 px-3 py-1 rounded-full border border-brand-300">
                   Madurai Operations Desk
                 </span>
                 <h3 className="text-xl font-black text-slate-900">Direct Support Channels</h3>
@@ -88,12 +88,12 @@ export default function ContactPage() {
 
               <div className="space-y-4 text-xs font-bold text-slate-700">
                 <div className="flex items-start space-x-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-brand-100 text-brand-800 flex items-center justify-center shrink-0">
                     <Mail className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Email Support</span>
-                    <a href="mailto:support@idam.park" className="text-slate-900 font-black hover:text-emerald-700 text-sm">
+                    <span className="text-[10px] text-slate-400 block">Email Support</span>
+                    <a href="mailto:support@idam.park" className="text-slate-900 font-black hover:text-brand-700 text-sm">
                       support@idam.park
                     </a>
                     <span className="text-[10px] text-slate-500 block">Response within 2 hours</span>
@@ -101,22 +101,22 @@ export default function ContactPage() {
                 </div>
 
                 <div className="flex items-start space-x-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-brand-100 text-brand-800 flex items-center justify-center shrink-0">
                     <Phone className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Direct Helpline</span>
+                    <span className="text-[10px] text-slate-400 block">Direct Helpline</span>
                     <span className="text-slate-900 font-black text-sm block">+91 452 234 5678</span>
                     <span className="text-[10px] text-slate-500 block">Toll-free 08:00 AM – 10:00 PM IST</span>
                   </div>
                 </div>
 
                 <div className="flex items-start space-x-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-brand-100 text-brand-800 flex items-center justify-center shrink-0">
                     <MapPin className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Local Hub Address</span>
+                    <span className="text-[10px] text-slate-400 block">Local Hub Address</span>
                     <span className="text-slate-900 font-black text-xs block">
                       124 West Masi Street, Near Meenakshi Temple, Madurai, Tamil Nadu 625001
                     </span>
@@ -125,12 +125,12 @@ export default function ContactPage() {
               </div>
 
               {/* Service Level Agreement Badge */}
-              <div className="bg-emerald-50 border border-emerald-200/80 p-4 rounded-2xl text-xs text-emerald-900 space-y-1">
+              <div className="bg-brand-50 border border-brand-200/80 p-4 rounded-2xl text-xs text-brand-900 space-y-1">
                 <div className="flex items-center space-x-1.5 font-black">
-                  <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                  <ShieldCheck className="w-4 h-4 text-brand-700" />
                   <span>SLA Guarantee</span>
                 </div>
-                <p className="text-[11px] text-emerald-800 font-medium">
+                <p className="text-[11px] text-brand-800 font-medium">
                   Booking cancellation disputes and obstructed space reports are resolved within 30 minutes during active reservation hours.
                 </p>
               </div>
@@ -143,13 +143,13 @@ export default function ContactPage() {
               
               {submittedTicket ? (
                 <div className="py-8 text-center space-y-4 animate-scale-in">
-                  <div className="w-16 h-16 bg-emerald-100 text-emerald-800 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                    <CheckCircle2 className="w-10 h-10 text-emerald-700" />
+                  <div className="w-16 h-16 bg-brand-100 text-brand-800 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                    <CheckCircle2 className="w-10 h-10 text-brand-700" />
                   </div>
 
                   <div className="space-y-1">
                     <h3 className="text-2xl font-black text-slate-900">Support Ticket Logged</h3>
-                    <p className="text-xs text-emerald-800 font-extrabold font-mono">
+                    <p className="text-xs text-brand-800 font-extrabold tabular">
                       Reference Code: {submittedTicket.id}
                     </p>
                   </div>
@@ -160,7 +160,7 @@ export default function ContactPage() {
 
                   <button
                     onClick={() => setSubmittedTicket(null)}
-                    className="px-6 py-2.5 bg-slate-950 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95"
+                    className="px-6 py-2.5 bg-slate-950 text-white font-black text-xs rounded-xl shadow-md transition-all"
                   >
                     Submit Another Inquiry
                   </button>
@@ -184,7 +184,7 @@ export default function ContactPage() {
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         placeholder="e.g. Ramesh Kumar"
-                        className={`w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                        className={`w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                           errors.name ? 'border-rose-300 ring-1 ring-rose-200' : 'border-slate-200'
                         }`}
                       />
@@ -200,7 +200,7 @@ export default function ContactPage() {
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         placeholder="e.g. ramesh@example.com"
-                        className={`w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                        className={`w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                           errors.email ? 'border-rose-300 ring-1 ring-rose-200' : 'border-slate-200'
                         }`}
                       />
@@ -216,7 +216,7 @@ export default function ContactPage() {
                       <select
                         value={formData.category}
                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
                       >
                         <option>General Question</option>
                         <option>Booking & Slot Access Issue</option>
@@ -235,7 +235,7 @@ export default function ContactPage() {
                         value={formData.bookingId}
                         onChange={(e) => setFormData({ ...formData, bookingId: e.target.value })}
                         placeholder="e.g. IDM-82931"
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
                       />
                     </div>
                   </div>
@@ -249,7 +249,7 @@ export default function ContactPage() {
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                       placeholder="Please explain your question or issue in detail..."
-                      className={`w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                      className={`w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                         errors.message ? 'border-rose-300 ring-1 ring-rose-200' : 'border-slate-200'
                       }`}
                     />
@@ -259,9 +259,9 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full py-3.5 bg-slate-950 hover:bg-slate-900 active:scale-98 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                    className="w-full py-3.5 bg-slate-950 hover:bg-slate-900 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
                   >
-                    <Send className="w-4 h-4 text-emerald-400" />
+                    <Send className="w-4 h-4 text-brand-400" />
                     <span>{isSubmitting ? 'Transmitting Ticket...' : 'Send Message to Operations'}</span>
                   </button>
                 </form>

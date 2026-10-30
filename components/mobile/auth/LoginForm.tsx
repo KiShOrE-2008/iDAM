@@ -62,8 +62,8 @@ export const LoginForm: React.FC = () => {
       
       {/* Brand Header */}
       <div className="text-center space-y-1.5">
-        <div className="text-xl font-black tracking-widest text-slate-900 uppercase">
-          iDAM <span className="text-emerald-700 font-tamil">இடம்</span>
+        <div className="text-xl font-black text-slate-900 uppercase">
+          iDAM <span className="text-brand-700 font-tamil">இடம்</span>
         </div>
         <h2 className="text-lg font-black text-slate-900">Welcome back.</h2>
         <p className="text-xs text-slate-500 font-medium">Find & reserve parking before you arrive.</p>
@@ -81,7 +81,7 @@ export const LoginForm: React.FC = () => {
           type="button"
           onClick={handleResend}
           disabled={resendState !== 'idle'}
-          className="w-full text-xs font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl py-2.5 hover:bg-emerald-100 disabled:opacity-70"
+          className="w-full text-xs font-extrabold text-brand-800 bg-brand-50 border border-brand-200 rounded-xl py-2.5 hover:bg-brand-100 disabled:opacity-70"
         >
           {resendState === 'sent'
             ? `Confirmation email sent to ${email}. Check your inbox and spam folder.`
@@ -101,7 +101,7 @@ export const LoginForm: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/40"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-600/40"
             />
           </div>
         </div>
@@ -109,7 +109,7 @@ export const LoginForm: React.FC = () => {
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="text-xs font-extrabold text-slate-800">Password</label>
-            <Link href="/forgot-password" className="text-[11px] font-bold text-emerald-800 hover:underline">
+            <Link href="/forgot-password" className="text-[11px] font-bold text-brand-800 hover:underline">
               Forgot password?
             </Link>
           </div>
@@ -121,7 +121,7 @@ export const LoginForm: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••••••"
-              className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/40"
+              className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-600/40"
             />
             <button
               type="button"
@@ -136,14 +136,14 @@ export const LoginForm: React.FC = () => {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3 rounded-xl shadow-md text-xs tracking-wide transition-all transform active:scale-98 flex items-center justify-center space-x-2 disabled:opacity-75"
+          className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3 rounded-xl shadow-md text-xs tracking-wide transition-all transform flex items-center justify-center space-x-2 disabled:opacity-75"
         >
           {isLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+            <Loader2 className="w-4 h-4 animate-spin text-brand-400" />
           ) : (
             <>
               <span>Sign in</span>
-              <ArrowRight className="w-4 h-4 text-emerald-400" />
+              <ArrowRight className="w-4 h-4 text-brand-400" />
             </>
           )}
         </button>
@@ -152,7 +152,7 @@ export const LoginForm: React.FC = () => {
       {/* Redirect to Sign Up */}
       <div className="text-center text-xs text-slate-500 font-medium pt-1">
         <span>New to iDAM? </span>
-        <Link href="/signup" className="text-emerald-800 font-extrabold hover:underline">
+        <Link href="/signup" className="text-brand-800 font-extrabold hover:underline">
           Create an account →
         </Link>
       </div>

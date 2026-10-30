@@ -31,7 +31,7 @@ export default function AccessibilityStatementPage() {
         {/* 1. Commitment */}
         <section className="space-y-2">
           <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-            <HeartHandshake className="w-5 h-5 text-emerald-600" />
+            <HeartHandshake className="w-5 h-5 text-brand-600" />
             1. Our Commitment to Universal Access
           </h2>
           <p>
@@ -47,27 +47,27 @@ export default function AccessibilityStatementPage() {
             
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
               <div className="flex items-center gap-2 text-slate-900 font-black text-sm">
-                <Eye className="w-4 h-4 text-emerald-600" />
+                <Eye className="w-4 h-4 text-brand-600" />
                 Color Contrast & Typography
               </div>
               <p className="text-xs text-slate-600">
-                Our Warm Minimal palette uses high-contrast text (<span className="font-mono text-slate-900 font-bold">#14201D</span> on <span className="font-mono text-slate-900 font-bold">#F8F8F5</span> and white surfaces) achieving a contrast ratio well above the required 4.5:1 ratio for normal body copy and 3:1 for large text.
+                Our Warm Minimal palette uses high-contrast text (<span className="tabular text-slate-900 font-bold">#14201D</span> on <span className="tabular text-slate-900 font-bold">#F8F8F5</span> and white surfaces) achieving a contrast ratio well above the required 4.5:1 ratio for normal body copy and 3:1 for large text.
               </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
               <div className="flex items-center gap-2 text-slate-900 font-black text-sm">
-                <Monitor className="w-4 h-4 text-emerald-600" />
+                <Monitor className="w-4 h-4 text-brand-600" />
                 Screen Reader Compatibility
               </div>
               <p className="text-xs text-slate-600">
-                Interactive elements include meaningful semantic HTML5 tags (<code className="text-emerald-700">&lt;main&gt;</code>, <code className="text-emerald-700">&lt;nav&gt;</code>, <code className="text-emerald-700">&lt;button&gt;</code>) and explicit <code className="text-emerald-700">aria-label</code> tags on icon-only buttons, parking filters, and status badges.
+                Interactive elements include meaningful semantic HTML5 tags (<code className="text-brand-700">&lt;main&gt;</code>, <code className="text-brand-700">&lt;nav&gt;</code>, <code className="text-brand-700">&lt;button&gt;</code>) and explicit <code className="text-brand-700">aria-label</code> tags on icon-only buttons, parking filters, and status badges.
               </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
               <div className="flex items-center gap-2 text-slate-900 font-black text-sm">
-                <Smartphone className="w-4 h-4 text-emerald-600" />
+                <Smartphone className="w-4 h-4 text-brand-600" />
                 Touch Target Sizing & Haptics
               </div>
               <p className="text-xs text-slate-600">
@@ -77,7 +77,7 @@ export default function AccessibilityStatementPage() {
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
               <div className="flex items-center gap-2 text-slate-900 font-black text-sm">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <CheckCircle2 className="w-4 h-4 text-brand-600" />
                 Bilingual Language Support
               </div>
               <p className="text-xs text-slate-600">
@@ -92,27 +92,27 @@ export default function AccessibilityStatementPage() {
         <section className="space-y-2">
           <h2 className="text-base sm:text-lg font-black text-slate-900">3. Keyboard & Assistive Device Navigation</h2>
           <p>
-            All critical workflows—searching for parking, selecting a slot, reserving a pass, reviewing receipts, and accessing legal terms—can be navigated using standard keyboard controls (<kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-xs font-mono">Tab</kbd>, <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-xs font-mono">Shift + Tab</kbd>, <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-xs font-mono">Enter</kbd>, and <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-xs font-mono">Escape</kbd>).
+            All critical workflows—searching for parking, selecting a slot, reserving a pass, reviewing receipts, and accessing legal terms—can be navigated using standard keyboard controls (<kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-xs tabular">Tab</kbd>, <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-xs tabular">Shift + Tab</kbd>, <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-xs tabular">Enter</kbd>, and <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-xs tabular">Escape</kbd>).
           </p>
         </section>
 
         {/* 4. Feedback and Barrier Reporting */}
         <section className="space-y-3 p-5 rounded-2xl bg-slate-50 border border-slate-200/80">
           <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-emerald-600" />
+            <MessageSquare className="w-5 h-5 text-brand-600" />
             4. Report an Accessibility Barrier
           </h2>
           <p>
             We continually test and improve our application. If you experience difficulty accessing any part of our website, reservation workflow, or QR pass reader, please let us know:
           </p>
           <div className="space-y-1 text-slate-800 font-semibold text-xs">
-            <p>• <strong>Accessibility Team Email:</strong> <a href="mailto:support@idam.park?subject=Accessibility%20Barrier" className="text-emerald-700 font-black underline">support@idam.park</a></p>
+            <p>• <strong>Accessibility Team Email:</strong> <a href="mailto:support@idam.park?subject=Accessibility%20Barrier" className="text-brand-700 font-black underline">support@idam.park</a></p>
             <p>• <strong>Response Commitment:</strong> We investigate all accessibility reports within 2 business days.</p>
           </div>
           <div className="pt-2">
             <Link
               href="/contact?category=accessibility"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition-colors text-xs"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 text-white font-bold hover:bg-brand-700 transition-colors text-xs"
             >
               Submit Feedback via Support Form
             </Link>

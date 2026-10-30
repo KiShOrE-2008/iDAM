@@ -177,7 +177,7 @@ export async function openOfficialRazorpayCheckout(params: OfficialCheckoutParam
         passCode: params.bookingPassCode || ''
       },
       theme: {
-        color: '#064e3b', // iDAM emerald-900 brand
+        color: '#1846A3', // iDAM sign blue (brand-700)
         backdrop_color: 'rgba(0, 0, 0, 0.65)'
       },
       modal: {

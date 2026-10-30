@@ -57,8 +57,8 @@ export const NetworkStatus: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-slate-900/95 border border-emerald-500/30 text-emerald-300 shadow-2xl backdrop-blur-xl">
-          <Wifi className="w-4 h-4 text-emerald-400 shrink-0" />
+        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-slate-900/95 border border-brand-500/30 text-brand-300 shadow-2xl backdrop-blur-xl">
+          <Wifi className="w-4 h-4 text-brand-400 shrink-0" />
           <span className="text-xs font-medium text-white">Back online — connection restored</span>
         </div>
       )}

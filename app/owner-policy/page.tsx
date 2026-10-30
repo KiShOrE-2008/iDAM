@@ -25,7 +25,7 @@ export default function OwnerPolicyPage() {
         {/* Navigation Breadcrumb */}
         <Link
           href="/"
-          className="inline-flex items-center space-x-2 text-xs font-bold text-gray-500 hover:text-emerald-800 transition-colors"
+          className="inline-flex items-center space-x-2 text-xs font-bold text-gray-500 hover:text-brand-800 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Home</span>
@@ -33,8 +33,8 @@ export default function OwnerPolicyPage() {
 
         {/* Page Header */}
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-200/80 space-y-4">
-          <div className="inline-flex items-center space-x-2 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3.5 py-1 rounded-full text-xs font-bold">
-            <Building2 className="w-4 h-4 text-emerald-700" />
+          <div className="inline-flex items-center space-x-2 bg-brand-50 text-brand-800 border border-brand-200 px-3.5 py-1 rounded-full text-xs font-bold">
+            <Building2 className="w-4 h-4 text-brand-700" />
             <span>Owner & Partner Standards</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
@@ -54,7 +54,7 @@ export default function OwnerPolicyPage() {
         </div>
 
         {/* Main Content */}
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-200/80 prose prose-emerald max-w-none text-sm leading-relaxed space-y-8">
+        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-200/80 prose prose-brand max-w-none text-sm leading-relaxed space-y-8">
           
           <p className="text-base text-gray-700 font-medium">
             This policy applies to individuals, private space owners, commercial building operators, and organizations that list parking spaces on <strong>IDAM | இடம்</strong> across Madurai.
@@ -99,7 +99,7 @@ export default function OwnerPolicyPage() {
           <section className="space-y-3">
             <h3 className="text-xl font-extrabold text-gray-900">5. Earnings & Payouts</h3>
             <p>
-              Owners receive accumulated parking earnings directly to their bank account or UPI according to weekly or monthly payout cycles, subject to applicable platform fees and statutory taxes.
+              Owners receive each booking's amount minus the iDAM platform fee directly in their verified bank account through Razorpay. The money is held until 24 hours after the parking ends and then paid out, usually within 1–2 working days, subject to applicable statutory taxes. A booking the driver cancels before arriving is not paid out.
             </p>
           </section>
 

@@ -52,7 +52,7 @@ export const CapacitorBackButtonHandler: React.FC = () => {
   if (!showExitDialog) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-fade-in">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/70 animate-fade-in">
       <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-2xl max-w-xs w-full text-center space-y-4 border border-slate-200 animate-scale-in relative">
         
         {/* Close Icon Button */}
@@ -81,13 +81,13 @@ export const CapacitorBackButtonHandler: React.FC = () => {
         <div className="flex items-center space-x-3 pt-2">
           <button
             onClick={cancelExitApp}
-            className="flex-1 py-3 px-4 rounded-2xl border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-all active:scale-95"
+            className="flex-1 py-3 px-4 rounded-2xl border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-all"
           >
             Stay
           </button>
           <button
             onClick={confirmExitApp}
-            className="flex-1 py-3 px-4 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs shadow-md transition-all active:scale-95 flex items-center justify-center space-x-1.5"
+            className="flex-1 py-3 px-4 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs shadow-md transition-all flex items-center justify-center space-x-1.5"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Exit app</span>

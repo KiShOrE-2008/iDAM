@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
 import { AdminLayout, AdminCard, LoadState } from '@/components/admin/AdminLayout';
 import { AdminBooking, fetchAdminBookings, formatInr, formatDateTime } from '@/lib/admin/service';
+import { SlidingTabs } from '@/components/admin/motion';
 
 const FILTERS: { key: string | null; label: string }[] = [
   { key: null, label: 'All' },
@@ -17,7 +18,7 @@ const FILTERS: { key: string | null; label: string }[] = [
 
 const STATUS_STYLE: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-900',
-  confirmed: 'bg-emerald-100 text-emerald-900',
+  confirmed: 'bg-brand-100 text-brand-900',
   active: 'bg-sky-100 text-sky-900',
   completed: 'bg-slate-100 text-slate-700',
   cancelled: 'bg-rose-100 text-rose-900',
@@ -50,7 +51,7 @@ function BookingsBody() {
       <div className="flex flex-wrap items-center gap-2">
         <form
           onSubmit={(e) => { e.preventDefault(); setSearch(query.trim()); }}
-          className="flex items-center bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 w-full sm:w-72"
+          className="flex items-center bg-white border border-slate-300 rounded-md px-3 py-2 w-full sm:w-72 focus-within:border-ink"
         >
           <Search className="w-3.5 h-3.5 text-slate-400" />
           <input
@@ -61,19 +62,8 @@ function BookingsBody() {
             className="ml-2 flex-1 text-xs font-medium outline-none bg-transparent"
           />
         </form>
-        <div className="flex gap-1 overflow-x-auto no-scrollbar">
-          {FILTERS.map((f) => (
-            <button
-              key={f.label}
-              onClick={() => setFilter(f.key)}
-              aria-pressed={filter === f.key}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap border ${
-                filter === f.key ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
+        <div className="min-w-0 max-w-full">
+          <SlidingTabs label="Booking status" value={filter} onChange={setFilter} options={FILTERS} />
         </div>
       </div>
 
@@ -92,17 +82,17 @@ function BookingsBody() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows?.map((b) => (
-                    <tr key={b.id} className="border-t border-slate-100 align-top">
-                      <td className="py-2 px-1 font-mono font-bold whitespace-nowrap">{b.pass_code}<div className="font-sans font-medium text-[10px] text-slate-500">{formatDateTime(b.created_at)}</div></td>
+                  {rows?.map((b, i) => (
+                    <tr key={b.id} className="row-in border-t border-slate-100 align-top" style={{ animationDelay: `${Math.min(i, 15) * 20}ms` }}>
+                      <td className="py-2 px-1 tabular font-bold whitespace-nowrap">{b.pass_code}<div className="font-sans font-medium text-[10px] text-slate-500">{formatDateTime(b.created_at)}</div></td>
                       <td className="py-2 px-1 max-w-[180px]"><div className="font-bold truncate">{b.driver_name || '—'}</div><div className="text-[10px] text-slate-500 truncate">{b.driver_email}</div></td>
                       <td className="py-2 px-1 max-w-[160px] truncate">{b.lot || '—'}</td>
                       <td className="py-2 px-1 whitespace-nowrap">{formatDateTime(b.start_at)}</td>
-                      <td className="py-2 px-1 whitespace-nowrap font-mono">{b.vehicle_number || '—'} <span className="font-sans text-slate-500">{b.vehicle_type}</span></td>
+                      <td className="py-2 px-1 whitespace-nowrap tabular">{b.vehicle_number || '—'} <span className="font-sans text-slate-500">{b.vehicle_type}</span></td>
                       <td className="py-2 px-1 whitespace-nowrap tabular-nums font-bold">{formatInr(b.total_amount)}</td>
                       <td className="py-2 px-1"><Badge status={b.booking_status} /></td>
                       <td className="py-2 px-1"><Badge status={b.payment_status} /></td>
-                      <td className="py-2 px-1 font-mono text-[10px] text-slate-500 whitespace-nowrap">{b.payment_id || b.razorpay_order_id || '—'}</td>
+                      <td className="py-2 px-1 tabular text-[10px] text-slate-500 whitespace-nowrap">{b.payment_id || b.razorpay_order_id || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -117,7 +107,7 @@ function BookingsBody() {
 
 function Badge({ status }: { status: string }) {
   return (
-    <span className={`inline-block text-[10px] font-black rounded-full px-2 py-0.5 whitespace-nowrap ${STATUS_STYLE[status] || 'bg-slate-100 text-slate-700'}`}>
+    <span className={`inline-block text-xs font-bold rounded px-1.5 py-0.5 whitespace-nowrap ${STATUS_STYLE[status] || 'bg-slate-100 text-slate-700'}`}>
       {status}
     </span>
   );

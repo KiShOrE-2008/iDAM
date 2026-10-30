@@ -42,15 +42,15 @@ export const CookieBanner: React.FC = () => {
       aria-label="Cookie consent banner"
       className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 animate-fade-in"
     >
-      <div className="bg-slate-950/95 backdrop-blur-md text-white border border-slate-800 rounded-3xl p-5 shadow-2xl flex flex-col gap-3">
+      <div className="bg-slate-950/95 text-white border border-slate-800 rounded-3xl p-5 shadow-2xl flex flex-col gap-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-brand-950/80 border border-brand-500/40 text-brand-400 flex items-center justify-center shrink-0">
               <Cookie className="w-4 h-4" />
             </div>
             <div>
               <h4 className="text-xs font-black tracking-wide text-white">Cookie & Privacy Notice</h4>
-              <p className="text-[11px] text-emerald-400 font-bold">Zero Advertising Trackers</p>
+              <p className="text-[11px] text-brand-400 font-bold">Zero Advertising Trackers</p>
             </div>
           </div>
           <button
@@ -69,14 +69,14 @@ export const CookieBanner: React.FC = () => {
         <div className="flex items-center justify-between gap-3 pt-1">
           <Link
             href="/cookie-policy"
-            className="text-xs text-emerald-400 font-bold hover:underline"
+            className="text-xs text-brand-400 font-bold hover:underline"
           >
             Learn More
           </Link>
           <div className="flex items-center gap-2">
             <button
               onClick={handleAccept}
-              className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors shadow-sm"
+              className="px-4 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs transition-colors shadow-sm"
             >
               Got it
             </button>

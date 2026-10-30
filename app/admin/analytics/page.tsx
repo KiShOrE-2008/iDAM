@@ -3,11 +3,17 @@
 import React, { useEffect, useState } from 'react';
 import { AdminLayout, AdminCard, StatTile, LoadState } from '@/components/admin/AdminLayout';
 import { BarChart } from '@/components/admin/BarChart';
+import { SlidingTabs } from '@/components/admin/motion';
 import { AdminAnalytics, fetchAdminAnalytics, formatInr, formatDateTime } from '@/lib/admin/service';
 
 const PERIODS = [7, 30, 90];
 
-const dayLabel = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+// `day` arrives as "2026-10-30" or, from generate_series, "2026-10-30T00:00:00": use the date part only
+const dayLabel = (day: string) => {
+  const [y, m, d] = String(day).slice(0, 10).split('-').map(Number);
+  const date = new Date(y, (m || 1) - 1, d || 1);
+  return Number.isNaN(date.getTime()) ? String(day) : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+};
 
 export default function AdminAnalyticsPage() {
   const [days, setDays] = useState(30);
@@ -16,18 +22,13 @@ export default function AdminAnalyticsPage() {
       title="Analytics"
       subtitle="Owners, drivers and money for the selected period (India time)."
       actions={
-        <div role="group" aria-label="Period" className="flex bg-white border border-slate-200 rounded-xl p-0.5">
-          {PERIODS.map((p) => (
-            <button
-              key={p}
-              onClick={() => setDays(p)}
-              aria-pressed={days === p}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold ${days === p ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              {p} days
-            </button>
-          ))}
-        </div>
+        <SlidingTabs
+          label="Period"
+          variant="segmented"
+          value={days}
+          onChange={setDays}
+          options={PERIODS.map((p) => ({ key: p, label: `${p} days` }))}
+        />
       }
     >
       <AnalyticsBody days={days} />
@@ -56,22 +57,22 @@ function AnalyticsBody({ days }: { days: number }) {
         <>
           <AdminCard title="Money">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <StatTile label="Paid by drivers" value={formatInr(t.revenue)} hint={`${t.paid_bookings} paid bookings`} />
-              <StatTile label="iDAM fees" value={formatInr(t.platform_fees)} hint="Platform fee per booking" />
-              <StatTile label="Owners' share" value={formatInr(t.owner_earnings)} hint="Paid minus iDAM fees" />
-              <StatTile label="Average booking" value={formatInr(t.avg_booking_value)} />
+              <StatTile label="Paid by drivers" value={Number(t.revenue)} format={formatInr} hint={`${t.paid_bookings} paid bookings`} />
+              <StatTile label="iDAM fees" value={Number(t.platform_fees)} format={formatInr} hint="Platform fee per booking" />
+              <StatTile label="Owners' share" value={Number(t.owner_earnings)} format={formatInr} hint="Paid minus iDAM fees" />
+              <StatTile label="Average booking" value={Number(t.avg_booking_value)} format={formatInr} />
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
               <StatTile label="All bookings" value={t.bookings} hint="Including unpaid" />
               <StatTile label="Cancelled" value={t.cancelled} />
-              <StatTile label="Marked refunded" value={formatInr(t.marked_refunded)} hint="Check in Razorpay" />
+              <StatTile label="Marked refunded" value={Number(t.marked_refunded)} format={formatInr} hint="Check in Razorpay" />
             </div>
           </AdminCard>
 
           <AdminCard>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-xs font-black uppercase tracking-wider text-slate-500">Paid revenue per day</h2>
-              <button onClick={() => setShowTable((v) => !v)} className="text-[11px] font-bold text-emerald-800 hover:underline">
+              <h2 className="text-base font-black text-ink">Paid revenue per day</h2>
+              <button onClick={() => setShowTable((v) => !v)} className="text-[11px] font-bold text-brand-800 hover:underline">
                 {showTable ? 'Show charts' : 'Show as table'}
               </button>
             </div>
@@ -105,7 +106,7 @@ function AnalyticsBody({ days }: { days: number }) {
                     detail: [`${d.paid_bookings} paid booking${d.paid_bookings === 1 ? '' : 's'}`]
                   }))}
                 />
-                <h2 className="text-xs font-black uppercase tracking-wider text-slate-500 mt-5 mb-2">Bookings made per day</h2>
+                <h2 className="text-base font-black text-ink mt-6 mb-2">Bookings made per day</h2>
                 <BarChart
                   title="Bookings made per day"
                   data={data.daily.map((d) => ({
@@ -185,7 +186,7 @@ function Amount({ value, max }: { value: number; max: number }) {
   return (
     <div className="flex items-center justify-end gap-2">
       <div className="hidden sm:block w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden" aria-hidden="true">
-        <div className="h-full rounded-full" style={{ width: `${(value / max) * 100}%`, background: '#059669' }} />
+        <div className="h-full rounded-full meter-fill" style={{ width: `${(value / max) * 100}%`, background: '#1846A3' }} />
       </div>
       <span className="tabular-nums font-bold">{formatInr(value)}</span>
     </div>
@@ -205,8 +206,8 @@ function RankTable({ headers, rows, empty }: { headers: string[]; rows: { key: s
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
-            <tr key={r.key} className="border-t border-slate-100 align-middle">
+          {rows.map((r, idx) => (
+            <tr key={r.key} className="row-in border-t border-slate-100 align-middle" style={{ animationDelay: `${Math.min(idx, 12) * 30}ms` }}>
               {r.cells.map((c, i) => (
                 <td key={i} className={`py-2 px-1 ${i === 0 ? 'max-w-[220px]' : 'text-right whitespace-nowrap tabular-nums'}`}>{c}</td>
               ))}

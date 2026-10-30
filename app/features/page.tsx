@@ -102,13 +102,13 @@ export default function FeaturesPage() {
               return (
                 <div
                   key={idx}
-                  className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-md space-y-4 hover:border-emerald-400/60 transition-all group"
+                  className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-md space-y-4 hover:border-brand-400/60 transition-all group"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform">
+                    <div className="w-12 h-12 rounded-2xl bg-brand-100 text-brand-800 flex items-center justify-center shadow-inner transition-transform">
                       <Icon className="w-6 h-6" />
                     </div>
-                    <span className="bg-emerald-50 text-emerald-900 border border-emerald-300 text-[10px] font-black px-2.5 py-0.5 rounded-full">
+                    <span className="bg-brand-50 text-brand-900 border border-brand-300 text-[10px] font-black px-2.5 py-0.5 rounded-full">
                       {feat.badge}
                     </span>
                   </div>
@@ -123,7 +123,7 @@ export default function FeaturesPage() {
                   <div className="space-y-1.5 pt-2 border-t border-slate-100">
                     {feat.highlights.map((item, i) => (
                       <div key={i} className="flex items-center space-x-2 text-xs text-slate-700 font-semibold">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-brand-600 shrink-0" />
                         <span>{item}</span>
                       </div>
                     ))}
@@ -176,13 +176,13 @@ export default function FeaturesPage() {
           <div className="flex items-center gap-3 shrink-0">
             <Link
               href="/explore"
-              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-5 py-3 rounded-2xl text-xs shadow-md transition-all active:scale-95"
+              className="bg-brand-500 hover:bg-brand-400 text-slate-950 font-black px-5 py-3 rounded-2xl text-xs shadow-md transition-all"
             >
               Explore Live Map
             </Link>
             <Link
               href="/how-it-works"
-              className="bg-slate-800 hover:bg-slate-700 text-white font-black px-5 py-3 rounded-2xl text-xs transition-all active:scale-95"
+              className="bg-slate-800 hover:bg-slate-700 text-white font-black px-5 py-3 rounded-2xl text-xs transition-all"
             >
               See How It Works
             </Link>

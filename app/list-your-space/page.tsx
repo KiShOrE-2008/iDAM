@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, Car, Bike, MapPin, Building2, Clock, Upload, CheckCircle2, ShieldCheck, ChevronRight, Sparkles, Calculator, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, Car, Bike, Clock, Upload, CheckCircle2 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Language } from '@/types';
@@ -195,443 +195,312 @@ export default function ListYourSpacePage() {
     }
   };
 
+  const STEPS = ['Place', 'Spaces', 'Rates', 'Hours', 'Photos', 'Review'];
+  const SPACE_TYPES = [
+    { id: 'private', label: 'House driveway' },
+    { id: 'commercial', label: 'Shop or office lot' },
+    { id: 'apartment', label: 'Apartment bays' },
+    { id: 'plot', label: 'Empty plot or yard' },
+  ] as const;
+  const label = 'block text-sm text-slate-600 mb-1.5';
+  const field = 'w-full px-3 py-2.5 bg-white border border-slate-300 rounded-md text-[15px] text-ink focus:outline-none focus:border-ink focus:ring-4 focus:ring-amber-300/50';
+  const choice = (on: boolean) =>
+    `border rounded-md cursor-pointer ${on ? 'bg-ink text-white border-ink' : 'bg-white text-ink border-slate-300 hover:border-slate-400'}`;
+
+  const Stepper = ({ value, onChange, name }: { value: number; onChange: (n: number) => void; name: string }) => (
+    <div className="flex items-center border border-slate-300 rounded-md bg-white overflow-hidden">
+      <button type="button" aria-label={`Fewer ${name}`} onClick={() => onChange(Math.max(0, value - 1))} className="w-11 h-11 text-xl font-bold hover:bg-slate-50 cursor-pointer">−</button>
+      <span className="w-12 text-center text-lg font-black tabular" aria-live="polite">{value}</span>
+      <button type="button" aria-label={`More ${name}`} onClick={() => onChange(value + 1)} className="w-11 h-11 text-xl font-bold hover:bg-slate-50 cursor-pointer">+</button>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-[#F8F8F5] flex flex-col justify-between font-sans text-slate-900 selection:bg-emerald-200">
-      
-      <Navbar
-        lang={lang}
-        onLanguageToggle={setLang}
-        activeView="web"
-        onViewChange={() => {}}
-        onOpenOwnerModal={() => {}}
-      />
+    <div className="min-h-screen bg-limewash text-ink flex flex-col">
+      <Navbar lang={lang} onLanguageToggle={setLang} onOpenOwnerModal={() => {}} />
 
-      <div className="max-w-xl mx-auto px-4 py-8 w-full flex-1 flex flex-col justify-center">
-        
-        {/* Back Link */}
-        <Link
-          href="/"
-          className="inline-flex items-center space-x-2 text-xs font-extrabold text-slate-500 hover:text-slate-900 mb-4"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Home</span>
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <Link href="/owners" className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-ink">
+          <ArrowLeft className="w-4 h-4" aria-hidden />
+          For space owners
         </Link>
+        <h1 className="mt-4 text-4xl sm:text-5xl font-black tracking-[-0.02em] leading-tight">List your space</h1>
+        <p className="mt-3 text-lg text-slate-600 max-w-2xl">Six short steps. Your answers are saved on this device as you go.</p>
 
-        {/* Resumed Draft Alert */}
         {mustSignInToSubmit && !isSubmitted && (
-          <div role="status" className="mb-4 bg-amber-50 border border-amber-200 text-amber-950 rounded-2xl p-4 text-xs font-semibold flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <span>You need to sign in to submit a listing. Your answers are saved on this device, so nothing is lost.</span>
-            <Link href={loginUrlReturningTo('/list-your-space')} className="shrink-0 bg-slate-900 text-white px-3 py-1.5 rounded-xl font-extrabold text-center">
-              Sign in first
+          <div role="status" className="mt-6 bg-amber-50 border-l-4 border-amber-500 rounded p-4 text-[15px] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 max-w-3xl">
+            <span>Sign in before you submit. You can fill in the steps first; nothing is lost.</span>
+            <Link href={loginUrlReturningTo('/list-your-space')} className="shrink-0 bg-ink text-white px-4 py-2 rounded-md font-bold text-center">
+              Sign in
             </Link>
           </div>
         )}
 
         {resumedFromDraft && !isSubmitted && (
-          <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex items-center justify-between text-xs animate-fade-in">
-            <div className="flex items-center space-x-2 text-emerald-900 font-bold">
-              <Sparkles className="w-4 h-4 text-emerald-600" />
-              <span>Resumed listing draft from your last session.</span>
-            </div>
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-slate-600">
+            <span>We picked up where you left off.</span>
             <button
               onClick={() => {
                 localStorage.removeItem(DRAFT_STORAGE_KEY);
                 setResumedFromDraft(false);
               }}
-              className="text-[10px] text-slate-500 hover:text-rose-600 font-black underline cursor-pointer"
+              className="font-bold text-rose-700 underline underline-offset-4 cursor-pointer"
             >
-              Discard Draft
+              Start over
             </button>
           </div>
         )}
 
-        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-200/80 space-y-6">
-          
-          {/* Header */}
-          <div className="text-center space-y-1">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900">List Your Parking Space</h1>
-            <p className="text-xs text-slate-500 font-medium">Turn unused parking capacity into daily verified income.</p>
-          </div>
-
-          {/* Stepper Progress Bar (●──○──○──○──○──○) */}
-          <div className="flex items-center justify-between px-2">
-            {[1, 2, 3, 4, 5, 6].map((stepNum) => {
-              const isActive = currentStep === stepNum;
-              const isCompleted = currentStep > stepNum;
-              return (
-                <React.Fragment key={stepNum}>
-                  <div
-                    onClick={() => stepNum < currentStep && setCurrentStep(stepNum)}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all cursor-pointer ${
-                      isCompleted
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : isActive
-                        ? 'bg-slate-900 text-white ring-4 ring-emerald-100 shadow-md scale-105'
-                        : 'bg-slate-100 text-slate-400'
-                    }`}
-                  >
-                    {isCompleted ? <Check className="w-4 h-4 stroke-[3]" /> : stepNum}
-                  </div>
-                  {stepNum < 6 && (
-                    <div
-                      className={`flex-1 h-1 rounded-full transition-all mx-1 ${
-                        currentStep > stepNum ? 'bg-emerald-500' : 'bg-slate-200'
+        <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+          {/* Step rail */}
+          <nav aria-label="Listing steps" className="lg:col-span-3">
+            <ol className="flex lg:flex-col overflow-x-auto no-scrollbar border-b lg:border-b-0 lg:border-l-2 border-slate-300">
+              {STEPS.map((name, idx) => {
+                const n = idx + 1;
+                const isActive = currentStep === n;
+                const isDone = currentStep > n;
+                return (
+                  <li key={name} className="shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => isDone && !isSubmitted && setCurrentStep(n)}
+                      disabled={!isDone || isSubmitted}
+                      aria-current={isActive ? 'step' : undefined}
+                      className={`flex items-center gap-3 px-3 lg:pl-5 py-2.5 lg:-ml-[2px] border-b-[3px] lg:border-b-0 lg:border-l-[3px] -mb-px lg:mb-0 text-[15px] whitespace-nowrap ${
+                        isActive ? 'border-brand-700 font-black text-ink' : isDone ? 'border-transparent font-semibold text-ink hover:text-brand-700 cursor-pointer' : 'border-transparent text-slate-400'
                       }`}
-                    />
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
+                    >
+                      <span className={`w-6 h-6 rounded flex items-center justify-center text-xs font-black tabular ${isDone ? 'bg-go-600 text-white' : isActive ? 'bg-brand-700 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                        {isDone ? <Check className="w-3.5 h-3.5 stroke-[3]" aria-hidden /> : n}
+                      </span>
+                      {name}
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
 
-          {isSubmitted ? (
-            <div className="py-8 text-center space-y-3 animate-scale-in">
-              <div className="w-16 h-16 bg-emerald-100 text-emerald-800 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                <CheckCircle2 className="w-10 h-10 text-emerald-700" />
+          {/* Form */}
+          <section className="lg:col-span-5 bg-white border border-slate-300 rounded-xl p-6 sm:p-7" aria-live="polite">
+            {isSubmitted ? (
+              <div className="py-6">
+                <span className="w-11 h-11 rounded-md bg-go-600 text-white flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6" aria-hidden />
+                </span>
+                <h2 className="text-2xl font-black mt-4">Sent for review</h2>
+                <p className="text-[15px] text-slate-600 mt-2">
+                  Your space is marked <strong className="text-ink">Pending review</strong>. We&apos;ll check it and let you know. Taking you home…
+                </p>
               </div>
-              <h3 className="text-xl font-black text-slate-900">Listing Submitted for Review!</h3>
-              <p className="text-xs text-slate-500 font-medium max-w-xs mx-auto">
-                Status set to <span className="font-bold text-slate-800">Pending Review</span>. Redirecting to your Owner Portal...
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* STEP 1: Tell us about your space */}
-              {currentStep === 1 && (
-                <div className="space-y-4 animate-fade-in">
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Step 1: Space Location & Type</h3>
-                  
-                  <div>
-                    <label className="block text-xs font-extrabold text-slate-800 mb-1">Parking Listing Title</label>
-                    <input
-                      type="text"
-                      value={spaceTitle}
-                      onChange={(e) => setSpaceTitle(e.target.value)}
-                      placeholder="e.g. West Masi Private Driveway"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/40"
-                    />
-                  </div>
+            ) : (
+              <>
+                <p className="text-sm text-slate-500 tabular">Step {currentStep} of 6</p>
 
-                  <div>
-                    <label className="block text-xs font-extrabold text-slate-800 mb-1">Full Address</label>
-                    <input
-                      type="text"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder="e.g. 124 West Masi Street, Madurai"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/40"
-                    />
+                {currentStep === 1 && (
+                  <div className="mt-1 space-y-5 animate-fade-in">
+                    <h2 className="text-2xl font-black">Where is your space?</h2>
+                    <div>
+                      <label htmlFor="ls-title" className={label}>Name drivers will see</label>
+                      <input id="ls-title" type="text" value={spaceTitle} onChange={(e) => setSpaceTitle(e.target.value)} placeholder="West Masi Street driveway" className={field} />
+                    </div>
+                    <div>
+                      <label htmlFor="ls-address" className={label}>Full address</label>
+                      <input id="ls-address" type="text" autoComplete="street-address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="124 West Masi Street, Madurai" className={field} />
+                    </div>
+                    <fieldset>
+                      <legend className={label}>What kind of space is it?</legend>
+                      <div className="grid grid-cols-2 gap-2">
+                        {SPACE_TYPES.map((t) => (
+                          <button
+                            type="button"
+                            key={t.id}
+                            aria-pressed={spaceType === t.id}
+                            onClick={() => {
+                              setSpaceType(t.id);
+                              applyRecommendedRates(t.id);
+                            }}
+                            className={`px-3.5 py-3 text-left text-[15px] font-bold ${choice(spaceType === t.id)}`}
+                          >
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-sm text-slate-500 mt-2">This also sets suggested rates, which you can change in step 3.</p>
+                    </fieldset>
                   </div>
+                )}
 
-                  <div>
-                    <label className="block text-xs font-extrabold text-slate-800 mb-1.5">Property Type</label>
-                    <div className="grid grid-cols-2 gap-2 text-xs font-extrabold">
-                      {[
-                        { id: 'private', label: 'Private Driveway' },
-                        { id: 'commercial', label: 'Commercial Lot' },
-                        { id: 'apartment', label: 'Apartment Complex' },
-                        { id: 'plot', label: 'Empty Plot / Yard' }
-                      ].map((t) => (
-                        <button
-                          type="button"
-                          key={t.id}
-                          onClick={() => {
-                            setSpaceType(t.id as any);
-                            applyRecommendedRates(t.id as any);
-                          }}
-                          className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                            spaceType === t.id
-                              ? 'bg-emerald-950 text-white border-emerald-700 shadow-xs'
-                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          {t.label}
-                        </button>
+                {currentStep === 2 && (
+                  <div className="mt-1 space-y-5 animate-fade-in">
+                    <h2 className="text-2xl font-black">How many vehicles fit?</h2>
+                    <div className="divide-y divide-slate-200 border-y border-slate-200">
+                      <div className="flex items-center justify-between gap-4 py-4">
+                        <span className="flex items-center gap-3">
+                          <Car className="w-6 h-6 text-slate-500" aria-hidden />
+                          <span className="font-bold text-lg">Cars</span>
+                        </span>
+                        <Stepper value={carCapacity} onChange={setCarCapacity} name="car spaces" />
+                      </div>
+                      <div className="flex items-center justify-between gap-4 py-4">
+                        <span className="flex items-center gap-3">
+                          <Bike className="w-6 h-6 text-slate-500" aria-hidden />
+                          <span className="font-bold text-lg">Bikes</span>
+                        </span>
+                        <Stepper value={bikeCapacity} onChange={setBikeCapacity} name="bike spaces" />
+                      </div>
+                    </div>
+                    <label className="flex items-center gap-3 text-[15px] cursor-pointer">
+                      <input type="checkbox" checked={evChargerAvailable} onChange={(e) => setEvChargerAvailable(e.target.checked)} className="w-5 h-5 accent-[#1846A3]" />
+                      There&apos;s an EV charging point
+                    </label>
+                  </div>
+                )}
+
+                {currentStep === 3 && (
+                  <div className="mt-1 space-y-5 animate-fade-in">
+                    <div className="flex items-baseline justify-between gap-4">
+                      <h2 className="text-2xl font-black">Hourly rates</h2>
+                      <button type="button" onClick={() => applyRecommendedRates(spaceType)} className="text-sm font-bold text-brand-700 underline underline-offset-4 cursor-pointer shrink-0">
+                        Use suggested rates
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {([
+                        ['ls-car', 'Car, per hour', priceCar, setPriceCar],
+                        ['ls-bike', 'Bike, per hour', priceBike, setPriceBike],
+                      ] as const).map(([id, text, val, set]) => (
+                        <div key={id}>
+                          <label htmlFor={id} className={label}>{text}</label>
+                          <div className="flex items-center border border-slate-300 rounded-md bg-white focus-within:border-ink focus-within:ring-4 focus-within:ring-amber-300/50">
+                            <span className="pl-3 text-lg font-bold text-slate-500">₹</span>
+                            <input id={id} type="number" min={0} inputMode="numeric" value={val} onChange={(e) => set(Number(e.target.value))} className="w-full px-2 py-2.5 text-xl font-black tabular bg-transparent focus:outline-none" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="border-t-2 border-ink pt-4">
+                      <p className="text-sm text-slate-600">If your spaces are used about 6 hours a day, 26 days a month, you could earn around</p>
+                      <p className="text-3xl font-black tabular mt-1">₹{estimatedMonthlyEarnings.toLocaleString('en-IN')}<span className="text-base font-semibold text-slate-500"> a month</span></p>
+                    </div>
+                  </div>
+                )}
+
+                {currentStep === 4 && (
+                  <div className="mt-1 space-y-5 animate-fade-in">
+                    <h2 className="text-2xl font-black">When can drivers park?</h2>
+                    <fieldset>
+                      <legend className={label}>Open on</legend>
+                      <div className="grid grid-cols-7 gap-1.5">
+                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                          <button type="button" key={day} aria-pressed={availableDays.includes(day)} onClick={() => toggleDay(day)} className={`py-2.5 text-sm font-bold ${choice(availableDays.includes(day))}`}>
+                            {day}
+                          </button>
+                        ))}
+                      </div>
+                    </fieldset>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label htmlFor="ls-open" className={label}>Opens at</label>
+                        <input id="ls-open" type="text" value={openingTime} onChange={(e) => setOpeningTime(e.target.value)} className={`${field} tabular`} />
+                      </div>
+                      <div>
+                        <label htmlFor="ls-close" className={label}>Closes at</label>
+                        <input id="ls-close" type="text" value={closingTime} onChange={(e) => setClosingTime(e.target.value)} className={`${field} tabular`} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {currentStep === 5 && (
+                  <div className="mt-1 space-y-5 animate-fade-in">
+                    <h2 className="text-2xl font-black">Photos</h2>
+                    <p className="text-[15px] text-slate-600">Drivers book more often when they can see the entrance and the parking area.</p>
+                    <div className="border-2 border-dashed border-slate-300 rounded-md p-5 text-center bg-limewash">
+                      <Upload className="w-7 h-7 text-slate-400 mx-auto" aria-hidden />
+                      <p className="text-[15px] font-semibold mt-2">Photo upload isn&apos;t available yet</p>
+                      <p className="text-sm text-slate-500 mt-0.5">The sample photo below is used until it is.</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {images.map((img, idx) => (
+                        <img key={idx} src={img} alt={`Photo ${idx + 1} of the space`} className="h-28 w-full rounded-md object-cover" />
                       ))}
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* STEP 2: Capacity */}
-              {currentStep === 2 && (
-                <div className="space-y-4 animate-fade-in">
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Step 2: Vehicle Capacity</h3>
-
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Car className="w-5 h-5 text-emerald-700" />
-                        <div>
-                          <p className="text-xs font-extrabold text-slate-900">Car Parking Slots</p>
-                          <p className="text-[10px] text-slate-500">Dedicated space for four-wheelers</p>
+                {currentStep === 6 && (
+                  <div className="mt-1 space-y-5 animate-fade-in">
+                    <h2 className="text-2xl font-black">Check and send</h2>
+                    <dl className="text-[15px] border-t-2 border-ink divide-y divide-slate-200">
+                      {[
+                        ['Name', spaceTitle],
+                        ['Address', address],
+                        ['Spaces', `${carCapacity} cars, ${bikeCapacity} bikes${evChargerAvailable ? ', EV charging' : ''}`],
+                        ['Rates', `Car ₹${priceCar}/hr, bike ₹${priceBike}/hr`],
+                        ['Hours', `${openingTime} to ${closingTime}`],
+                        ['Days', availableDays.join(', ') || 'None selected'],
+                      ].map(([k, v]) => (
+                        <div key={k} className="flex justify-between gap-6 py-2.5">
+                          <dt className="text-slate-600 shrink-0">{k}</dt>
+                          <dd className="font-bold text-right">{v}</dd>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => setCarCapacity(Math.max(0, carCapacity - 1))}
-                          className="w-7 h-7 rounded-lg bg-white border border-slate-300 text-slate-800 font-bold hover:bg-slate-100"
-                        >
-                          −
-                        </button>
-                        <span className="font-black text-sm text-slate-900 w-6 text-center">{carCapacity}</span>
-                        <button
-                          type="button"
-                          onClick={() => setCarCapacity(carCapacity + 1)}
-                          className="w-7 h-7 rounded-lg bg-white border border-slate-300 text-slate-800 font-bold hover:bg-slate-100"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-                      <div className="flex items-center space-x-2">
-                        <Bike className="w-5 h-5 text-emerald-700" />
-                        <div>
-                          <p className="text-xs font-extrabold text-slate-900">Bike Parking Slots</p>
-                          <p className="text-[10px] text-slate-500">Two-wheeler bays</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => setBikeCapacity(Math.max(0, bikeCapacity - 1))}
-                          className="w-7 h-7 rounded-lg bg-white border border-slate-300 text-slate-800 font-bold hover:bg-slate-100"
-                        >
-                          −
-                        </button>
-                        <span className="font-black text-sm text-slate-900 w-6 text-center">{bikeCapacity}</span>
-                        <button
-                          type="button"
-                          onClick={() => setBikeCapacity(bikeCapacity + 1)}
-                          className="w-7 h-7 rounded-lg bg-white border border-slate-300 text-slate-800 font-bold hover:bg-slate-100"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-                      <span className="text-xs font-bold text-slate-700">EV Charging Point Available?</span>
-                      <input
-                        type="checkbox"
-                        checked={evChargerAvailable}
-                        onChange={(e) => setEvChargerAvailable(e.target.checked)}
-                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
-                      />
-                    </div>
+                      ))}
+                    </dl>
+                    <p className="text-sm text-slate-600">We review every listing before drivers can book it. You can change rates and hours later from the owner dashboard.</p>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* STEP 3: Pricing with Estimator */}
-              {currentStep === 3 && (
-                <div className="space-y-4 animate-fade-in">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Step 3: Hourly Pricing Setup</h3>
-                    <button
-                      type="button"
-                      onClick={() => applyRecommendedRates(spaceType)}
-                      className="text-[10px] text-emerald-700 font-black flex items-center space-x-1 hover:underline cursor-pointer"
-                    >
-                      <Calculator className="w-3 h-3" />
-                      <span>Apply Market Rates</span>
+                <div className="flex justify-between gap-3 mt-8 pt-5 border-t border-slate-200">
+                  {currentStep > 1 ? (
+                    <button type="button" onClick={() => setCurrentStep(currentStep - 1)} className="px-5 py-3 rounded-md border border-slate-300 font-bold hover:border-slate-400 cursor-pointer">
+                      Back
                     </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1.5">
-                      <label className="text-xs font-extrabold text-slate-800 flex items-center space-x-1">
-                        <Car className="w-4 h-4 text-emerald-700" />
-                        <span>Car Hourly Rate</span>
-                      </label>
-                      <div className="flex items-center space-x-1">
-                        <span className="text-sm font-black text-slate-500">₹</span>
-                        <input
-                          type="number"
-                          value={priceCar}
-                          onChange={(e) => setPriceCar(Number(e.target.value))}
-                          className="w-full bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 text-sm font-black text-slate-900"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1.5">
-                      <label className="text-xs font-extrabold text-slate-800 flex items-center space-x-1">
-                        <Bike className="w-4 h-4 text-emerald-700" />
-                        <span>Bike Hourly Rate</span>
-                      </label>
-                      <div className="flex items-center space-x-1">
-                        <span className="text-sm font-black text-slate-500">₹</span>
-                        <input
-                          type="number"
-                          value={priceBike}
-                          onChange={(e) => setPriceBike(Number(e.target.value))}
-                          className="w-full bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 text-sm font-black text-slate-900"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Monthly Revenue Estimator */}
-                  <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-4 text-xs space-y-1">
-                    <div className="flex items-center justify-between font-bold text-emerald-900">
-                      <span>Estimated Monthly Earnings:</span>
-                      <span className="text-base font-black text-emerald-800">₹{estimatedMonthlyEarnings.toLocaleString('en-IN')}/mo</span>
-                    </div>
-                    <p className="text-[10px] text-emerald-700 font-medium">
-                      Based on 6-hr daily occupancy at standard Madurai commercial rates.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 4: Availability */}
-              {currentStep === 4 && (
-                <div className="space-y-4 animate-fade-in">
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Step 4: Operating Hours</h3>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-extrabold text-slate-800 block">Available Days</label>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => {
-                        const isSelected = availableDays.includes(day);
-                        return (
-                          <button
-                            type="button"
-                            key={day}
-                            onClick={() => toggleDay(day)}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-emerald-950 text-white border-emerald-700 shadow-xs'
-                                : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
-                            }`}
-                          >
-                            {day}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    <div>
-                      <label className="text-xs font-extrabold text-slate-800 block mb-1">Opening Time</label>
-                      <input
-                        type="text"
-                        value={openingTime}
-                        onChange={(e) => setOpeningTime(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-extrabold text-slate-800 block mb-1">Closing Time</label>
-                      <input
-                        type="text"
-                        value={closingTime}
-                        onChange={(e) => setClosingTime(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 5: Add Photos */}
-              {currentStep === 5 && (
-                <div className="space-y-4 animate-fade-in">
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Step 5: Property Photos</h3>
-
-                  <div className="border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center space-y-2 hover:border-emerald-500 cursor-pointer transition-colors bg-slate-50">
-                    <Upload className="w-8 h-8 text-slate-400 mx-auto" />
-                    <p className="text-xs font-extrabold text-slate-800">+ Add Parking Photo</p>
-                    <p className="text-[10px] text-slate-500">Verified photos increase driver trust and reservations</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    {images.map((img, idx) => (
-                      <div key={idx} className="relative h-24 rounded-2xl overflow-hidden border border-slate-200 shadow-2xs">
-                        <img src={img} alt="Parking Space" className="w-full h-full object-cover" />
-                        <span className="absolute bottom-1 right-1 bg-slate-950/70 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md">
-                          Primary
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 6: Review & Submit */}
-              {currentStep === 6 && (
-                <div className="space-y-4 animate-fade-in text-xs">
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Step 6: Review Listing Summary</h3>
-
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2 font-semibold">
-                    <div className="flex justify-between border-b pb-1.5">
-                      <span className="text-slate-500">Property Title</span>
-                      <span className="font-extrabold text-slate-900">{spaceTitle}</span>
-                    </div>
-                    <div className="flex justify-between border-b pb-1.5">
-                      <span className="text-slate-500">Address</span>
-                      <span className="font-extrabold text-slate-900 truncate max-w-[180px]">{address}</span>
-                    </div>
-                    <div className="flex justify-between border-b pb-1.5">
-                      <span className="text-slate-500">Capacity</span>
-                      <span className="font-extrabold text-slate-900">{carCapacity} Cars • {bikeCapacity} Bikes {evChargerAvailable ? '• EV Plug' : ''}</span>
-                    </div>
-                    <div className="flex justify-between border-b pb-1.5">
-                      <span className="text-slate-500">Pricing</span>
-                      <span className="font-extrabold text-emerald-800">Car ₹{priceCar}/hr • Bike ₹{priceBike}/hr</span>
-                    </div>
-                    <div className="flex justify-between border-b pb-1.5">
-                      <span className="text-slate-500">Operating Hours</span>
-                      <span className="font-extrabold text-slate-900">{openingTime} – {closingTime}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Status</span>
-                      <span className="bg-amber-100 text-amber-900 font-black px-2 py-0.5 rounded-full text-[10px]">Pending Review</span>
-                    </div>
-                  </div>
-
-                  <p className="text-[11px] text-slate-500 font-medium text-center">
-                    Your space will be linked to your owner profile and verified by our parking operations team.
-                  </p>
-                </div>
-              )}
-
-              {/* Navigation Controls */}
-              <div className="flex justify-between pt-4 border-t border-slate-200">
-                {currentStep > 1 ? (
+                  ) : <span />}
                   <button
                     type="button"
-                    onClick={() => setCurrentStep(currentStep - 1)}
-                    className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold transition-all cursor-pointer"
+                    onClick={handleNextStep}
+                    disabled={isSubmitting}
+                    className="px-6 py-3 rounded-md bg-brand-700 hover:bg-brand-800 text-white font-black disabled:opacity-70 cursor-pointer"
                   >
-                    ← Back
+                    {currentStep === 6 ? (isSubmitting ? 'Sending…' : 'Send for review') : 'Next'}
                   </button>
-                ) : <div />}
+                </div>
+              </>
+            )}
+          </section>
 
-                <button
-                  type="button"
-                  onClick={handleNextStep}
-                  disabled={isSubmitting}
-                  className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold shadow-md transition-all flex items-center space-x-1 cursor-pointer"
-                >
-                  <span>{currentStep === 6 ? (isSubmitting ? 'Submitting...' : 'Submit for Review') : 'Continue'}</span>
-                  <ChevronRight className="w-4 h-4 text-emerald-400" />
-                </button>
+          {/* Live preview, drawn the way the map shows a place */}
+          <aside className="lg:col-span-4 lg:sticky lg:top-24" aria-label="Preview">
+            <p className="text-sm text-slate-600 mb-2.5">How drivers will see it</p>
+            <div className="asphalt rounded-xl overflow-hidden text-white">
+              <img src={images[0]} alt="" className="w-full h-32 object-cover opacity-90" />
+              <div className="border-t-[3px] border-paint grid grid-cols-2">
+                <div className="p-4 border-r-[3px] border-paint">
+                  <p className="text-[2.2rem] font-black leading-none tabular">{carCapacity}</p>
+                  <p className="text-sm text-white/60 mt-1">car spaces</p>
+                  <p className="text-amber-300 font-bold tabular mt-2">₹{priceCar}/hr</p>
+                </div>
+                <div className="p-4">
+                  <p className="text-[2.2rem] font-black leading-none tabular">{bikeCapacity}</p>
+                  <p className="text-sm text-white/60 mt-1">bike spaces</p>
+                  <p className="text-amber-300 font-bold tabular mt-2">₹{priceBike}/hr</p>
+                </div>
               </div>
-            </>
-          )}
-
+              <div className="border-t-[3px] border-paint p-4">
+                <p className="font-black text-lg leading-snug">{spaceTitle || 'Your space'}</p>
+                <p className="text-sm text-white/70 mt-0.5">{address || 'Address'}</p>
+                <p className="text-sm text-white/70 mt-2 flex items-center gap-1.5">
+                  <Clock className="w-4 h-4" aria-hidden />
+                  <span className="tabular">{openingTime} to {closingTime}</span>
+                </p>
+              </div>
+            </div>
+          </aside>
         </div>
-
-      </div>
+      </main>
 
       <Footer lang={lang} />
-
     </div>
   );
 }

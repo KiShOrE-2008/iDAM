@@ -52,6 +52,17 @@ SELECT item, ok FROM (VALUES
     AND NOT has_function_privilege('anon', 'public.admin_summary()', 'EXECUTE')
     AND NOT has_function_privilege('anon', 'public.admin_review_space(uuid,text,text)', 'EXECUTE')
     AND pg_get_functiondef('public.admin_review_space(uuid,text,text)'::regprocedure) LIKE '%require_admin%'),
+  ('Owner payouts: ledger and bank accounts closed to app users',
+    to_regclass('public.owner_payouts') IS NOT NULL
+    AND NOT has_table_privilege('authenticated', 'public.owner_payouts', 'SELECT')
+    AND NOT has_table_privilege('authenticated', 'public.owner_payouts', 'UPDATE')
+    AND NOT has_table_privilege('anon', 'public.owner_payouts', 'SELECT')
+    AND NOT has_table_privilege('authenticated', 'public.owner_payout_accounts', 'INSERT')
+    AND NOT has_table_privilege('authenticated', 'public.owner_payout_accounts', 'UPDATE')
+    AND NOT has_function_privilege('anon', 'public.owner_payout_overview()', 'EXECUTE')),
+  ('Owner payouts: paying and cancelling update the ledger',
+    EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_sync_owner_payout')
+    AND EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_release_waiting_owner_payouts')),
   ('Overnight fix: timestamp sync trigger installed',
     EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_sync_booking_timestamps')),
   -- Any rule not on this list (e.g. left over from an old schema) is a potential hole:

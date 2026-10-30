@@ -23,7 +23,7 @@ const REPORT_CATEGORIES = [
     id: 'space',
     icon: Building2,
     title: 'Parking Space',
-    color: 'border-emerald-200 bg-emerald-50/50 text-emerald-950',
+    color: 'border-brand-200 bg-brand-50/50 text-brand-950',
     issues: [
       'Parking space unavailable',
       'Incorrect location on map',
@@ -140,7 +140,7 @@ export default function ReportIssuePage() {
                   }}
                   className={`p-5 rounded-3xl border-2 text-left transition-all relative ${
                     isSelected
-                      ? 'border-emerald-600 bg-emerald-50/80 shadow-md ring-2 ring-emerald-600/20'
+                      ? 'border-brand-600 bg-brand-50/80 shadow-md ring-2 ring-brand-600/20'
                       : 'border-gray-200 bg-white hover:border-gray-300'
                   }`}
                 >
@@ -166,14 +166,14 @@ export default function ReportIssuePage() {
           <div className="border-b border-gray-100 pb-4">
             <h3 className="text-xl font-extrabold text-gray-900">Report Form</h3>
             <p className="text-xs text-gray-500 font-medium mt-0.5">
-              Category: <span className="font-bold text-emerald-800 uppercase">{activeCategoryObj.title}</span>
+              Category: <span className="font-bold text-brand-800 uppercase">{activeCategoryObj.title}</span>
             </p>
           </div>
 
           {isSuccess ? (
-            <div className="py-10 text-center space-y-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 p-6">
-              <div className="w-16 h-16 bg-emerald-100 text-emerald-800 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
-                <CheckCircle2 className="w-10 h-10 text-emerald-700" />
+            <div className="py-10 text-center space-y-4 bg-brand-50/50 rounded-2xl border border-brand-100 p-6">
+              <div className="w-16 h-16 bg-brand-100 text-brand-800 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+                <CheckCircle2 className="w-10 h-10 text-brand-700" />
               </div>
               <h4 className="text-2xl font-extrabold text-gray-900">Report Submitted!</h4>
               <p className="text-xs text-gray-600 font-medium max-w-md mx-auto">
@@ -181,7 +181,7 @@ export default function ReportIssuePage() {
               </p>
               <button
                 onClick={() => setIsSuccess(false)}
-                className="bg-emerald-950 text-white font-bold text-xs px-6 py-2.5 rounded-xl hover:bg-emerald-900 transition-colors"
+                className="bg-brand-950 text-white font-bold text-xs px-6 py-2.5 rounded-xl hover:bg-brand-900 transition-colors"
               >
                 Submit Another Report
               </button>
@@ -197,7 +197,7 @@ export default function ReportIssuePage() {
                     placeholder="e.g. IDM-82931"
                     value={bookingId}
                     onChange={(e) => setBookingId(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-600 text-xs font-mono bg-gray-50/50"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-brand-600 text-xs tabular bg-gray-50/50"
                   />
                 </div>
 
@@ -206,7 +206,7 @@ export default function ReportIssuePage() {
                   <select
                     value={selectedIssue}
                     onChange={(e) => setSelectedIssue(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-600 text-xs bg-gray-50/50"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-brand-600 text-xs bg-gray-50/50"
                   >
                     {activeCategoryObj.issues.map((iss, i) => (
                       <option key={i} value={iss}>{iss}</option>
@@ -223,14 +223,14 @@ export default function ReportIssuePage() {
                   placeholder="Tell us what happened..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-600 text-xs bg-gray-50/50"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-brand-600 text-xs bg-gray-50/50"
                 />
               </div>
 
               {/* Upload evidence field */}
               <div>
                 <label className="block text-gray-700 font-bold mb-1">Upload evidence (optional)</label>
-                <div className="border-2 border-dashed border-gray-200 hover:border-emerald-600 rounded-2xl p-4 text-center cursor-pointer bg-gray-50/50 transition-colors">
+                <div className="border-2 border-dashed border-gray-200 hover:border-brand-600 rounded-2xl p-4 text-center cursor-pointer bg-gray-50/50 transition-colors">
                   <input
                     type="file"
                     accept="image/*"
@@ -255,7 +255,7 @@ export default function ReportIssuePage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 rounded-xl flex items-center justify-center space-x-2 text-xs transition-all shadow-md"
+                className="w-full bg-brand-950 hover:bg-brand-900 text-white font-bold py-3.5 rounded-xl flex items-center justify-center space-x-2 text-xs transition-all shadow-md"
               >
                 <Send className="w-4 h-4" />
                 <span>{isSubmitting ? 'Submitting Report...' : 'Submit Report →'}</span>

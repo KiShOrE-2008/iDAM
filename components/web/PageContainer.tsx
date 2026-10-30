@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { ChevronRight, ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ChevronRight } from 'lucide-react';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { CookieBanner } from './CookieBanner';
@@ -19,6 +20,7 @@ interface PageContainerProps {
   titleTa?: string;
   subtitle?: string;
   subtitleTa?: string;
+  /** Kept for existing callers; no longer shown (eyebrow labels were removed from the design) */
   badge?: string;
   breadcrumbs?: BreadcrumbItem[];
   lang?: Language;
@@ -32,12 +34,13 @@ export const PageContainer: React.FC<PageContainerProps> = ({
   titleTa,
   subtitle,
   subtitleTa,
-  badge,
+
   breadcrumbs = [],
   lang: controlledLang,
   onLanguageToggle: controlledToggle,
   maxWidthClass = 'max-w-5xl'
 }) => {
+  const router = useRouter();
   const [internalLang, setInternalLang] = useState<Language>('en');
   const lang = controlledLang || internalLang;
   const handleLangToggle = controlledToggle || setInternalLang;
@@ -46,55 +49,48 @@ export const PageContainer: React.FC<PageContainerProps> = ({
   const displaySubtitle = lang === 'ta' && subtitleTa ? subtitleTa : subtitle;
 
   return (
-    <div className="min-h-screen bg-[#F8F8F5] text-[#14201D] font-sans antialiased selection:bg-emerald-200 selection:text-emerald-900 flex flex-col justify-between">
+    <div className="min-h-screen bg-limewash text-ink flex flex-col justify-between">
       
       {/* Shared Header Navigation */}
       <Navbar
         lang={lang}
         onLanguageToggle={handleLangToggle}
-        onOpenOwnerModal={() => {}}
+        onOpenOwnerModal={() => router.push('/list-your-space')}
       />
 
       {/* Main Page Area */}
-      <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-14">
         <div className={`mx-auto ${maxWidthClass} space-y-8 animate-fade-in`}>
           
-          {/* Breadcrumbs Navigation */}
           {breadcrumbs.length > 0 && (
-            <nav aria-label="Breadcrumbs" className="flex items-center space-x-2 text-xs font-bold text-slate-500">
-              <Link href="/" className="hover:text-emerald-800 transition-colors">Home</Link>
+            <nav aria-label="Breadcrumbs" className="flex items-center gap-1.5 text-sm text-slate-500">
+              <Link href="/" className="hover:text-ink hover:underline underline-offset-4">Home</Link>
               {breadcrumbs.map((crumb, idx) => (
                 <React.Fragment key={idx}>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" aria-hidden />
                   {crumb.href ? (
-                    <Link href={crumb.href} className="hover:text-emerald-800 transition-colors">
+                    <Link href={crumb.href} className="hover:text-ink hover:underline underline-offset-4">
                       {crumb.label}
                     </Link>
                   ) : (
-                    <span className="text-slate-900 font-extrabold">{crumb.label}</span>
+                    <span className="text-ink font-semibold" aria-current="page">{crumb.label}</span>
                   )}
                 </React.Fragment>
               ))}
             </nav>
           )}
 
-          {/* Page Hero Header */}
           {(title || subtitle) && (
-            <div className="space-y-3 border-b border-slate-200/80 pb-6">
-              {badge && (
-                <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-black tracking-wide border border-emerald-300">
-                  <span>{badge}</span>
-                </div>
-              )}
-              <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight ${lang === 'ta' ? 'font-tamil' : ''}`}>
+            <header className="border-b-2 border-ink pb-7">
+              <h1 className={`text-4xl sm:text-5xl lg:text-[3.6rem] font-black text-ink tracking-[-0.02em] leading-[1.02] max-w-4xl ${lang === 'ta' ? 'font-tamil leading-tight' : ''}`}>
                 {displayTitle}
               </h1>
               {displaySubtitle && (
-                <p className={`text-sm sm:text-base text-slate-600 font-medium leading-relaxed max-w-3xl ${lang === 'ta' ? 'font-tamil' : ''}`}>
+                <p className={`mt-4 text-lg text-slate-600 leading-relaxed max-w-2xl ${lang === 'ta' ? 'font-tamil' : ''}`}>
                   {displaySubtitle}
                 </p>
               )}
-            </div>
+            </header>
           )}
 
           {/* Children Content */}

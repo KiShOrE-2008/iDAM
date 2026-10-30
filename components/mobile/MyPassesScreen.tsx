@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Ticket, Calendar, Clock, MapPin, XCircle } from 'lucide-react';
-import { Download, Share2, Navigation, Eye, CheckCircle2, FileText, Home, BookOpen, UserCheck, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowLeft, Ticket, XCircle, Navigation, Eye, CheckCircle2 } from 'lucide-react';
+import { AppTabBar } from './AppTabBar';
 import { QRCodeSVG as QR } from 'qrcode.react';
 import { Language, Booking } from '@/types';
 import { getAllBookings, fetchUserBookings } from '@/lib/booking/service';
@@ -62,12 +62,12 @@ export const MyPassesScreen: React.FC<MyPassesScreenProps> = ({
       title: 'West Tower Square Parking',
       address: 'West Tower Street, Near Temple Gate 3, Madurai',
       vehicle: 'TN 59 AB 1234 (Car)',
-      slot: 'Spot A-02 [EV ⚡]',
+      slot: 'Spot A-02 [EV ]',
       time: '10:00 AM - 12:00 PM',
       date: 'Today',
       amount: '₹75',
       status: 'ACTIVE',
-      statusColor: 'bg-emerald-100 text-emerald-900 border-emerald-300 font-black',
+      statusColor: 'bg-brand-100 text-brand-900 border-brand-300 font-black',
       qrValue: 'IDAM:v2:seed_82931_west_tower'
     },
     {
@@ -96,7 +96,7 @@ export const MyPassesScreen: React.FC<MyPassesScreenProps> = ({
     const statusColor = isAwaitingPayment
       ? 'bg-amber-100 text-amber-900 border-amber-300 font-black'
       : isLiveActive
-      ? 'bg-emerald-100 text-emerald-900 border-emerald-300 font-black'
+      ? 'bg-brand-100 text-brand-900 border-brand-300 font-black'
       : (isCancelled ? 'bg-rose-100 text-rose-800 border-rose-300 font-bold' : 'bg-slate-100 text-slate-700 border-slate-300');
 
     return {
@@ -135,187 +135,179 @@ export const MyPassesScreen: React.FC<MyPassesScreenProps> = ({
     }, 1200);
   };
 
+  const statusStyle: Record<string, { label: string; cls: string }> = {
+    ACTIVE: { label: 'Active', cls: 'text-go-700 bg-go-50 border-go-100' },
+    'PAYMENT PENDING': { label: 'Confirming payment', cls: 'text-amber-800 bg-amber-50 border-amber-200' },
+    COMPLETED: { label: 'Completed', cls: 'text-slate-600 bg-slate-100 border-slate-200' },
+    CANCELLED: { label: 'Cancelled', cls: 'text-rose-700 bg-rose-50 border-rose-200' },
+  };
+  const StatusTag = ({ status }: { status: string }) => {
+    const st = statusStyle[status] || statusStyle.COMPLETED;
+    return <span className={`inline-block text-xs font-bold border rounded px-1.5 py-0.5 ${st.cls}`}>{st.label}</span>;
+  };
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const plateOf = (vehicle: string) => vehicle.replace(/\s*\(.*\)$/, '');
+
   return (
-    <div className="h-full flex flex-col justify-between bg-[#F8F8F5] relative overflow-y-auto no-scrollbar animate-fade-in text-slate-900 select-none">
-      
-      {/* Top Mobile Header */}
-      <div className="p-3.5 bg-white border-b border-slate-200/80 sticky top-0 z-20 flex items-center justify-between shadow-2xs">
-        <button onClick={onBack} className="p-1 rounded-lg text-slate-700 hover:bg-slate-100 active:scale-95 transition-transform">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div className="flex items-center space-x-1.5">
-          <Ticket className="w-4 h-4 text-emerald-600" />
-          <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">
-            My Digital Passes
-          </h3>
-        </div>
-        <div className="w-5" />
-      </div>
-
-      <div className="p-4 sm:p-5 space-y-4 flex-1">
-        
-        {/* Pass Filter Tabs */}
-        <div className="bg-slate-200/80 p-1 rounded-2xl flex text-xs font-black">
+    <div className="h-full flex flex-col bg-limewash text-ink relative animate-fade-in">
+      <header className="px-4 pt-4 border-b border-slate-300">
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => setActiveFilter('active')}
-            className={`flex-1 py-2 rounded-xl transition-all ${
-              activeFilter === 'active' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
-            }`}
+            onClick={onBack}
+            aria-label="Back"
+            className="w-10 h-10 -ml-1 rounded-md flex items-center justify-center active:bg-slate-200 cursor-pointer"
           >
-            Active Passes ({activePasses.length})
+            <ArrowLeft className="w-5 h-5" />
           </button>
-          <button
-            onClick={() => setActiveFilter('past')}
-            className={`flex-1 py-2 rounded-xl transition-all ${
-              activeFilter === 'past' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
-            }`}
-          >
-            Past History ({pastPasses.length})
-          </button>
+          <h1 className="text-[1.6rem] font-black">Your passes</h1>
         </div>
+        <div className="flex mt-3" role="tablist">
+          {([
+            ['active', `Upcoming (${activePasses.length})`],
+            ['past', `Past (${pastPasses.length})`],
+          ] as const).map(([id, label]) => (
+            <button
+              key={id}
+              role="tab"
+              aria-selected={activeFilter === id}
+              onClick={() => setActiveFilter(id)}
+              className={`flex-1 pb-2.5 text-[15px] font-bold border-b-[3px] -mb-px cursor-pointer ${
+                activeFilter === id ? 'border-brand-700 text-ink' : 'border-transparent text-slate-500'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </header>
 
-        {/* Passes Card List */}
+      <div className="flex-1 overflow-y-auto no-scrollbar p-4 space-y-3">
         {displayPasses.length === 0 ? (
-          <div className="bg-white rounded-3xl p-8 text-center space-y-3 border border-slate-200">
-            <Ticket className="w-10 h-10 text-slate-300 mx-auto" />
-            <p className="text-xs font-extrabold text-slate-500">No {activeFilter} passes found</p>
+          <div className="pt-10 text-center">
+            <Ticket className="w-10 h-10 text-slate-400 mx-auto" aria-hidden />
+            <p className="font-bold mt-3">{activeFilter === 'active' ? 'No upcoming bookings' : 'No past bookings yet'}</p>
+            <p className="text-sm text-slate-600 mt-1">Passes appear here as soon as you book a space.</p>
+            {activeFilter === 'active' && (
+              <button onClick={onNavigateToHome} className="mt-5 bg-brand-700 text-white font-bold px-5 py-3 rounded-lg cursor-pointer">
+                Find parking
+              </button>
+            )}
           </div>
         ) : (
           displayPasses.map((pass) => (
-            <div
-              key={pass.id}
-              className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-md space-y-4 hover:border-emerald-500/40 transition-all"
-            >
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] border ${pass.statusColor}`}>
-                    ● {pass.status}
+            <article key={pass.id} className="bg-white rounded-lg border border-slate-300 overflow-hidden">
+              <button onClick={() => { setConfirmCancel(false); setSelectedPass(pass); }} className="w-full text-left flex cursor-pointer active:bg-slate-50">
+                <span className="flex-1 min-w-0 p-4">
+                  <StatusTag status={pass.status} />
+                  <span className="block font-black text-[17px] leading-snug mt-2">{pass.title}</span>
+                  <span className="block text-sm text-slate-600 mt-1 tabular">
+                    {pass.date}, {pass.time}
                   </span>
-                  <h4 className="font-black text-sm text-slate-900">{pass.title}</h4>
-                  <div className="flex items-center space-x-1 text-xs text-slate-500 font-semibold">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span className="truncate max-w-[200px]">{pass.address}</span>
-                  </div>
-                </div>
-
-                <div className="bg-emerald-50 border border-emerald-200 p-2 rounded-2xl flex flex-col items-center justify-center">
+                  <span className="plate inline-block text-sm px-2 py-0.5 mt-3">{plateOf(pass.vehicle)}</span>
+                </span>
+                <span className="w-[104px] shrink-0 border-l-2 border-dashed border-slate-300 flex flex-col items-center justify-center gap-1.5 p-2">
                   {pass.qrValue ? (
-                    <QR value={pass.qrValue} size={50} />
+                    <QR value={pass.qrValue} size={64} />
                   ) : (
-                    <div className="w-[50px] h-[50px] flex items-center justify-center text-[8px] font-bold text-amber-800 text-center leading-tight">No QR yet</div>
+                    <span className="w-16 h-16 flex items-center justify-center text-[11px] font-semibold text-amber-800 text-center leading-tight">QR after payment</span>
                   )}
-                  <span className="text-[9px] font-mono font-black text-emerald-900 mt-1">
-                    {pass.slot}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-2xl border border-slate-100 font-semibold">
-                <div>
-                  <span className="text-slate-400 text-[10px] block">Time & Date</span>
-                  <span className="text-slate-800 font-bold">{pass.time}</span>
-                  <span className="text-slate-500 text-[11px] block">{pass.date}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 text-[10px] block">Vehicle & Total</span>
-                  <span className="text-slate-800 font-bold">{pass.vehicle}</span>
-                  <span className="text-emerald-700 font-black block">{pass.amount} Paid</span>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  onClick={() => setSelectedPass(pass)}
-                  className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-2.5 rounded-xl text-xs flex items-center justify-center space-x-1 shadow-sm transition-all"
-                >
-                  <Eye className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>View Pass</span>
+                  <span className="text-xs font-bold tabular">{pass.amount}</span>
+                </span>
+              </button>
+              <div className="flex border-t border-slate-200 text-sm font-bold">
+                <button onClick={() => { setConfirmCancel(false); setSelectedPass(pass); }} className="flex-1 py-2.5 flex items-center justify-center gap-1.5 cursor-pointer active:bg-slate-50">
+                  <Eye className="w-4 h-4" aria-hidden />
+                  Show pass
                 </button>
-
                 <a
                   href={`https://maps.google.com/?q=${encodeURIComponent(pass.address)}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-black py-2.5 rounded-xl text-xs flex items-center justify-center space-x-1 transition-all"
+                  className="flex-1 py-2.5 flex items-center justify-center gap-1.5 border-l border-slate-200 text-brand-700 active:bg-slate-50"
                 >
-                  <Navigation className="w-3.5 h-3.5 text-emerald-700" />
-                  <span>Directions</span>
+                  <Navigation className="w-4 h-4" aria-hidden />
+                  Directions
                 </a>
               </div>
-            </div>
+            </article>
           ))
         )}
-
       </div>
 
-      {/* Digital Pass / Tax Invoice Modal */}
       {selectedPass && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-xs space-y-4 text-center shadow-2xl border border-slate-200">
+        <div className="fixed inset-0 bg-ink/70 z-50 flex items-end justify-center animate-fade-in" role="dialog" aria-modal="true" aria-label="Parking pass">
+          <div className="bg-white rounded-t-xl w-full max-w-[440px] p-5 pb-6 shadow-2xl animate-slide-up">
             {cancelMessage ? (
-              <div className="py-6 space-y-2 animate-scale-in">
-                <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
-                <h3 className="text-base font-black text-slate-900">{cancelMessage}</h3>
+              <div className="py-8 text-center">
+                <CheckCircle2 className="w-10 h-10 text-go-600 mx-auto" aria-hidden />
+                <p className="text-lg font-black mt-3">{cancelMessage}</p>
               </div>
             ) : (
               <>
-                <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl inline-block mx-auto">
-                  {selectedPass.qrValue ? (
-                    <QR value={selectedPass.qrValue} size={110} />
-                  ) : (
-                    <div className="w-[110px] h-[110px] flex items-center justify-center text-[10px] font-bold text-amber-800 text-center">
-                      Entry QR appears once payment is confirmed
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <StatusTag status={selectedPass.status} />
+                    <h2 className="text-xl font-black mt-2 leading-snug">{selectedPass.title}</h2>
+                    <p className="text-sm text-slate-600">{selectedPass.address}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-5 mt-5">
+                  <div className="p-1.5 border-2 border-ink rounded-md shrink-0">
+                    {selectedPass.qrValue ? (
+                      <QR value={selectedPass.qrValue} size={132} level="H" />
+                    ) : (
+                      <div className="w-[132px] h-[132px] flex items-center justify-center text-sm font-semibold text-amber-800 text-center p-2">
+                        Your QR appears once payment is confirmed
+                      </div>
+                    )}
+                  </div>
+                  <dl className="text-sm space-y-2 min-w-0">
+                    <div>
+                      <dt className="text-xs text-slate-500">Pass code</dt>
+                      <dd className="font-black text-lg tabular whitespace-nowrap">{selectedPass.id}</dd>
                     </div>
-                  )}
+                    <div>
+                      <dt className="text-xs text-slate-500">When</dt>
+                      <dd className="font-bold tabular">{selectedPass.date}, {selectedPass.time}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-slate-500">Paid</dt>
+                      <dd className="font-bold tabular">{selectedPass.amount}</dd>
+                    </div>
+                  </dl>
                 </div>
-
-                <div>
-                  <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] border mb-1 ${selectedPass.statusColor}`}>
-                    ● {selectedPass.status}
-                  </span>
-                  <h3 className="text-sm font-black text-slate-900">{selectedPass.title}</h3>
-                  <p className="text-[11px] text-slate-500 font-medium">{selectedPass.address}</p>
-                </div>
-
-                <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200 text-left text-xs space-y-1 font-semibold">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Pass Code</span>
-                    <span className="text-slate-900 font-mono font-bold">{selectedPass.id}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Slot Reserved</span>
-                    <span className="text-slate-900 font-bold">{selectedPass.slot}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Vehicle</span>
-                    <span className="text-slate-900">{selectedPass.vehicle}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Time & Date</span>
-                    <span className="text-slate-900">{selectedPass.time} • {selectedPass.date}</span>
-                  </div>
-                  <div className="flex justify-between pt-1 border-t border-slate-200 font-black text-emerald-700">
-                    <span>Amount Paid</span>
-                    <span>{selectedPass.amount}</span>
-                  </div>
+                <div className="mt-4 flex items-center justify-between">
+                  <span className="text-sm text-slate-600">{selectedPass.slot}</span>
+                  <span className="plate text-base px-2.5 py-0.5">{plateOf(selectedPass.vehicle)}</span>
                 </div>
 
                 {selectedPass.canCancel && (
-                  <button
-                    onClick={() => handleCancelPass(selectedPass)}
-                    className="w-full bg-rose-50 hover:bg-rose-100 text-rose-700 font-extrabold py-2.5 rounded-xl text-xs border border-rose-200 flex items-center justify-center space-x-1.5 transition-all"
-                  >
-                    <XCircle className="w-3.5 h-3.5 text-rose-600" />
-                    <span>Cancel Reservation</span>
-                  </button>
+                  confirmCancel ? (
+                    <div className="mt-5 border-l-4 border-rose-600 bg-rose-50 p-3 rounded">
+                      <p className="text-sm text-rose-900">Cancel this booking? If it&apos;s more than 30 minutes before your start time, the full amount is refunded.</p>
+                      <div className="flex gap-2 mt-3">
+                        <button onClick={() => handleCancelPass(selectedPass)} className="flex-1 bg-rose-700 text-white font-bold py-2.5 rounded-md text-sm cursor-pointer">
+                          Cancel booking
+                        </button>
+                        <button onClick={() => setConfirmCancel(false)} className="flex-1 bg-white border border-slate-300 font-bold py-2.5 rounded-md text-sm cursor-pointer">
+                          Keep it
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmCancel(true)}
+                      className="mt-5 w-full text-rose-700 font-bold py-2.5 text-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <XCircle className="w-4 h-4" aria-hidden />
+                      Cancel booking
+                    </button>
+                  )
                 )}
 
-                <button
-                  onClick={() => setSelectedPass(null)}
-                  className="w-full bg-slate-900 text-white font-extrabold py-3 rounded-2xl text-xs shadow-md"
-                >
-                  Close Pass
+                <button onClick={() => setSelectedPass(null)} className="mt-2 w-full bg-ink text-white font-bold py-3 rounded-lg cursor-pointer">
+                  Done
                 </button>
               </>
             )}
@@ -323,32 +315,7 @@ export const MyPassesScreen: React.FC<MyPassesScreenProps> = ({
         </div>
       )}
 
-      {/* Bottom App Navigation Bar */}
-      <div className="bg-white border-t border-slate-200 px-8 py-2.5 flex items-center justify-between text-xs font-extrabold text-slate-500 z-20">
-        <button
-          onClick={onNavigateToHome}
-          className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-900"
-        >
-          <Home className="w-5 h-5" />
-          <span>Home</span>
-        </button>
-
-        <button
-          className="flex flex-col items-center gap-0.5 text-emerald-900 font-black scale-105"
-        >
-          <BookOpen className="w-5 h-5 text-emerald-700" />
-          <span>Passes</span>
-        </button>
-
-        <button
-          onClick={onNavigateToProfile}
-          className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-900"
-        >
-          <UserCheck className="w-5 h-5" />
-          <span>Profile</span>
-        </button>
-      </div>
-
+      <AppTabBar active="passes" onHome={onNavigateToHome} onProfile={onNavigateToProfile} />
     </div>
   );
 };

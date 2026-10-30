@@ -98,11 +98,11 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 animate-fade-in">
       <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200 relative flex flex-col max-h-[92vh]">
         
         {/* Razorpay Branded Top Header */}
-        <div className="bg-gradient-to-r from-blue-950 via-slate-900 to-emerald-950 text-white p-4 sm:p-5 relative">
+        <div className="bg-gradient-to-r from-blue-950 via-slate-900 to-brand-950 text-white p-4 sm:p-5 relative">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               {/* Razorpay Brand Mark */}
@@ -112,7 +112,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
               <div>
                 <div className="flex items-center space-x-2">
                   <span className="text-sm font-black tracking-wide text-white">Razorpay</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 border border-brand-400/30">
                     Trusted Business
                   </span>
                 </div>
@@ -132,12 +132,12 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
           {/* Amount Badge */}
           <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
             <div>
-              <span className="text-[10px] font-bold uppercase text-slate-300 tracking-wider">Payable Amount</span>
+              <span className="text-[10px] font-bold uppercase text-slate-300">Payable Amount</span>
               <div className="text-2xl font-black text-white">₹{amount}</div>
             </div>
             <div className="text-right">
-              <span className="text-[10px] font-bold uppercase text-slate-300 tracking-wider">Spot</span>
-              <div className="text-xs font-semibold text-emerald-300 truncate max-w-[160px]">{locationTitle}</div>
+              <span className="text-[10px] font-bold uppercase text-slate-300">Spot</span>
+              <div className="text-xs font-semibold text-brand-300 truncate max-w-[160px]">{locationTitle}</div>
             </div>
           </div>
         </div>
@@ -249,7 +249,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                     value={vpa}
                     onChange={(e) => setVpa(e.target.value)}
                     placeholder="username@okhdfcbank"
-                    className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono font-bold text-slate-800 focus:ring-2 focus:ring-blue-600 outline-none"
+                    className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs tabular font-bold text-slate-800 focus:ring-2 focus:ring-blue-600 outline-none"
                   />
                 </div>
               </div>
@@ -263,13 +263,13 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
               <div className="w-40 h-40 bg-white p-3 rounded-2xl border border-slate-200 shadow-md mx-auto flex items-center justify-center">
                 {/* Dynamically styled simulated QR code pattern */}
                 <div className="w-full h-full bg-radial from-slate-900 to-slate-800 rounded-xl flex flex-col items-center justify-center text-white p-3 space-y-1">
-                  <QrCode className="w-16 h-16 text-emerald-400" />
-                  <span className="text-[9px] font-mono tracking-widest text-emerald-300">RAZORPAY•UPI</span>
+                  <QrCode className="w-16 h-16 text-brand-400" />
+                  <span className="text-[9px] tabular text-brand-300">RAZORPAY•UPI</span>
                   <span className="text-[10px] font-bold text-white">₹{amount}</span>
                 </div>
               </div>
               <div className="text-[11px] text-slate-500 flex items-center justify-center space-x-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                <span className="w-2 h-2 rounded-full bg-brand-500"></span>
                 <span>Camera or any UPI App (GPay, PhonePe, Paytm, BHIM)</span>
               </div>
             </div>
@@ -285,7 +285,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                   value={cardNumber}
                   onChange={(e) => setCardNumber(e.target.value)}
                   placeholder="4532 8921 4410 9923"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono font-bold text-slate-800 focus:ring-2 focus:ring-blue-600 outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs tabular font-bold text-slate-800 focus:ring-2 focus:ring-blue-600 outline-none"
                 />
               </div>
 
@@ -297,7 +297,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                     value={cardExpiry}
                     onChange={(e) => setCardExpiry(e.target.value)}
                     placeholder="MM/YY"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono font-bold text-slate-800 focus:ring-2 focus:ring-blue-600 outline-none text-center"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs tabular font-bold text-slate-800 focus:ring-2 focus:ring-blue-600 outline-none text-center"
                   />
                 </div>
                 <div>
@@ -308,7 +308,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                     value={cardCvv}
                     onChange={(e) => setCardCvv(e.target.value)}
                     placeholder="•••"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono font-bold text-slate-800 focus:ring-2 focus:ring-blue-600 outline-none text-center"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs tabular font-bold text-slate-800 focus:ring-2 focus:ring-blue-600 outline-none text-center"
                   />
                 </div>
               </div>
@@ -325,7 +325,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
               </div>
 
               <div className="flex items-center space-x-2 text-[10px] text-slate-500 pt-1">
-                <Lock className="w-3.5 h-3.5 text-emerald-700" />
+                <Lock className="w-3.5 h-3.5 text-brand-700" />
                 <span>Card data tokenized securely. PCI-DSS Level 1 certified.</span>
               </div>
             </div>
@@ -379,7 +379,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                 >
                   <div>
                     <div className="text-xs font-bold text-slate-900">{w.name}</div>
-                    <div className="text-[10px] text-emerald-700 font-semibold">{w.balance}</div>
+                    <div className="text-[10px] text-brand-700 font-semibold">{w.balance}</div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-400" />
                 </div>
@@ -412,7 +412,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
           </button>
 
           <div className="flex items-center justify-center space-x-2 text-[10px] text-slate-500 font-semibold">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+            <ShieldCheck className="w-3.5 h-3.5 text-brand-700" />
             <span>Demo mode • No real money is charged</span>
           </div>
 
@@ -420,18 +420,18 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
 
         {/* Payment Success Overlay Simulation */}
         {paymentSuccessData && (
-          <div className="absolute inset-0 bg-white/95 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center space-y-3 z-30 animate-fade-in">
-            <div className="w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xl shadow-emerald-500/40 animate-bounce">
+          <div className="absolute inset-0 bg-white/95 flex flex-col items-center justify-center p-6 text-center space-y-3 z-30 animate-fade-in">
+            <div className="w-16 h-16 rounded-full bg-brand-500 text-white flex items-center justify-center shadow-xl shadow-brand-500/40">
               <CheckCircle2 className="w-10 h-10" />
             </div>
             <div>
               <h3 className="font-black text-xl text-slate-900">Payment Successful!</h3>
               <p className="text-xs text-slate-500 mt-0.5">Authorized by Razorpay Gateway</p>
             </div>
-            <div className="bg-slate-100 p-2.5 rounded-xl font-mono text-xs font-bold text-slate-800 border border-slate-200">
+            <div className="bg-slate-100 p-2.5 rounded-xl tabular text-xs font-bold text-slate-800 border border-slate-200">
               ID: {paymentSuccessData.razorpay_payment_id}
             </div>
-            <p className="text-[11px] text-emerald-700 font-semibold">Generating your confirmed digital parking pass...</p>
+            <p className="text-[11px] text-brand-700 font-semibold">Generating your confirmed digital parking pass...</p>
           </div>
         )}
 

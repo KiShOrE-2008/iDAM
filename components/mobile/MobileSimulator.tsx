@@ -56,17 +56,17 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ locations, lan
   ];
 
   return (
-    <section id="mobile-demo" className="py-16 bg-slate-950 text-white relative border-t border-slate-800 selection:bg-emerald-500 selection:text-slate-950">
+    <section id="mobile-demo" className="py-16 bg-slate-950 text-white relative border-t border-slate-800 selection:bg-brand-500 selection:text-slate-950">
       
       {/* Soft Glow Background Accent */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-emerald-950/40 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-brand-950/40 via-transparent to-transparent pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 relative z-10">
         
         {/* Section Header */}
         <div className="text-center space-y-3 max-w-2xl mx-auto">
-          <div className="inline-flex items-center space-x-2 bg-emerald-950/90 text-emerald-300 border border-emerald-500/40 px-3.5 py-1.5 rounded-full text-xs font-black shadow-lg">
-            <Smartphone className="w-4 h-4 text-emerald-400" />
+          <div className="inline-flex items-center space-x-2 bg-brand-950/90 text-brand-300 border border-brand-500/40 px-3.5 py-1.5 rounded-full text-xs font-black shadow-lg">
+            <Smartphone className="w-4 h-4 text-brand-400" />
             <span>Interactive Mobile Application Presentation Demo</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
@@ -88,7 +88,7 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ locations, lan
                 onClick={() => setCurrentStep(stepNum)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 ${
                   isActive
-                    ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30 scale-105 ring-2 ring-emerald-300'
+                    ? 'bg-brand-500 text-slate-950 shadow-lg shadow-brand-500/30 ring-2 ring-brand-300'
                     : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800'
                 }`}
               >
@@ -256,7 +256,7 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ locations, lan
             <span>Previous Screen</span>
           </button>
 
-          <span className="bg-slate-900 border border-slate-800 px-3 py-1 rounded-full text-emerald-400">
+          <span className="bg-slate-900 border border-slate-800 px-3 py-1 rounded-full text-brand-400">
             Screen {currentStep} of {stepTitles.length}
           </span>
 

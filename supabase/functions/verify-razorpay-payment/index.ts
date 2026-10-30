@@ -2,6 +2,7 @@
 // Razorpay's signature is valid for the order created for that booking.
 import { adminClient, callerUser, requireEnv, BOOKING_PAYMENT_COLUMNS } from '../_shared/supabase.ts';
 import { corsHeaders, json, verifyPaymentSignature, type PayableBooking } from '../_shared/razorpay.ts';
+import { processPayout, razorpayKeys } from '../_shared/payoutRunner.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -47,6 +48,11 @@ Deno.serve(async (req) => {
       console.error('Reconciliation failed', error ?? result);
       return json({ error: result?.error ?? 'RECONCILIATION_FAILED' }, 409);
     }
+
+
+    // Owner's share -> their Razorpay linked account (on hold). A failure here never
+    // un-confirms the booking: the ledger row stays and the hourly sweep retries it.
+    await processPayout(admin, razorpayKeys(), booking.id).catch(err => console.error('Owner payout failed', booking.id, err));
 
     return json({ success: true, booking_id: booking.id, status: 'confirmed' });
   } catch (err) {

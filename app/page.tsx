@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
-import { Smartphone, Monitor } from 'lucide-react';
+import { Smartphone } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
 import { HowItWorks } from '@/components/HowItWorks';
@@ -301,22 +301,20 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans text-slate-900 antialiased selection:bg-emerald-200 selection:text-emerald-900">
+    <div className="min-h-screen bg-limewash text-ink">
       
-      {/* Top Demo View Switcher Pill Bar */}
-      <div className="bg-slate-950 text-white px-4 py-2 border-b border-slate-800 flex items-center justify-between text-xs font-bold">
-        <div className="flex items-center space-x-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>iDAM Showcase • Web & Mobile Demo</span>
+      {/* Demo switcher: opens the phone app full screen */}
+      <div className="bg-asphalt text-white/80 text-[13px]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-9 flex items-center justify-between gap-4">
+          <span className="truncate">You&apos;re viewing the website. iDAM is also a phone app.</span>
+          <button
+            onClick={() => setDemoViewMode('mobile_standalone')}
+            className="flex items-center gap-1.5 font-bold text-amber-300 hover:text-amber-200 whitespace-nowrap cursor-pointer"
+          >
+            <Smartphone className="w-4 h-4" aria-hidden />
+            Open the app
+          </button>
         </div>
-
-        <button
-          onClick={() => setDemoViewMode('mobile_standalone')}
-          className="flex items-center space-x-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-3.5 py-1 rounded-full text-xs font-black shadow-md transition-all transform active:scale-95"
-        >
-          <Smartphone className="w-3.5 h-3.5" />
-          <span>Launch Full-Screen Mobile App Demo 📱</span>
-        </button>
       </div>
 
       {/* Main Navbar */}
@@ -335,11 +333,18 @@ export default function Home() {
           lang={lang}
           onSearch={(q) => setSearchQuery(q)}
           onOpenOwnerModal={() => setIsOwnerModalOpen(true)}
+          locations={locations}
+          onPickLocation={(loc) => {
+            setSelectedBookingLocation(loc);
+            setIsBookingModalOpen(true);
+          }}
         />
 
         {/* Real-time Discovery Map & Search */}
         <WebExplorer
           lang={lang}
+          query={searchQuery}
+          onClearQuery={() => setSearchQuery('')}
           onSelectLocation={(loc) => {
             setSelectedBookingLocation(loc);
             setIsBookingModalOpen(true);

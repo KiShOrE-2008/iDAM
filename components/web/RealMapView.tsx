@@ -68,10 +68,10 @@ export const RealMapView: React.FC<RealMapViewProps> = ({
               }">
                 <div class="flex items-center space-x-1 px-3 py-1.5 rounded-full shadow-lg font-extrabold text-xs border ${
                   isSelected
-                    ? 'bg-emerald-950 text-white border-emerald-400 ring-4 ring-emerald-500/20'
-                    : 'bg-white text-emerald-950 border-emerald-300 shadow-md'
+                    ? 'bg-brand-950 text-white border-brand-400 ring-4 ring-brand-500/20'
+                    : 'bg-white text-brand-950 border-brand-300 shadow-md'
                 }">
-                  <span class="w-2 h-2 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-emerald-600'}"></span>
+                  <span class="w-2 h-2 rounded-full ${isSelected ? 'bg-brand-400' : 'bg-brand-600'}"></span>
                   <span>₹${rate}</span>
                 </div>
               </div>
@@ -129,10 +129,10 @@ export const RealMapView: React.FC<RealMapViewProps> = ({
               }">
                 <div class="flex items-center space-x-1 px-3 py-1.5 rounded-full shadow-lg font-extrabold text-xs border ${
                   isSelected
-                    ? 'bg-emerald-950 text-white border-emerald-400 ring-4 ring-emerald-500/20'
-                    : 'bg-white text-emerald-950 border-emerald-300 shadow-md'
+                    ? 'bg-brand-950 text-white border-brand-400 ring-4 ring-brand-500/20'
+                    : 'bg-white text-brand-950 border-brand-300 shadow-md'
                 }">
-                  <span class="w-2 h-2 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-emerald-600'}"></span>
+                  <span class="w-2 h-2 rounded-full ${isSelected ? 'bg-brand-400' : 'bg-brand-600'}"></span>
                   <span>₹${rate}</span>
                 </div>
               </div>

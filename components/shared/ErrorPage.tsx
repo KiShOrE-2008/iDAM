@@ -51,7 +51,7 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({
 
         {correlationId && (
           <div className="inline-block px-3 py-1 bg-slate-950/60 border border-slate-800 rounded-full">
-            <span className="text-[11px] font-mono text-slate-500">Ref: {correlationId}</span>
+            <span className="text-[11px] tabular text-slate-500">Ref: {correlationId}</span>
           </div>
         )}
 
@@ -59,7 +59,7 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({
           {onRetry && (
             <button
               onClick={onRetry}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-400 text-slate-950 font-semibold text-sm transition-all shadow-lg shadow-brand-500/20"
             >
               <RefreshCw className="w-4 h-4" />
               Try Again
@@ -69,7 +69,7 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({
           {showBack && (
             <button
               onClick={() => window.history.back()}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-sm transition-all active:scale-95 border border-slate-700"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-sm transition-all border border-slate-700"
             >
               <ArrowLeft className="w-4 h-4" />
               Go Back
@@ -79,7 +79,7 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({
           {showHome && (
             <a
               href="/"
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-sm transition-all active:scale-95 border border-slate-700"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-sm transition-all border border-slate-700"
             >
               <Home className="w-4 h-4" />
               Home

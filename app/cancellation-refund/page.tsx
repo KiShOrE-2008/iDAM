@@ -29,11 +29,11 @@ export default function CancellationRefundPage() {
         </div>
 
         {/* Highlight Banner */}
-        <div className="bg-emerald-50 border border-emerald-300 p-5 rounded-2xl flex items-start space-x-3 text-emerald-950">
-          <CheckCircle2 className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
+        <div className="bg-brand-50 border border-brand-300 p-5 rounded-2xl flex items-start space-x-3 text-brand-950">
+          <CheckCircle2 className="w-5 h-5 text-brand-700 shrink-0 mt-0.5" />
           <div className="space-y-1">
             <h3 className="font-black text-sm">30-Minute Free Cancellation Guarantee</h3>
-            <p className="text-xs text-emerald-800 leading-relaxed">
+            <p className="text-xs text-brand-800 leading-relaxed">
               Plans change! Cancel your reservation up to 30 minutes before your scheduled arrival time for an immediate 100% refund with zero cancellation fees.
             </p>
           </div>
@@ -55,9 +55,9 @@ export default function CancellationRefundPage() {
               <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
                 <tr>
                   <td className="p-3.5 font-bold text-slate-900">&gt; 30 minutes before arrival</td>
-                  <td className="p-3.5 text-emerald-700 font-black text-sm">100% Full Refund</td>
+                  <td className="p-3.5 text-brand-700 font-black text-sm">100% Full Refund</td>
                   <td className="p-3.5 text-slate-500">₹0 (Zero fee)</td>
-                  <td className="p-3.5 text-emerald-800 font-bold">Instant (within minutes)</td>
+                  <td className="p-3.5 text-brand-800 font-bold">Instant (within minutes)</td>
                 </tr>
                 <tr>
                   <td className="p-3.5 font-bold text-slate-900">Within 30 minutes of arrival</td>

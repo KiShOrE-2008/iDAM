@@ -212,7 +212,7 @@ export default function OwnerPortalPage() {
           onOpenOwnerModal={() => setIsModalOpen(true)}
         />
         <main className="max-w-md mx-auto px-4 py-16 text-center space-y-6 flex-1 flex flex-col items-center justify-center">
-          <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto shadow-inner">
+          <div className="w-16 h-16 rounded-3xl bg-brand-100 text-brand-800 flex items-center justify-center mx-auto shadow-inner">
             <Lock className="w-8 h-8" />
           </div>
           <div className="space-y-2">
@@ -224,7 +224,7 @@ export default function OwnerPortalPage() {
           <div className="flex items-center space-x-3 w-full pt-2">
             <Link
               href={loginUrlReturningTo('/owner')}
-              className="flex-1 bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 px-6 rounded-2xl text-xs shadow-md transition-all text-center"
+              className="flex-1 bg-brand-950 hover:bg-brand-900 text-white font-bold py-3.5 px-6 rounded-2xl text-xs shadow-md transition-all text-center"
             >
               Sign In
             </Link>
@@ -265,7 +265,7 @@ export default function OwnerPortalPage() {
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full pt-2">
             <Link
               href="/list-your-space"
-              className="w-full bg-emerald-700 hover:bg-emerald-600 text-white font-bold py-3.5 px-6 rounded-2xl text-xs shadow-md transition-all text-center"
+              className="w-full bg-brand-700 hover:bg-brand-600 text-white font-bold py-3.5 px-6 rounded-2xl text-xs shadow-md transition-all text-center"
             >
               Apply to List Space
             </Link>
@@ -296,31 +296,31 @@ export default function OwnerPortalPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1 space-y-8">
         
         {/* Portal Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-950 p-6 sm:p-8 rounded-3xl text-white shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-brand-950 via-brand-900 to-brand-950 p-6 sm:p-8 rounded-3xl text-white shadow-xl">
           <div>
-            <div className="inline-flex items-center space-x-1.5 bg-emerald-800/80 text-emerald-200 px-3 py-1 rounded-full text-xs font-bold mb-2">
+            <div className="inline-flex items-center space-x-1.5 bg-brand-800/80 text-brand-200 px-3 py-1 rounded-full text-xs font-bold mb-2">
               <Building2 className="w-3.5 h-3.5" />
               <span>Owner Management Portal</span>
             </div>
             <h1 className="text-3xl font-extrabold">{activeSpace.title}</h1>
-            <p className="text-xs text-emerald-200 mt-1">{activeSpace.address}</p>
+            <p className="text-xs text-brand-200 mt-1">{activeSpace.address}</p>
           </div>
 
           <div className="flex items-center space-x-3">
             <button
               onClick={handleToggleSpaceOpen}
               className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
-                isSpaceOpen ? 'bg-emerald-500 text-slate-950' : 'bg-red-500 text-white'
+                isSpaceOpen ? 'bg-brand-500 text-slate-950' : 'bg-red-500 text-white'
               }`}
             >
-              {isSpaceOpen ? '🟢 Space Open for Bookings' : '🔴 Space Paused'}
+              {isSpaceOpen ? 'Space Open for Bookings' : 'Space Paused'}
             </button>
 
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center space-x-2 bg-white text-emerald-950 font-bold px-4 py-2.5 rounded-2xl text-xs shadow-md hover:bg-emerald-50 transition-all cursor-pointer"
+              className="flex items-center space-x-2 bg-white text-brand-950 font-bold px-4 py-2.5 rounded-2xl text-xs shadow-md hover:bg-brand-50 transition-all cursor-pointer"
             >
-              <PlusCircle className="w-4 h-4 text-emerald-700" />
+              <PlusCircle className="w-4 h-4 text-brand-700" />
               <span>Add New Space</span>
             </button>
           </div>
@@ -347,10 +347,14 @@ export default function OwnerPortalPage() {
           <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-2xs space-y-2">
             <div className="flex items-center justify-between text-xs font-bold text-gray-500">
               <span>Today&apos;s Earnings</span>
-              <DollarSign className="w-4 h-4 text-emerald-700" />
+              <DollarSign className="w-4 h-4 text-brand-700" />
             </div>
             <div className="text-2xl font-extrabold text-gray-900">₹{todayEarnings.toLocaleString('en-IN')}</div>
-            <div className="text-[11px] text-emerald-700 font-semibold">{!isDemoMode ? 'Verified Supabase transactions' : '+18% vs yesterday'}</div>
+            {isDemoMode ? (
+              <div className="text-[11px] text-brand-700 font-semibold">+18% vs yesterday</div>
+            ) : (
+              <Link href="/owner/payouts" className="text-[11px] text-brand-700 font-bold hover:underline">Payouts &amp; bank account →</Link>
+            )}
           </div>
 
           <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-2xs space-y-2">
@@ -376,7 +380,7 @@ export default function OwnerPortalPage() {
               <span>Owner Rating</span>
               <ShieldCheck className="w-4 h-4 text-amber-500" />
             </div>
-            <div className="text-2xl font-extrabold text-gray-900">4.8 ⭐</div>
+            <div className="text-2xl font-extrabold text-gray-900">4.8 </div>
             <div className="text-[11px] text-gray-500 font-semibold">Based on 64 reviews</div>
           </div>
         </div>
@@ -391,7 +395,7 @@ export default function OwnerPortalPage() {
 
             <button
               onClick={() => setIsScannerOpen(true)}
-              className="flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer"
+              className="flex items-center space-x-1.5 bg-brand-600 hover:bg-brand-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
             >
               <QrCode className="w-3.5 h-3.5" />
               <span>Scan Driver Pass</span>
@@ -401,7 +405,7 @@ export default function OwnerPortalPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-gray-100 text-gray-400 font-bold uppercase tracking-wider">
+                <tr className="border-b border-gray-100 text-gray-400 font-bold">
                   <th className="pb-3">Pass Code</th>
                   <th className="pb-3">Vehicle Plate</th>
                   <th className="pb-3">Type</th>
@@ -420,15 +424,15 @@ export default function OwnerPortalPage() {
                 ) : (
                   displayBookings.map((b) => (
                     <tr key={b.id} className="hover:bg-gray-50/80">
-                      <td className="py-3 font-mono font-bold text-gray-900">{b.code}</td>
-                      <td className="py-3 font-mono font-bold text-emerald-950">{b.vehicle}</td>
+                      <td className="py-3 tabular font-bold text-gray-900">{b.code}</td>
+                      <td className="py-3 tabular font-bold text-brand-950">{b.vehicle}</td>
                       <td className="py-3 text-gray-600">{b.type}</td>
                       <td className="py-3 text-gray-700">{b.time}</td>
                       <td className="py-3 font-bold text-gray-900">₹{b.amount}</td>
                       <td className="py-3 text-right">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
                           b.status === 'Active'
-                            ? 'bg-emerald-100 text-emerald-900'
+                            ? 'bg-brand-100 text-brand-900'
                             : b.status === 'Upcoming'
                             ? 'bg-blue-100 text-blue-900'
                             : 'bg-gray-100 text-gray-700'
@@ -456,7 +460,7 @@ export default function OwnerPortalPage() {
 
       {/* Scanner Dialog for Web / Tablet */}
       {isScannerOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
           <div className="bg-slate-950 rounded-3xl max-w-sm w-full h-[650px] overflow-hidden shadow-2xl border border-slate-800 relative flex flex-col">
             <OwnerScannerScreen
               onBack={() => setIsScannerOpen(false)}

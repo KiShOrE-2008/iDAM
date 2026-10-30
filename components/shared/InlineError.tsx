@@ -21,7 +21,7 @@ export const InlineError: React.FC<InlineErrorProps> = ({ error, onRetry, classN
     >
       <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
       <div className="flex-1 space-y-0.5">
-        {title && <p className="font-semibold text-rose-200 text-xs uppercase tracking-wider">{title}</p>}
+        {title && <p className="font-semibold text-rose-200 text-xs">{title}</p>}
         <p className="leading-snug">{message}</p>
       </div>
       {onRetry && (

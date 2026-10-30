@@ -29,7 +29,7 @@ function UsersBody() {
     <>
       <form
         onSubmit={(e) => { e.preventDefault(); setSearch(query.trim()); }}
-        className="flex items-center bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 w-full sm:w-72"
+        className="flex items-center bg-white border border-slate-300 rounded-md px-3 py-2 w-full sm:w-72 focus-within:border-ink"
       >
         <Search className="w-3.5 h-3.5 text-slate-400" />
         <input
@@ -56,13 +56,13 @@ function UsersBody() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows?.map((u) => (
-                    <tr key={u.id} className="border-t border-slate-100">
+                  {rows?.map((u, i) => (
+                    <tr key={u.id} className="row-in border-t border-slate-100" style={{ animationDelay: `${Math.min(i, 15) * 20}ms` }}>
                       <td className="py-2 px-1 font-bold max-w-[180px] truncate">{u.name || '—'}</td>
                       <td className="py-2 px-1 max-w-[220px] truncate">{u.email || '—'}</td>
                       <td className="py-2 px-1 whitespace-nowrap">{u.phone || '—'}</td>
                       <td className="py-2 px-1">
-                        <span className={`text-[10px] font-black rounded-full px-2 py-0.5 ${u.role === 'admin' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                        <span className={`text-xs font-bold rounded px-1.5 py-0.5 ${u.role === 'admin' ? 'bg-ink text-white' : 'bg-slate-100 text-slate-700'}`}>
                           {u.listings > 0 && u.role !== 'admin' ? 'owner' : u.role}
                         </span>
                       </td>

@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { MapPin, Phone, Mail, Car, Bike, ExternalLink, Check, X, PauseCircle, PlayCircle } from 'lucide-react';
+import { MapPin, Phone, Mail, Car, Bike, ExternalLink, Check, X, PauseCircle, PlayCircle, Loader2 } from 'lucide-react';
 import { AdminLayout, AdminCard, LoadState } from '@/components/admin/AdminLayout';
 import { AdminSpace, ReviewAction, fetchAdminSpaces, reviewSpace, formatDateTime } from '@/lib/admin/service';
+import { SlidingTabs, notifyAdminRefresh } from '@/components/admin/motion';
 
 const TABS: { key: string | null; label: string }[] = [
   { key: 'pending_review', label: 'Waiting for review' },
@@ -26,30 +27,17 @@ function RequestsBody() {
   const [spaces, setSpaces] = useState<AdminSpace[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const load = () => {
-    setSpaces(null);
+  // Silent reloads (after a review) keep the list on screen instead of flashing the loader
+  const load = (silent = false) => {
+    if (!silent) setSpaces(null);
     setError(null);
     fetchAdminSpaces(tab).then(setSpaces).catch((e) => setError(e.message));
   };
-  useEffect(load, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => load(), [tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
-      <div role="tablist" className="flex gap-1 overflow-x-auto no-scrollbar">
-        {TABS.map((t) => (
-          <button
-            key={t.label}
-            role="tab"
-            aria-selected={tab === t.key}
-            onClick={() => setTab(t.key)}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap border ${
-              tab === t.key ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <SlidingTabs label="Listing status" value={tab} onChange={setTab} options={TABS} />
 
       <LoadState loading={!spaces} error={error}>
         {spaces && spaces.length === 0 && (
@@ -60,8 +48,10 @@ function RequestsBody() {
           </AdminCard>
         )}
         <div className="grid xl:grid-cols-2 gap-4">
-          {spaces?.map((space) => (
-            <SpaceReviewCard key={space.id} space={space} onDone={load} />
+          {spaces?.map((space, i) => (
+            <div key={space.id} className="row-in" style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }}>
+              <SpaceReviewCard space={space} onDone={() => load(true)} />
+            </div>
           ))}
         </div>
       </LoadState>
@@ -71,7 +61,7 @@ function RequestsBody() {
 
 const STATUS_STYLE: Record<string, string> = {
   pending_review: 'bg-amber-100 text-amber-900 border-amber-300',
-  active: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+  active: 'bg-brand-100 text-brand-900 border-brand-300',
   suspended: 'bg-rose-100 text-rose-900 border-rose-300',
   draft: 'bg-slate-100 text-slate-700 border-slate-300',
   inactive: 'bg-slate-100 text-slate-700 border-slate-300'
@@ -84,17 +74,28 @@ const STATUS_LABEL: Record<string, string> = {
   inactive: 'Paused by owner'
 };
 
+const STAMP: Record<ReviewAction, { text: string; cls: string }> = {
+  approve: { text: 'Approved', cls: 'text-go-700 border-go-600' },
+  reinstate: { text: 'Reinstated', cls: 'text-go-700 border-go-600' },
+  reject: { text: 'Rejected', cls: 'text-rose-700 border-rose-600' },
+  suspend: { text: 'Suspended', cls: 'text-rose-700 border-rose-600' },
+};
+
 function SpaceReviewCard({ space, onDone }: { space: AdminSpace; onDone: () => void }) {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState<ReviewAction | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Set once the server accepts the review: the card is stamped, then folds away
+  const [outcome, setOutcome] = useState<ReviewAction | null>(null);
 
   const act = async (action: ReviewAction) => {
     setBusy(action);
     setError(null);
     try {
       await reviewSpace(space.id, action, note.trim() || undefined);
-      onDone();
+      setOutcome(action);
+      notifyAdminRefresh();
+      setTimeout(onDone, 1200);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -106,7 +107,16 @@ function SpaceReviewCard({ space, onDone }: { space: AdminSpace; onDone: () => v
   const mapUrl = `https://www.google.com/maps/search/?api=1&query=${space.latitude},${space.longitude}`;
 
   return (
-    <AdminCard>
+    <div className={outcome ? 'card-fold' : ''}>
+    <div className="min-h-0 overflow-hidden">
+    <AdminCard className="relative">
+      {outcome && (
+        <div className="absolute inset-0 z-10 bg-white/70 flex items-center justify-center" role="status">
+          <span className={`stamp-in border-4 rounded-md px-5 py-2 text-3xl font-black bg-white/80 ${STAMP[outcome].cls}`}>
+            {STAMP[outcome].text}
+          </span>
+        </div>
+      )}
       <div className="flex gap-3">
         {space.image_url && (
           <img src={space.image_url} alt="" className="w-20 h-20 rounded-xl object-cover shrink-0 bg-slate-100" loading="lazy" />
@@ -114,7 +124,7 @@ function SpaceReviewCard({ space, onDone }: { space: AdminSpace; onDone: () => v
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-black text-sm text-slate-900 truncate">{space.title}</h3>
-            <span className={`shrink-0 text-[10px] font-black border rounded-full px-2 py-0.5 ${STATUS_STYLE[space.status] || STATUS_STYLE.draft}`}>
+            <span className={`shrink-0 text-xs font-bold border rounded px-1.5 py-0.5 ${STATUS_STYLE[space.status] || STATUS_STYLE.draft}`}>
               {STATUS_LABEL[space.status] || space.status}
             </span>
           </div>
@@ -122,7 +132,7 @@ function SpaceReviewCard({ space, onDone }: { space: AdminSpace; onDone: () => v
             <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5 text-slate-400" />
             <span>{space.address}{space.landmark ? ` (near ${space.landmark})` : ''}</span>
           </p>
-          <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold text-emerald-800 hover:underline inline-flex items-center gap-1 mt-1">
+          <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold text-brand-800 hover:underline inline-flex items-center gap-1 mt-1">
             Check location on map <ExternalLink className="w-3 h-3" />
           </a>
         </div>
@@ -130,9 +140,9 @@ function SpaceReviewCard({ space, onDone }: { space: AdminSpace; onDone: () => v
 
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs mt-3 pt-3 border-t border-slate-100">
         <dt className="text-slate-500 flex items-center gap-1"><Car className="w-3.5 h-3.5" /> Car bays / rate</dt>
-        <dd className="font-bold text-right">{space.car_capacity} · ₹{space.price_per_hour_car}/hr</dd>
+        <dd className="font-bold text-right tabular">{space.car_capacity} bays, ₹{space.price_per_hour_car}/hr</dd>
         <dt className="text-slate-500 flex items-center gap-1"><Bike className="w-3.5 h-3.5" /> Bike bays / rate</dt>
-        <dd className="font-bold text-right">{space.bike_capacity} · ₹{space.price_per_hour_bike}/hr</dd>
+        <dd className="font-bold text-right tabular">{space.bike_capacity} bays, ₹{space.price_per_hour_bike}/hr</dd>
         <dt className="text-slate-500">Submitted</dt>
         <dd className="font-bold text-right">{formatDateTime(space.created_at)}</dd>
       </dl>
@@ -163,7 +173,7 @@ function SpaceReviewCard({ space, onDone }: { space: AdminSpace; onDone: () => v
             rows={2}
             maxLength={500}
             placeholder="e.g. Please add a photo of the entrance"
-            className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 p-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-600/30"
+            className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 p-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-brand-600/30"
           />
         </label>
         {error && <p role="alert" className="text-[11px] font-semibold text-rose-700">{error}</p>}
@@ -185,6 +195,8 @@ function SpaceReviewCard({ space, onDone }: { space: AdminSpace; onDone: () => v
         </div>
       </div>
     </AdminCard>
+    </div>
+    </div>
   );
 }
 
@@ -195,11 +207,11 @@ function ActionButton({ children, onClick, busy, disabled, tone, icon }: {
     <button
       onClick={onClick}
       disabled={busy || disabled}
-      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black disabled:opacity-50 disabled:cursor-not-allowed ${
-        tone === 'primary' ? 'bg-emerald-700 hover:bg-emerald-800 text-white' : 'bg-white border border-rose-300 text-rose-800 hover:bg-rose-50'
+      className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
+        tone === 'primary' ? 'bg-brand-700 hover:bg-brand-800 text-white' : 'bg-white border border-rose-300 text-rose-800 hover:bg-rose-50'
       }`}
     >
-      {icon}
+      {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : icon}
       {busy ? 'Saving…' : children}
     </button>
   );

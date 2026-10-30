@@ -63,82 +63,60 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   return (
     <div className="space-y-4 animate-fade-in font-sans">
       
-      {/* Owner Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center space-x-1.5">
-            <h3 className="font-black text-sm text-slate-900">Owner Portal</h3>
-            {isDemoMode && (
-              <span className="text-[9px] bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.2 rounded-full font-black">
-                DEMO MODE
-              </span>
-            )}
-          </div>
-          <p className="text-[10px] text-slate-500 font-medium">Real-time occupancy & QR pass verification</p>
-        </div>
-        <Link
-          href="/list-your-space"
-          className="bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-[11px] px-3 py-1.5 rounded-xl shadow-xs flex items-center space-x-1"
-        >
-          <Plus className="w-3.5 h-3.5 text-emerald-400" />
-          <span>+ Add Space</span>
-        </Link>
-      </div>
-
-      {/* PROMINENT ACTION: SCAN PARKING PASS */}
       {onNavigateToScanner && (
         <button
           onClick={onNavigateToScanner}
-          className="w-full p-4 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-3xl font-black text-sm shadow-xl shadow-emerald-600/25 flex items-center justify-between transition-all active:scale-98 border border-emerald-400/30 group"
+          className="w-full bg-brand-700 active:bg-brand-800 text-white rounded-lg p-1.5 cursor-pointer"
         >
-          <div className="flex items-center space-x-3 text-left">
-            <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/25 shadow-inner group-hover:scale-105 transition-transform">
-              <QrCode className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <span className="block text-sm font-black leading-tight">Scan Parking Pass</span>
-              <span className="text-[11px] text-emerald-100 font-medium">Fast camera verification & check-in</span>
-            </div>
-          </div>
-
-          <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-white">
-            <ArrowRight className="w-4 h-4 text-white" />
-          </div>
+          <span className="flex items-center gap-4 border-2 border-white/90 rounded-md px-4 py-4 text-left">
+            <QrCode className="w-9 h-9 shrink-0" aria-hidden />
+            <span className="flex-1">
+              <span className="block text-lg font-black leading-tight">Scan a pass</span>
+              <span className="block text-sm text-white/80">Check a driver in at the gate</span>
+            </span>
+            <ArrowRight className="w-5 h-5" aria-hidden />
+          </span>
         </button>
       )}
 
-      {/* Primary Metrics Grid */}
-      <div className="grid grid-cols-4 gap-2 text-center">
-        <div className="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-2xs">
-          <p className="text-[9px] font-extrabold text-slate-400 uppercase">Today Rev</p>
-          <p className="text-sm font-black text-emerald-800">₹{todayRevenue.toLocaleString('en-IN')}</p>
-        </div>
-        
-        {/* Clickable Currently Parked Metric Tile */}
-        <button
-          type="button"
-          onClick={onNavigateToParked}
-          className="bg-white hover:bg-emerald-50/50 p-2.5 rounded-2xl border border-slate-200 shadow-2xs text-center transition-all cursor-pointer group"
-        >
-          <p className="text-[9px] font-extrabold text-emerald-700 uppercase group-hover:underline">Parked</p>
-          <p className="text-sm font-black text-slate-900 flex items-center justify-center space-x-1">
-            <span>{parkedCount}</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          </p>
-        </button>
-
-        <div className="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-2xs">
-          <p className="text-[9px] font-extrabold text-slate-400 uppercase">Total Spots</p>
-          <p className="text-sm font-black text-slate-900">{totalSpots}</p>
-        </div>
-        <div className="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-2xs">
-          <p className="text-[9px] font-extrabold text-slate-400 uppercase">Rating</p>
-          <p className="text-sm font-black text-amber-600 flex items-center justify-center space-x-0.5">
-            <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
-            <span>{isDemoMode ? '4.8' : '—'}</span>
-          </p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-slate-600">
+          {isDemoMode ? 'Sample data for the demo' : 'Live occupancy for your space'}
+        </p>
+        <div className="flex items-center gap-4">
+          {!isDemoMode && (
+            <Link href="/owner/payouts" className="text-sm font-bold text-brand-700">
+              Payouts
+            </Link>
+          )}
+          <Link href="/list-your-space" className="text-sm font-bold text-brand-700 flex items-center gap-1">
+            <Plus className="w-4 h-4" aria-hidden />
+            Add a space
+          </Link>
         </div>
       </div>
+
+      <dl className="grid grid-cols-4 border-y-2 border-ink divide-x divide-slate-300 bg-transparent">
+        <div className="py-2.5 pr-2">
+          <dt className="text-xs text-slate-500">Today</dt>
+          <dd className="text-lg font-black tabular">₹{todayRevenue.toLocaleString('en-IN')}</dd>
+        </div>
+        <button type="button" onClick={onNavigateToParked} className="py-2.5 px-2 text-left cursor-pointer">
+          <dt className="text-xs text-brand-700 underline underline-offset-2">Parked</dt>
+          <dd className="text-lg font-black tabular">{parkedCount}</dd>
+        </button>
+        <div className="py-2.5 px-2">
+          <dt className="text-xs text-slate-500">Spaces</dt>
+          <dd className="text-lg font-black tabular">{totalSpots}</dd>
+        </div>
+        <div className="py-2.5 pl-2">
+          <dt className="text-xs text-slate-500">Rating</dt>
+          <dd className="text-lg font-black tabular flex items-center gap-1">
+            <Star className="w-4 h-4 fill-amber-500 text-amber-500" aria-hidden />
+            {isDemoMode ? '4.8' : '—'}
+          </dd>
+        </div>
+      </dl>
 
       {loadError && (
         <div role="alert" className="text-[11px] font-semibold text-red-800 bg-red-50 border border-red-200 p-3 rounded-2xl">
@@ -150,10 +128,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       {onNavigateToParked && (
         <div
           onClick={onNavigateToParked}
-          className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-xs flex items-center justify-between cursor-pointer hover:border-emerald-300 transition-colors"
+          className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-xs flex items-center justify-between cursor-pointer hover:border-brand-300 transition-colors"
         >
           <div className="flex items-center space-x-2.5">
-            <div className="p-2 rounded-xl bg-emerald-100 text-emerald-800">
+            <div className="p-2 rounded-xl bg-brand-100 text-brand-800">
               <Car className="w-4 h-4" />
             </div>
             <div>
@@ -163,7 +141,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               </span>
             </div>
           </div>
-          <span className="text-xs font-black text-emerald-700 flex items-center space-x-1">
+          <span className="text-xs font-black text-brand-700 flex items-center space-x-1">
             <span>Manage</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </span>
@@ -189,8 +167,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-1.5">
-            <Clock className="w-4 h-4 text-emerald-600" />
-            <h4 className="font-black text-xs text-slate-900 uppercase tracking-wider">Expected Arrivals</h4>
+            <Clock className="w-4 h-4 text-brand-600" />
+            <h4 className="font-black text-xs text-slate-900">Expected Arrivals</h4>
           </div>
           <span className="text-[10px] bg-slate-100 text-slate-700 font-extrabold px-2 py-0.5 rounded-full">
             {expectedArrivals.length} Confirmed
@@ -208,14 +186,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               >
                 <div className="flex items-center space-x-2.5">
                   <div className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-700">
-                    <Car className="w-3.5 h-3.5 text-emerald-600" />
+                    <Car className="w-3.5 h-3.5 text-brand-600" />
                   </div>
                   <div>
                     <div className="flex items-center space-x-1.5">
-                      <span className="font-mono font-black text-slate-900 text-xs">
+                      <span className="tabular font-black text-slate-900 text-xs">
                         {arrival.vehicleNumber || 'TN 59 AB 1234'}
                       </span>
-                      <span className="text-[9px] bg-emerald-100 text-emerald-900 font-black px-1.5 py-0.2 rounded">
+                      <span className="text-[9px] bg-brand-100 text-brand-900 font-black px-1.5 py-0.2 rounded">
                         {arrival.passCode}
                       </span>
                     </div>

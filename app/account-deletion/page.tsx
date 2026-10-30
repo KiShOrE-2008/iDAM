@@ -50,8 +50,8 @@ export default function AccountDeletionPage() {
         
         {isDeleted ? (
           <div className="py-10 text-center space-y-4 animate-scale-in">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto shadow-inner">
-              <CheckCircle2 className="w-10 h-10 text-emerald-700" />
+            <div className="w-16 h-16 rounded-full bg-brand-100 text-brand-800 flex items-center justify-center mx-auto shadow-inner">
+              <CheckCircle2 className="w-10 h-10 text-brand-700" />
             </div>
 
             <div className="space-y-1">
@@ -92,19 +92,19 @@ export default function AccountDeletionPage() {
               <h3 className="text-base font-black text-slate-900">What data will be removed?</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-semibold text-slate-700">
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-brand-600 shrink-0" />
                   <span>Personal Name, Email & Verified Phone</span>
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-brand-600 shrink-0" />
                   <span>Registered Vehicle Garage & Plates</span>
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-brand-600 shrink-0" />
                   <span>iDAM Wallet Balance & Ledger History</span>
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-brand-600 shrink-0" />
                   <span>Authentication Sessions & Password Credentials</span>
                 </div>
               </div>
@@ -147,7 +147,7 @@ export default function AccountDeletionPage() {
 
               <div className="space-y-1">
                 <label className="text-xs font-black text-slate-800 block">
-                  Type <span className="font-mono text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded">DELETE</span> in capital letters to confirm *
+                  Type <span className="tabular text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded">DELETE</span> in capital letters to confirm *
                 </label>
                 <input
                   type="text"
@@ -155,14 +155,14 @@ export default function AccountDeletionPage() {
                   onChange={(e) => setConfirmWord(e.target.value)}
                   placeholder="DELETE"
                   required
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-black text-rose-800 focus:outline-none focus:ring-2 focus:ring-rose-500 uppercase tracking-widest"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs tabular font-black text-rose-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isDeleting || confirmWord !== 'DELETE' || !confirmEmail.trim()}
-                className="w-full py-3.5 bg-rose-600 disabled:bg-slate-200 disabled:text-slate-400 hover:bg-rose-700 active:scale-98 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                className="w-full py-3.5 bg-rose-600 disabled:bg-slate-200 disabled:text-slate-400 hover:bg-rose-700 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
               >
                 <Trash2 className="w-4 h-4" />
                 <span>{isDeleting ? 'Erasing Account Records...' : 'Permanently Delete My Account & Purge Data'}</span>

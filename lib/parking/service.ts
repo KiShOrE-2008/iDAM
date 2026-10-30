@@ -138,6 +138,10 @@ export async function cancelBooking(bookingId: string, reason: string = 'User re
       });
 
       if (!error && data) {
+        if (data.success) {
+          // Take back the owner's held payout now rather than at the next hourly sweep
+          supabase.functions.invoke('process-payouts', { body: { booking_id: bookingId } }).catch(() => {});
+        }
         return {
           success: Boolean(data.success),
           message: data.message || (data.success ? 'Booking cancelled' : data.error || 'Failed to cancel')

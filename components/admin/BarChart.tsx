@@ -19,8 +19,8 @@ interface BarChartProps {
 }
 
 // Single series: one brand hue, validated against the white surface (dataviz palette checks)
-const BAR_COLOR = '#059669';
-const GRID_COLOR = '#e2e8f0';
+const BAR_COLOR = '#1846A3';
+const GRID_COLOR = '#d8ddd9';
 
 /** Rounded top corners only, anchored flat to the baseline. */
 function barPath(x: number, y: number, w: number, h: number, r: number) {
@@ -78,7 +78,14 @@ export const BarChart: React.FC<BarChartProps> = ({ data, title, formatValue = (
           return (
             <g key={i}>
               {d.value > 0 && (
-                <path d={barPath(x, y, barW, h, 4)} fill={BAR_COLOR} opacity={hover === null || hover === i ? 1 : 0.45} />
+                // Bars grow up from the baseline, left to right, whenever the series loads
+                <path
+                  d={barPath(x, y, barW, h, 3)}
+                  fill={BAR_COLOR}
+                  className="bar-grow transition-opacity duration-150"
+                  style={{ animationDelay: `${Math.min(i * (420 / Math.max(1, data.length)), 420)}ms` }}
+                  opacity={hover === null || hover === i ? 1 : 0.4}
+                />
               )}
               {/* Hit target: the full column, larger than the bar */}
               <rect
@@ -102,7 +109,7 @@ export const BarChart: React.FC<BarChartProps> = ({ data, title, formatValue = (
       </svg>
       {hovered && hover !== null && (
         <div
-          className="pointer-events-none absolute top-0 -translate-x-1/2 bg-slate-900 text-white rounded-lg px-2.5 py-1.5 text-[11px] font-semibold shadow-lg whitespace-nowrap"
+          className="pointer-events-none absolute top-0 -translate-x-1/2 bg-ink text-white rounded-md px-2.5 py-1.5 text-xs font-semibold shadow-lg whitespace-nowrap transition-[left] duration-150 ease-out"
           style={{ left: `${((pad.left + hover * slot + slot / 2) / width) * 100}%` }}
         >
           <div className="text-slate-300">{hovered.label}</div>

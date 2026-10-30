@@ -74,12 +74,12 @@ export const ScanVerificationResultModal: React.FC<ScanVerificationResultModalPr
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 animate-fade-in font-sans select-none">
-      <div className="bg-[#F8F8F5] rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl border border-slate-200 relative flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4 sm:p-6 animate-fade-in font-sans select-none">
+      <div className="bg-limewash rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl border border-slate-200 relative flex flex-col max-h-[90vh]">
         
         {/* Top Header */}
         <div className="p-4 bg-white border-b border-slate-200 flex items-center justify-between">
-          <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+          <span className="text-[11px] font-black text-slate-500">
             Pass Verification Result
           </span>
           <button
@@ -96,8 +96,8 @@ export const ScanVerificationResultModal: React.FC<ScanVerificationResultModalPr
           {/* SUCCESSFUL CHECK-IN CONFIRMED VIEW */}
           {confirmedSuccess ? (
             <div className="text-center py-6 space-y-4 animate-scale-in">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 border-2 border-emerald-400 text-emerald-800 flex items-center justify-center mx-auto shadow-inner">
-                <Check className="w-8 h-8 stroke-[3] text-emerald-700" />
+              <div className="w-16 h-16 rounded-full bg-brand-100 border-2 border-brand-400 text-brand-800 flex items-center justify-center mx-auto shadow-inner">
+                <Check className="w-8 h-8 stroke-[3] text-brand-700" />
               </div>
 
               <div className="space-y-1">
@@ -110,17 +110,17 @@ export const ScanVerificationResultModal: React.FC<ScanVerificationResultModalPr
               <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs text-left space-y-2 text-xs">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500 font-bold">Booking Ref</span>
-                  <span className="font-mono font-black text-slate-900">{booking?.passCode}</span>
+                  <span className="tabular font-black text-slate-900">{booking?.passCode}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500 font-bold">Vehicle Registration</span>
-                  <span className="font-mono font-black text-amber-900 bg-amber-100 px-2 py-0.5 rounded">
+                  <span className="tabular font-black text-amber-900 bg-amber-100 px-2 py-0.5 rounded">
                     {booking?.vehicleNumber}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500 font-bold">Slot Status</span>
-                  <span className="text-emerald-800 font-black bg-emerald-100 px-2 py-0.5 rounded-full text-[10px]">
+                  <span className="text-brand-800 font-black bg-brand-100 px-2 py-0.5 rounded-full text-[10px]">
                     ● ACTIVE PARKED
                   </span>
                 </div>
@@ -133,7 +133,7 @@ export const ScanVerificationResultModal: React.FC<ScanVerificationResultModalPr
                     className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-xs font-black shadow-md transition-all flex items-center justify-center space-x-1.5"
                   >
                     <span>View Currently Parked</span>
-                    <ArrowRight className="w-4 h-4 text-emerald-400" />
+                    <ArrowRight className="w-4 h-4 text-brand-400" />
                   </button>
                 )}
                 <button
@@ -151,15 +151,15 @@ export const ScanVerificationResultModal: React.FC<ScanVerificationResultModalPr
             <div className="space-y-4 animate-fade-in">
               
               {/* Status Header Banner */}
-              <div className="bg-emerald-50 border border-emerald-300/80 p-3.5 rounded-2xl flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md">
+              <div className="bg-brand-50 border border-brand-300/80 p-3.5 rounded-2xl flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center shrink-0 shadow-md">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-xs font-black text-emerald-950 uppercase tracking-wide block">
+                  <span className="text-xs font-black text-brand-950 block">
                     Valid parking pass
                   </span>
-                  <span className="text-[11px] text-emerald-800 font-semibold">
+                  <span className="text-[11px] text-brand-800 font-semibold">
                     Ready for owner check-in confirmation
                   </span>
                 </div>
@@ -175,14 +175,14 @@ export const ScanVerificationResultModal: React.FC<ScanVerificationResultModalPr
               <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 text-xs">
                 
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                  <span className="text-slate-400 uppercase text-[10px] font-extrabold tracking-wider">Pass Reference</span>
-                  <span className="font-mono text-sm font-black text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded-lg">
+                  <span className="text-slate-400 uppercase text-[10px] font-extrabold">Pass Reference</span>
+                  <span className="tabular text-sm font-black text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded-lg">
                     {booking.passCode}
                   </span>
                 </div>
 
                 <div className="flex items-start space-x-2 text-slate-700">
-                  <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <MapPin className="w-4 h-4 text-brand-600 shrink-0 mt-0.5" />
                   <div>
                     <span className="font-extrabold text-slate-900 block">{booking.parkingLocation?.title}</span>
                     <span className="text-[10px] text-slate-500 font-medium">{booking.parkingLocation?.address}</span>
@@ -190,8 +190,8 @@ export const ScanVerificationResultModal: React.FC<ScanVerificationResultModalPr
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 text-center">
-                  <span className="text-[10px] text-slate-500 font-extrabold block uppercase tracking-wider">Booked vehicle plate</span>
-                  <span className="font-mono font-black text-2xl tracking-widest text-amber-950 bg-amber-100 border-2 border-amber-300 px-4 py-1.5 rounded-xl inline-block mt-1">
+                  <span className="text-[10px] text-slate-500 font-extrabold block">Booked vehicle plate</span>
+                  <span className="tabular font-black text-2xl text-amber-950 bg-amber-100 border-2 border-amber-300 px-4 py-1.5 rounded-xl inline-block mt-1">
                     {booking.vehicleNumber || 'No plate on booking'}
                   </span>
                   <span className="text-[10px] text-slate-500 font-semibold block mt-1">
@@ -225,8 +225,8 @@ export const ScanVerificationResultModal: React.FC<ScanVerificationResultModalPr
 
                 <div className="flex items-center justify-between pt-1 border-t border-slate-100">
                   <span className="text-[10px] text-slate-400 font-bold uppercase">Payment Status</span>
-                  <span className="text-[10px] bg-emerald-100 text-emerald-900 font-black px-2 py-0.5 rounded-full flex items-center space-x-1">
-                    <span>✓ {booking.paymentMethod || 'Razorpay'} Verified</span>
+                  <span className="text-[10px] bg-brand-100 text-brand-900 font-black px-2 py-0.5 rounded-full flex items-center space-x-1">
+                    <span>{booking.paymentMethod || 'Razorpay'} Verified</span>
                   </span>
                 </div>
 
@@ -250,7 +250,7 @@ export const ScanVerificationResultModal: React.FC<ScanVerificationResultModalPr
                     autoCapitalize="characters"
                     maxLength={8}
                     placeholder="e.g. 3200"
-                    className="w-full px-3 py-2 rounded-xl border border-amber-300 bg-white font-mono text-base font-black tracking-widest text-slate-900 outline-none focus:ring-2 focus:ring-amber-400"
+                    className="w-full px-3 py-2 rounded-xl border border-amber-300 bg-white tabular text-base font-black text-slate-900 outline-none focus:ring-2 focus:ring-amber-400"
                   />
                 </label>
               ) : (
@@ -259,9 +259,9 @@ export const ScanVerificationResultModal: React.FC<ScanVerificationResultModalPr
                     type="checkbox"
                     checked={plateConfirmed}
                     onChange={(e) => setPlateConfirmed(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 accent-emerald-600 shrink-0"
+                    className="mt-0.5 w-4 h-4 accent-brand-600 shrink-0"
                   />
-                  <span>I checked the car: its plate is <span className="font-mono">{booking.vehicleNumber || '(none on booking)'}</span></span>
+                  <span>I checked the car: its plate is <span className="tabular">{booking.vehicleNumber || '(none on booking)'}</span></span>
                 </label>
               )}
 
@@ -270,7 +270,7 @@ export const ScanVerificationResultModal: React.FC<ScanVerificationResultModalPr
                 <button
                   onClick={handleConfirm}
                   disabled={isConfirming || !canConfirm}
-                  className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 active:scale-98 text-white rounded-2xl text-xs font-black shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center space-x-2 disabled:opacity-75"
+                  className="w-full py-3.5 bg-brand-600 hover:bg-brand-500 text-white rounded-2xl text-xs font-black shadow-lg shadow-brand-600/30 transition-all flex items-center justify-center space-x-2 disabled:opacity-75"
                 >
                   {isConfirming ? (
                     <>
@@ -356,7 +356,7 @@ export const ScanVerificationResultModal: React.FC<ScanVerificationResultModalPr
                   onClick={onScanAgain}
                   className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-xs font-black shadow-md transition-all flex items-center justify-center space-x-1.5"
                 >
-                  <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
+                  <RefreshCw className="w-3.5 h-3.5 text-brand-400" />
                   <span>Scan Again</span>
                 </button>
               </div>

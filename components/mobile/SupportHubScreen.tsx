@@ -94,17 +94,17 @@ export const SupportHubScreen: React.FC<SupportHubScreenProps> = ({ onBack }) =>
   };
 
   return (
-    <div className="h-full flex flex-col justify-between bg-[#F8F8F5] relative overflow-y-auto no-scrollbar animate-fade-in text-slate-900 select-none">
+    <div className="h-full flex flex-col justify-between bg-limewash relative overflow-y-auto no-scrollbar animate-fade-in text-slate-900 select-none">
       
       {/* Top Header */}
       <div className="p-3.5 bg-white border-b border-slate-200/80 sticky top-0 z-20 flex items-center justify-between shadow-2xs">
         <button
           onClick={onBack}
-          className="p-1 rounded-lg text-slate-700 hover:bg-slate-100 active:scale-95 transition-transform"
+          className="p-1 rounded-lg text-slate-700 hover:bg-slate-100 transition-transform"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">
+        <h3 className="font-black text-xs text-slate-900">
           Support Hub & Help Center
         </h3>
         <div className="w-5" />
@@ -126,7 +126,7 @@ export const SupportHubScreen: React.FC<SupportHubScreenProps> = ({ onBack }) =>
             activeTab === 'chat' ? 'bg-slate-950 text-white shadow-xs' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'
           }`}
         >
-          <Bot className="w-3.5 h-3.5 text-emerald-400" />
+          <Bot className="w-3.5 h-3.5 text-brand-400" />
           <span>AI Assistant</span>
         </button>
         <button
@@ -144,10 +144,10 @@ export const SupportHubScreen: React.FC<SupportHubScreenProps> = ({ onBack }) =>
         {activeTab === 'help' && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+              <h4 className="text-xs font-black text-slate-900">
                 Frequently Asked Questions
               </h4>
-              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+              <span className="text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200">
                 24/7 Verified
               </span>
             </div>
@@ -168,7 +168,7 @@ export const SupportHubScreen: React.FC<SupportHubScreenProps> = ({ onBack }) =>
                       <span className="pr-2">{faq.q}</span>
                       <ChevronDown
                         className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
-                          isOpen ? 'rotate-180 text-emerald-600' : ''
+                          isOpen ? 'rotate-180 text-brand-600' : ''
                         }`}
                       />
                     </button>
@@ -183,17 +183,17 @@ export const SupportHubScreen: React.FC<SupportHubScreenProps> = ({ onBack }) =>
             </div>
 
             {/* Emergency Hotline Card */}
-            <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-3.5 flex items-center justify-between text-xs">
+            <div className="bg-brand-50 border border-brand-200/80 rounded-2xl p-3.5 flex items-center justify-between text-xs">
               <div className="flex items-center space-x-2.5">
-                <div className="p-2 bg-emerald-600 text-white rounded-xl shadow-xs">
+                <div className="p-2 bg-brand-600 text-white rounded-xl shadow-xs">
                   <Phone className="w-4 h-4" />
                 </div>
                 <div>
                   <h5 className="font-black text-slate-900">Direct Support Hotline</h5>
-                  <p className="text-[10px] text-emerald-900 font-semibold">Toll-free 1800-419-IDAM (9 AM - 9 PM)</p>
+                  <p className="text-[10px] text-brand-900 font-semibold">Toll-free 1800-419-IDAM (9 AM - 9 PM)</p>
                 </div>
               </div>
-              <span className="text-emerald-800 font-black text-[11px]">Call</span>
+              <span className="text-brand-800 font-black text-[11px]">Call</span>
             </div>
           </div>
         )}
@@ -209,7 +209,7 @@ export const SupportHubScreen: React.FC<SupportHubScreenProps> = ({ onBack }) =>
                   <div
                     className={`max-w-[85%] p-3 rounded-2xl text-xs leading-relaxed ${
                       msg.sender === 'user'
-                        ? 'bg-emerald-950 text-white font-semibold rounded-br-none shadow-xs'
+                        ? 'bg-brand-950 text-white font-semibold rounded-br-none shadow-xs'
                         : 'bg-slate-100 text-slate-800 font-medium rounded-bl-none border border-slate-200'
                     }`}
                   >
@@ -240,11 +240,11 @@ export const SupportHubScreen: React.FC<SupportHubScreenProps> = ({ onBack }) =>
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="Ask iDAM AI assistant..."
-                className="flex-1 bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="flex-1 bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
               <button
                 onClick={() => handleSendMessage()}
-                className="bg-slate-950 hover:bg-slate-900 text-white p-2.5 rounded-xl transition-colors cursor-pointer shadow-xs active:scale-95"
+                className="bg-slate-950 hover:bg-slate-900 text-white p-2.5 rounded-xl transition-colors cursor-pointer shadow-xs"
               >
                 <Send className="w-4 h-4" />
               </button>
@@ -255,13 +255,13 @@ export const SupportHubScreen: React.FC<SupportHubScreenProps> = ({ onBack }) =>
         {activeTab === 'report' && (
           <div className="space-y-3">
             {submittedTicket ? (
-              <div className="bg-white border border-emerald-300 p-6 rounded-3xl text-center space-y-3 shadow-md animate-scale-in">
-                <div className="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-2xl mx-auto flex items-center justify-center">
+              <div className="bg-white border border-brand-300 p-6 rounded-3xl text-center space-y-3 shadow-md animate-scale-in">
+                <div className="w-12 h-12 bg-brand-100 text-brand-800 rounded-2xl mx-auto flex items-center justify-center">
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
                 <div>
                   <h4 className="text-base font-black text-slate-900">Issue Ticket Logged</h4>
-                  <p className="text-xs text-emerald-800 font-extrabold mt-0.5">Reference Code: {submittedTicket.id}</p>
+                  <p className="text-xs text-brand-800 font-extrabold mt-0.5">Reference Code: {submittedTicket.id}</p>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed">
                   Our operations team has received your ticket regarding <span className="font-bold text-slate-800">{submittedTicket.category}</span>. We will review and respond within 2 hours.
@@ -287,13 +287,13 @@ export const SupportHubScreen: React.FC<SupportHubScreenProps> = ({ onBack }) =>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                  <label className="text-[10px] font-black uppercase text-slate-500">
                     Issue Category
                   </label>
                   <select
                     value={ticketCategory}
                     onChange={(e) => setTicketCategory(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
                     <option>Occupied Reserved Spot</option>
                     <option>Payment / Billing Dispute</option>
@@ -305,7 +305,7 @@ export const SupportHubScreen: React.FC<SupportHubScreenProps> = ({ onBack }) =>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                  <label className="text-[10px] font-black uppercase text-slate-500">
                     Issue Description
                   </label>
                   <textarea
@@ -314,12 +314,12 @@ export const SupportHubScreen: React.FC<SupportHubScreenProps> = ({ onBack }) =>
                     onChange={(e) => setTicketDetails(e.target.value)}
                     placeholder="Provide details about what went wrong at the parking spot..."
                     required
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                  <label className="text-[10px] font-black uppercase text-slate-500">
                     Contact Email or Phone
                   </label>
                   <input
@@ -328,13 +328,13 @@ export const SupportHubScreen: React.FC<SupportHubScreenProps> = ({ onBack }) =>
                     onChange={(e) => setTicketContact(e.target.value)}
                     placeholder="e.g. driver@idam.park or +91 98765 43210"
                     required
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-slate-950 hover:bg-slate-900 active:scale-98 text-white font-black py-3 rounded-xl text-xs shadow-md transition-all cursor-pointer"
+                  className="w-full bg-slate-950 hover:bg-slate-900 text-white font-black py-3 rounded-xl text-xs shadow-md transition-all cursor-pointer"
                 >
                   Submit Ticket
                 </button>

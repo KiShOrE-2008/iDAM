@@ -50,7 +50,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, lang }) =
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/75 backdrop-blur-xs flex justify-center p-4 sm:py-16">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/75 flex justify-center p-4 sm:py-16">
       <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-gray-100 h-fit my-auto animate-in fade-in zoom-in-95 duration-200">
         
         {/* Close Button */}
@@ -63,8 +63,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, lang }) =
 
         {isSuccess ? (
           <div className="py-8 text-center space-y-4">
-            <div className="w-16 h-16 bg-emerald-100 text-emerald-800 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
-              <CheckCircle2 className="w-10 h-10 text-emerald-700" />
+            <div className="w-16 h-16 bg-brand-100 text-brand-800 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+              <CheckCircle2 className="w-10 h-10 text-brand-700" />
             </div>
             <h3 className="text-2xl font-extrabold text-gray-900">Signed In Successfully!</h3>
             <p className="text-xs text-gray-500 font-medium">Welcome back to iDAM | இடம் Parking Platform</p>
@@ -79,8 +79,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, lang }) =
                 alt="iDAM Logo"
                 className="h-12 w-auto mb-3 object-contain"
               />
-              <div className="inline-flex items-center space-x-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200/60 px-3 py-1 rounded-full text-xs font-bold mb-3">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+              <div className="inline-flex items-center space-x-1.5 bg-brand-50 text-brand-800 border border-brand-200/60 px-3 py-1 rounded-full text-xs font-bold mb-3">
+                <ShieldCheck className="w-3.5 h-3.5 text-brand-700" />
                 <span>Secure Mobile Sign In</span>
               </div>
               <h3 className="text-2xl font-extrabold text-gray-900">
@@ -101,11 +101,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, lang }) =
                   onClick={() => setRole('driver')}
                   className={`flex-1 py-2.5 rounded-xl flex items-center justify-center space-x-2 transition-all ${
                     role === 'driver'
-                      ? 'bg-white text-emerald-950 shadow-sm border border-gray-200/60'
+                      ? 'bg-white text-brand-950 shadow-sm border border-gray-200/60'
                       : 'text-gray-500 hover:text-gray-900'
                   }`}
                 >
-                  <Car className="w-4 h-4 text-emerald-700" />
+                  <Car className="w-4 h-4 text-brand-700" />
                   <span>Driver Account</span>
                 </button>
                 <button
@@ -113,11 +113,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, lang }) =
                   onClick={() => setRole('owner')}
                   className={`flex-1 py-2.5 rounded-xl flex items-center justify-center space-x-2 transition-all ${
                     role === 'owner'
-                      ? 'bg-white text-emerald-950 shadow-sm border border-gray-200/60'
+                      ? 'bg-white text-brand-950 shadow-sm border border-gray-200/60'
                       : 'text-gray-500 hover:text-gray-900'
                   }`}
                 >
-                  <Building2 className="w-4 h-4 text-emerald-700" />
+                  <Building2 className="w-4 h-4 text-brand-700" />
                   <span>Parking Owner</span>
                 </button>
               </div>
@@ -139,7 +139,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, lang }) =
                       placeholder="98765 43210"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                      className="w-full pl-16 pr-4 py-3 rounded-2xl border border-gray-300 text-sm font-mono font-bold text-gray-900 focus:ring-2 focus:ring-emerald-700 focus:border-emerald-700 outline-none transition-all"
+                      className="w-full pl-16 pr-4 py-3 rounded-2xl border border-gray-300 text-sm tabular font-bold text-gray-900 focus:ring-2 focus:ring-brand-700 focus:border-brand-700 outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -147,10 +147,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, lang }) =
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-emerald-950 hover:bg-emerald-900 text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-md transition-all flex items-center justify-center space-x-2 active:scale-98"
+                  className="w-full bg-brand-950 hover:bg-brand-900 text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-md transition-all flex items-center justify-center space-x-2"
                 >
                   <span>{isLoading ? 'Sending OTP Code...' : 'Send OTP Verification'}</span>
-                  <ArrowRight className="w-4 h-4 text-emerald-300" />
+                  <ArrowRight className="w-4 h-4 text-brand-300" />
                 </button>
               </form>
             ) : (
@@ -164,24 +164,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, lang }) =
                     placeholder="1 2 3 4"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
-                    className="w-full tracking-widest text-center py-3 rounded-2xl border border-gray-300 text-xl font-mono font-extrabold text-gray-900 focus:ring-2 focus:ring-emerald-700 outline-none"
+                    className="w-full text-center py-3 rounded-2xl border border-gray-300 text-xl tabular font-extrabold text-gray-900 focus:ring-2 focus:ring-brand-700 outline-none"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-emerald-950 hover:bg-emerald-900 text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-md transition-all flex items-center justify-center space-x-2 active:scale-98"
+                  className="w-full bg-brand-950 hover:bg-brand-900 text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-md transition-all flex items-center justify-center space-x-2"
                 >
                   <span>{isLoading ? 'Verifying OTP...' : 'Verify & Continue'}</span>
-                  <ArrowRight className="w-4 h-4 text-emerald-300" />
+                  <ArrowRight className="w-4 h-4 text-brand-300" />
                 </button>
 
                 <div className="text-center pt-1">
                   <button
                     type="button"
                     onClick={() => setStep('phone')}
-                    className="text-xs text-emerald-800 font-extrabold hover:underline"
+                    className="text-xs text-brand-800 font-extrabold hover:underline"
                   >
                     Change Phone Number
                   </button>

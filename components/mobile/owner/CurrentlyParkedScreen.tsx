@@ -85,18 +85,18 @@ export const CurrentlyParkedScreen: React.FC<CurrentlyParkedScreenProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col justify-between bg-[#F8F8F5] relative overflow-y-auto no-scrollbar animate-fade-in text-slate-900 select-none font-sans">
+    <div className="h-full flex flex-col justify-between bg-limewash relative overflow-y-auto no-scrollbar animate-fade-in text-slate-900 select-none font-sans">
       
       {/* Top Header */}
       <div className="p-3.5 bg-white border-b border-slate-200/80 sticky top-0 z-20 flex items-center justify-between shadow-2xs">
         <button
           onClick={onBack}
-          className="p-1 rounded-lg text-slate-700 hover:bg-slate-100 active:scale-95 transition-transform"
+          className="p-1 rounded-lg text-slate-700 hover:bg-slate-100 transition-transform"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="text-center">
-          <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">
+          <h3 className="font-black text-xs text-slate-900">
             Currently Parked Vehicles
           </h3>
           <span className="text-[10px] text-slate-500 font-bold">Meenakshi Temple Smart Lot</span>
@@ -112,12 +112,12 @@ export const CurrentlyParkedScreen: React.FC<CurrentlyParkedScreenProps> = ({
           <div className={`p-3 rounded-2xl text-xs font-bold flex items-center space-x-2 animate-scale-in ${
             checkoutNotification.isError 
               ? 'bg-rose-50 border border-rose-200 text-rose-800' 
-              : 'bg-emerald-50 border border-emerald-300 text-emerald-900'
+              : 'bg-brand-50 border border-brand-300 text-brand-900'
           }`}>
             {checkoutNotification.isError ? (
               <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
             ) : (
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-brand-600 shrink-0" />
             )}
             <span>{checkoutNotification.message}</span>
           </div>
@@ -126,7 +126,7 @@ export const CurrentlyParkedScreen: React.FC<CurrentlyParkedScreenProps> = ({
         {/* Live Counter Badge */}
         <div className="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Live Occupancy</span>
+            <span className="text-[10px] font-extrabold text-slate-400 block">Live Occupancy</span>
             <div className="flex items-baseline space-x-1.5 mt-0.5">
               <span className="text-2xl font-black text-slate-900">{parkedVehicles.length}</span>
               <span className="text-xs text-slate-500 font-bold">vehicles inside</span>
@@ -136,7 +136,7 @@ export const CurrentlyParkedScreen: React.FC<CurrentlyParkedScreenProps> = ({
           {onNavigateToScanner && (
             <button
               onClick={onNavigateToScanner}
-              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow-md flex items-center space-x-1 transition-all active:scale-95"
+              className="px-3.5 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-black shadow-md flex items-center space-x-1 transition-all"
             >
               <span>+ Scan In Pass</span>
             </button>
@@ -146,7 +146,7 @@ export const CurrentlyParkedScreen: React.FC<CurrentlyParkedScreenProps> = ({
         {/* List of Currently Parked Vehicles */}
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs px-1">
-            <span className="font-black text-slate-700 uppercase tracking-wider text-[11px]">Active Parked Passes</span>
+            <span className="font-black text-slate-700 text-[11px]">Active Parked Passes</span>
             <button
               onClick={loadData}
               className="text-slate-500 hover:text-slate-800 flex items-center space-x-1 text-[11px] font-bold"
@@ -170,15 +170,15 @@ export const CurrentlyParkedScreen: React.FC<CurrentlyParkedScreenProps> = ({
             parkedVehicles.map((b) => (
               <div
                 key={b.id}
-                className="bg-white rounded-3xl p-4 border border-slate-200/90 shadow-sm space-y-3 hover:border-emerald-400/50 transition-all"
+                className="bg-white rounded-3xl p-4 border border-slate-200/90 shadow-sm space-y-3 hover:border-brand-400/50 transition-all"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-2.5">
-                    <div className="p-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-black">
+                    <div className="p-2.5 rounded-2xl bg-brand-50 border border-brand-200 text-brand-800 font-black">
                       <Car className="w-5 h-5" />
                     </div>
                     <div>
-                      <span className="font-mono font-black text-sm text-slate-900 block">
+                      <span className="tabular font-black text-sm text-slate-900 block">
                         {b.vehicleNumber || 'TN 59 AB 1234'}
                       </span>
                       <span className="text-[10px] text-slate-500 font-bold uppercase">
@@ -187,8 +187,8 @@ export const CurrentlyParkedScreen: React.FC<CurrentlyParkedScreenProps> = ({
                     </div>
                   </div>
 
-                  <span className="text-[10px] bg-emerald-100 text-emerald-900 border border-emerald-300 font-black px-2 py-0.5 rounded-full flex items-center space-x-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="text-[10px] bg-brand-100 text-brand-900 border border-brand-300 font-black px-2 py-0.5 rounded-full flex items-center space-x-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
                     <span>ACTIVE</span>
                   </span>
                 </div>
@@ -207,7 +207,7 @@ export const CurrentlyParkedScreen: React.FC<CurrentlyParkedScreenProps> = ({
                 <div className="pt-1 flex justify-end">
                   <button
                     onClick={() => setSelectedBookingForCheckout(b)}
-                    className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black shadow-xs transition-all flex items-center justify-center space-x-1.5 active:scale-98"
+                    className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black shadow-xs transition-all flex items-center justify-center space-x-1.5"
                   >
                     <LogOut className="w-3.5 h-3.5 text-rose-400" />
                     <span>Check Out</span>
@@ -222,7 +222,7 @@ export const CurrentlyParkedScreen: React.FC<CurrentlyParkedScreenProps> = ({
 
       {/* CHECK-OUT CONFIRMATION MODAL */}
       {selectedBookingForCheckout && (
-        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 bg-slate-950/75 flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-3xl max-w-xs w-full p-5 space-y-4 shadow-2xl border border-slate-200 text-center animate-scale-in">
             <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
               <LogOut className="w-6 h-6" />
@@ -239,7 +239,7 @@ export const CurrentlyParkedScreen: React.FC<CurrentlyParkedScreenProps> = ({
             <div className="bg-slate-50 p-3 rounded-2xl text-left text-xs space-y-1.5 border border-slate-100">
               <div className="flex justify-between">
                 <span className="text-slate-500">Booking Ref:</span>
-                <span className="font-mono font-bold text-slate-900">{selectedBookingForCheckout.passCode}</span>
+                <span className="tabular font-bold text-slate-900">{selectedBookingForCheckout.passCode}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Check-in:</span>
@@ -263,7 +263,7 @@ export const CurrentlyParkedScreen: React.FC<CurrentlyParkedScreenProps> = ({
                 className="py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl text-xs transition-all shadow-md flex items-center justify-center space-x-1"
               >
                 {isCheckingOut ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-400" />
                 ) : (
                   <span>Check Out</span>
                 )}

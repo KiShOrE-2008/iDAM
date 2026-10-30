@@ -93,7 +93,7 @@ export default function PrivacyPolicyPage() {
             We retain booking logs for statutory tax compliance. You have the right to request access, correction, or permanent erasure of your personal data and vehicle garage records at any time.
           </p>
           <p>
-            To submit an erasure request, visit our <Link href="/account-deletion" className="text-emerald-700 font-black underline">Account Deletion Page</Link> or email <a href="mailto:privacy@idam.park" className="text-emerald-700 font-black underline">privacy@idam.park</a>.
+            To submit an erasure request, visit our <Link href="/account-deletion" className="text-brand-700 font-black underline">Account Deletion Page</Link> or email <a href="mailto:privacy@idam.park" className="text-brand-700 font-black underline">privacy@idam.park</a>.
           </p>
         </section>
 
@@ -106,7 +106,7 @@ export default function PrivacyPolicyPage() {
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs font-semibold text-slate-700 space-y-1">
             <p className="font-black text-slate-900">Data Protection Officer, iDAM | இடம்</p>
             <p>124 West Masi Street, Madurai, Tamil Nadu 625001, India</p>
-            <p>Email: <a href="mailto:privacy@idam.park" className="text-emerald-700 font-bold">privacy@idam.park</a></p>
+            <p>Email: <a href="mailto:privacy@idam.park" className="text-brand-700 font-bold">privacy@idam.park</a></p>
           </div>
         </section>
 

@@ -53,7 +53,7 @@ export const RequestStateHandler: React.FC<RequestStateHandlerProps> = ({
         {emptyAction && (
           <button
             onClick={emptyAction.onClick}
-            className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold border border-slate-700 transition-all active:scale-95"
+            className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold border border-slate-700 transition-all"
           >
             {emptyAction.label}
           </button>

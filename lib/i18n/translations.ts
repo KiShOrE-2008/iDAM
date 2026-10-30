@@ -8,8 +8,8 @@ export const TRANSLATIONS = {
     heroHeading: 'Find your space.',
     heroSubHeading: 'Discover, book and pay for parking spaces across Madurai. Save time, avoid the hassle, and make every trip smoother.',
     searchPlaceholder: 'Search destination e.g. Meenakshi Temple...',
-    searchBtn: 'Find Parking',
-    listSpaceBtn: 'List Your Space',
+    searchBtn: 'Find parking',
+    listSpaceBtn: 'List your space',
     sloganTamil: 'இடம் தேடு. நிறுத்து. போ.',
     sloganEnglish: 'Search • Reserve • Park • Go',
     
@@ -41,7 +41,7 @@ export const TRANSLATIONS = {
     
     // Card
     perHour: '/hr',
-    reserveSpace: 'Reserve this space',
+    reserveSpace: 'Book this space',
     viewDetails: 'View Details',
     
     // Booking

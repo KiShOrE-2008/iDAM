@@ -97,7 +97,7 @@ export const OwnerModal: React.FC<OwnerModalProps> = ({ isOpen, onClose, lang })
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
       <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative border border-gray-100 overflow-hidden">
         
         {/* Close Button */}
@@ -110,7 +110,7 @@ export const OwnerModal: React.FC<OwnerModalProps> = ({ isOpen, onClose, lang })
 
         {submitted ? (
           <div className="py-12 text-center space-y-4">
-            <div className="w-16 h-16 bg-emerald-100 text-emerald-800 rounded-full flex items-center justify-center mx-auto">
+            <div className="w-16 h-16 bg-brand-100 text-brand-800 rounded-full flex items-center justify-center mx-auto">
               <CheckCircle className="w-10 h-10" />
             </div>
             <h3 className="text-2xl font-extrabold text-gray-900">Application Submitted!</h3>
@@ -121,7 +121,7 @@ export const OwnerModal: React.FC<OwnerModalProps> = ({ isOpen, onClose, lang })
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="flex items-center space-x-3 pb-2 border-b border-gray-100">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-2xl bg-brand-100 text-brand-800 flex items-center justify-center">
                 <Building2 className="w-5 h-5" />
               </div>
               <div>
@@ -139,7 +139,7 @@ export const OwnerModal: React.FC<OwnerModalProps> = ({ isOpen, onClose, lang })
                   placeholder="e.g. West Tower Commercial Plaza Parking"
                   value={formData.title}
                   onChange={e => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-emerald-700 outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-brand-700 outline-none"
                 />
               </div>
 
@@ -151,7 +151,7 @@ export const OwnerModal: React.FC<OwnerModalProps> = ({ isOpen, onClose, lang })
                   placeholder="e.g. Near West Gate, South Masi Street, Madurai"
                   value={formData.address}
                   onChange={e => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-emerald-700 outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-brand-700 outline-none"
                 />
               </div>
 
@@ -163,7 +163,7 @@ export const OwnerModal: React.FC<OwnerModalProps> = ({ isOpen, onClose, lang })
                     required
                     value={formData.hourlyRateCar}
                     onChange={e => setFormData({ ...formData, hourlyRateCar: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-emerald-700 outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-brand-700 outline-none"
                   />
                 </div>
                 <div>
@@ -173,7 +173,7 @@ export const OwnerModal: React.FC<OwnerModalProps> = ({ isOpen, onClose, lang })
                     required
                     value={formData.hourlyRateBike}
                     onChange={e => setFormData({ ...formData, hourlyRateBike: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-emerald-700 outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-brand-700 outline-none"
                   />
                 </div>
               </div>
@@ -186,7 +186,7 @@ export const OwnerModal: React.FC<OwnerModalProps> = ({ isOpen, onClose, lang })
                     required
                     value={formData.totalSpots}
                     onChange={e => setFormData({ ...formData, totalSpots: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-emerald-700 outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-brand-700 outline-none"
                   />
                 </div>
                 <div>
@@ -197,7 +197,7 @@ export const OwnerModal: React.FC<OwnerModalProps> = ({ isOpen, onClose, lang })
                     placeholder="+91 98765 43210"
                     value={formData.ownerPhone}
                     onChange={e => setFormData({ ...formData, ownerPhone: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-emerald-700 outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-brand-700 outline-none"
                   />
                 </div>
               </div>
@@ -213,7 +213,7 @@ export const OwnerModal: React.FC<OwnerModalProps> = ({ isOpen, onClose, lang })
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 rounded-2xl text-sm shadow-md transition-all mt-4 cursor-pointer flex items-center justify-center space-x-2 ${
+              className={`w-full bg-brand-950 hover:bg-brand-900 text-white font-bold py-3.5 rounded-2xl text-sm shadow-md transition-all mt-4 cursor-pointer flex items-center justify-center space-x-2 ${
                 isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
               }`}
             >

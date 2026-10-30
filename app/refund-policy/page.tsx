@@ -25,7 +25,7 @@ export default function RefundPolicyPage() {
         {/* Navigation Breadcrumb */}
         <Link
           href="/"
-          className="inline-flex items-center space-x-2 text-xs font-bold text-gray-500 hover:text-emerald-800 transition-colors"
+          className="inline-flex items-center space-x-2 text-xs font-bold text-gray-500 hover:text-brand-800 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Home</span>
@@ -33,8 +33,8 @@ export default function RefundPolicyPage() {
 
         {/* Page Header */}
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-200/80 space-y-4">
-          <div className="inline-flex items-center space-x-2 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3.5 py-1 rounded-full text-xs font-bold">
-            <RefreshCw className="w-4 h-4 text-emerald-700" />
+          <div className="inline-flex items-center space-x-2 bg-brand-50 text-brand-800 border border-brand-200 px-3.5 py-1 rounded-full text-xs font-bold">
+            <RefreshCw className="w-4 h-4 text-brand-700" />
             <span>Fair Cancellation Standards</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
@@ -56,7 +56,7 @@ export default function RefundPolicyPage() {
         {/* Policy Grid Highlights */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs space-y-2">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm">
+            <div className="w-10 h-10 rounded-xl bg-brand-100 text-brand-800 flex items-center justify-center font-bold text-sm">
               100%
             </div>
             <h3 className="font-extrabold text-gray-900 text-sm">Cancel &gt; 1 Hour Before</h3>
@@ -87,10 +87,10 @@ export default function RefundPolicyPage() {
         </div>
 
         {/* Detailed Sections */}
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-200/80 prose prose-emerald max-w-none text-sm leading-relaxed space-y-6">
+        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-200/80 prose prose-brand max-w-none text-sm leading-relaxed space-y-6">
           <h3 className="text-xl font-extrabold text-gray-900">1. User-Initiated Cancellations</h3>
           <p>
-            Drivers can cancel their reservation directly from the <Link href="/dashboard" className="text-emerald-700 font-bold underline">Dashboard</Link> or <Link href="/my-bookings" className="text-emerald-700 font-bold underline">My Passes</Link> section prior to check-in.
+            Drivers can cancel their reservation directly from the <Link href="/dashboard" className="text-brand-700 font-bold underline">Dashboard</Link> or <Link href="/my-bookings" className="text-brand-700 font-bold underline">My Passes</Link> section prior to check-in.
           </p>
 
           <h3 className="text-xl font-extrabold text-gray-900">2. Owner / Operator Cancellations</h3>
@@ -105,7 +105,7 @@ export default function RefundPolicyPage() {
 
           <h3 className="text-xl font-extrabold text-gray-900">4. Support & Disputed Charges</h3>
           <p>
-            If you encounter any discrepancy, please log a claim via <Link href="/contact" className="text-emerald-700 font-bold underline">Help & Grievance Support</Link> within 24 hours of your booking slot.
+            If you encounter any discrepancy, please log a claim via <Link href="/contact" className="text-brand-700 font-bold underline">Help & Grievance Support</Link> within 24 hours of your booking slot.
           </p>
         </div>
 

@@ -25,7 +25,7 @@ export default function PrivacyPage() {
         {/* Navigation Breadcrumb */}
         <Link
           href="/"
-          className="inline-flex items-center space-x-2 text-xs font-bold text-gray-500 hover:text-emerald-800 transition-colors"
+          className="inline-flex items-center space-x-2 text-xs font-bold text-gray-500 hover:text-brand-800 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Home</span>
@@ -33,8 +33,8 @@ export default function PrivacyPage() {
 
         {/* Page Header */}
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-200/80 space-y-4">
-          <div className="inline-flex items-center space-x-2 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3.5 py-1 rounded-full text-xs font-bold">
-            <Lock className="w-4 h-4 text-emerald-700" />
+          <div className="inline-flex items-center space-x-2 bg-brand-50 text-brand-800 border border-brand-200 px-3.5 py-1 rounded-full text-xs font-bold">
+            <Lock className="w-4 h-4 text-brand-700" />
             <span>Data Protection & Privacy</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
@@ -54,7 +54,7 @@ export default function PrivacyPage() {
         </div>
 
         {/* Main Content */}
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-200/80 prose prose-emerald max-w-none text-sm leading-relaxed space-y-8">
+        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-200/80 prose prose-brand max-w-none text-sm leading-relaxed space-y-8">
           
           <p className="text-base text-gray-700 font-medium">
             <strong>IDAM | இடம்</strong> respects user privacy and is committed to protecting personal data. This Privacy Policy explains what information may be collected when you use the IDAM web or mobile platform and how it is processed.
@@ -119,7 +119,7 @@ export default function PrivacyPage() {
           <section className="space-y-3">
             <h3 className="text-xl font-extrabold text-gray-900">Contact Privacy Officer</h3>
             <p>
-              For privacy requests, data deletion inquiries, or feedback, please reach out via our <Link href="/contact" className="text-emerald-700 font-bold underline">Contact Us</Link> page.
+              For privacy requests, data deletion inquiries, or feedback, please reach out via our <Link href="/contact" className="text-brand-700 font-bold underline">Contact Us</Link> page.
             </p>
           </section>
 

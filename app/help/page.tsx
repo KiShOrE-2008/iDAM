@@ -26,7 +26,7 @@ const HELP_CATEGORIES = [
     id: 'finding-parking',
     title: 'Finding Parking',
     icon: Car,
-    badgeColor: 'bg-emerald-100 text-emerald-800',
+    badgeColor: 'bg-brand-100 text-brand-800',
     questions: [
       {
         q: 'How do I find a parking space?',
@@ -194,7 +194,7 @@ export default function HelpCenterPage() {
               placeholder="Search e.g. cancellation, invoice, map, payment..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-900 focus:outline-none focus:border-emerald-600 shadow-xs"
+              className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-900 focus:outline-none focus:border-brand-600 shadow-xs"
             />
           </div>
         </div>
@@ -235,11 +235,11 @@ export default function HelpCenterPage() {
                         <div key={index} className="py-3.5">
                           <button
                             onClick={() => toggleQuestion(qId)}
-                            className="w-full text-left flex items-center justify-between font-extrabold text-sm text-gray-900 hover:text-emerald-800 transition-colors py-1"
+                            className="w-full text-left flex items-center justify-between font-extrabold text-sm text-gray-900 hover:text-brand-800 transition-colors py-1"
                           >
                             <span>{item.q}</span>
                             {isOpen ? (
-                              <ChevronUp className="w-4 h-4 text-emerald-700 shrink-0 ml-2" />
+                              <ChevronUp className="w-4 h-4 text-brand-700 shrink-0 ml-2" />
                             ) : (
                               <ChevronDown className="w-4 h-4 text-gray-400 shrink-0 ml-2" />
                             )}
@@ -261,7 +261,7 @@ export default function HelpCenterPage() {
         </div>
 
         {/* Still Need Help CTA Banner */}
-        <div className="bg-gradient-to-r from-emerald-900 to-slate-900 text-white rounded-3xl p-8 shadow-md flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="bg-gradient-to-r from-brand-900 to-slate-900 text-white rounded-3xl p-8 shadow-md flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="space-y-1 text-center sm:text-left">
             <h3 className="text-xl font-extrabold">Still need help?</h3>
             <p className="text-xs text-slate-300 font-medium">
@@ -271,10 +271,10 @@ export default function HelpCenterPage() {
 
           <Link
             href="/contact"
-            className="bg-white text-emerald-950 font-bold text-xs px-6 py-3.5 rounded-2xl shadow-lg hover:bg-emerald-50 transition-all flex items-center space-x-2 shrink-0"
+            className="bg-white text-brand-950 font-bold text-xs px-6 py-3.5 rounded-2xl shadow-lg hover:bg-brand-50 transition-all flex items-center space-x-2 shrink-0"
           >
             <span>Contact Support</span>
-            <ArrowRight className="w-4 h-4 text-emerald-800" />
+            <ArrowRight className="w-4 h-4 text-brand-800" />
           </Link>
         </div>
 

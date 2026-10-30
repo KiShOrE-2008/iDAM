@@ -1,19 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  ArrowLeft,
-  CheckCircle2,
-  Lock,
-  Shield,
-  Smartphone,
-  CreditCard,
-  Wallet,
-  Sparkles,
-  Check,
-  Loader2,
-  ExternalLink
-} from 'lucide-react';
+import { ArrowLeft, Lock, Shield, Check, Loader2 } from 'lucide-react';
 import { ParkingLocation, Language } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { RazorpayCheckoutModal } from '@/components/payment/RazorpayCheckoutModal';
@@ -123,287 +111,146 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
     }, 1200);
   };
 
+  const methods: { id: typeof selectedMethod; title: string; note: string; demoOnly: boolean }[] = [
+    { id: 'razorpay', title: 'Razorpay', note: 'UPI, cards and net banking', demoOnly: false },
+    { id: 'upi', title: 'UPI app', note: 'Sample payment, demo only', demoOnly: true },
+    { id: 'card', title: 'Debit or credit card', note: 'Visa, Mastercard, RuPay, Amex', demoOnly: true },
+    { id: 'wallet', title: 'iDAM wallet', note: '₹500 available', demoOnly: true },
+  ];
+  const fieldClass = 'w-full px-3 py-2.5 bg-white border border-slate-300 rounded-md text-[15px] font-semibold tabular focus:outline-none focus:border-ink';
+
   return (
     <>
-      <div className="h-full flex flex-col justify-between bg-[#F8F8F5] text-[#14201D] relative overflow-y-auto no-scrollbar animate-fade-in">
-        
-        {/* Top Header Bar */}
-        <div className="pt-3 px-4 pb-3 flex items-center space-x-3 bg-white border-b border-slate-200 sticky top-0 z-20 shadow-2xs">
+      <div className="h-full flex flex-col bg-limewash text-ink relative animate-fade-in">
+        <header className="px-3 py-3 flex items-center gap-3 border-b border-slate-300">
           <button
             onClick={onBack}
-            className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 active:scale-95 transition-transform"
+            aria-label="Back"
+            className="w-10 h-10 rounded-md border border-slate-300 bg-white flex items-center justify-center active:bg-slate-100 cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
-          <div>
-            <h3 className="font-extrabold text-slate-900 text-sm">Secure Payment Checkout</h3>
-            <p className="text-[10px] text-slate-500">256-Bit Encrypted Transaction</p>
-          </div>
-        </div>
+          <h1 className="font-black text-lg">Pay for your space</h1>
+        </header>
 
-        {/* Main Content */}
-        <div className="p-4 space-y-4 flex-1">
-          
-          {/* Total Price Header Banner */}
-          <div className="bg-gradient-to-r from-slate-950 via-emerald-950 to-slate-900 text-white p-4 rounded-2xl shadow-md flex items-center justify-between">
-            <div>
-              <div className="text-[10px] text-emerald-300 font-extrabold uppercase tracking-wider">Amount to Pay</div>
-              <div className="text-2xl font-black text-white">₹{bookingDetails.total}</div>
-              <div className="text-[11px] text-slate-300 mt-0.5 truncate max-w-[180px]">
-                {location.title} • {bookingDetails.duration} hrs
-              </div>
+        <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-5">
+          <div className="flex items-end justify-between gap-4 border-b-2 border-ink pb-4">
+            <div className="min-w-0">
+              <p className="text-sm text-slate-600 truncate">{location.title}</p>
+              <p className="text-sm text-slate-600 tabular">
+                {bookingDetails.date}, {bookingDetails.time}, for {bookingDetails.duration} {bookingDetails.duration === 1 ? 'hour' : 'hours'}
+              </p>
             </div>
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300">
-              <Lock className="w-5 h-5" />
-            </div>
+            <p className="text-[2.4rem] font-black leading-none tabular shrink-0">₹{bookingDetails.total}</p>
           </div>
 
-          {/* Payment Method Selector Tabs */}
-          <div className="space-y-2">
-            <label className="text-xs font-black text-slate-900 uppercase tracking-wider block">
-              Payment Options
-            </label>
-
-            {/* FEATURED: Razorpay Payment Gateway */}
-            <div
-              onClick={() => setSelectedMethod('razorpay')}
-              className={`p-3.5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden ${
-                selectedMethod === 'razorpay'
-                  ? 'bg-blue-50/70 border-blue-600 ring-2 ring-blue-500/20 shadow-sm'
-                  : 'bg-white border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shadow-xs">
-                    <span className="italic tracking-tighter">R</span>
-                  </div>
-                  <div>
-                    <div className="flex items-center space-x-1.5">
-                      <h4 className="font-extrabold text-xs text-slate-900">Razorpay Gateway</h4>
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
-                        Live Gateway
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-slate-500 font-semibold">
-                      Official Checkout • UPI, Cards & NetBanking
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                  selectedMethod === 'razorpay' ? 'border-blue-600 bg-blue-600' : 'border-slate-300'
-                }`}>
-                  {selectedMethod === 'razorpay' && <Check className="w-3 h-3 text-white stroke-[3]" />}
-                </div>
-              </div>
-            </div>
-
-            {/* Options 2-4 are simulations and only exist in demo mode; real
-                payments offer UPI, cards and net banking inside Razorpay checkout */}
-            {isDemoMode && (<>
-            {/* Option 2: Instant UPI Apps */}
-            <div
-              onClick={() => setSelectedMethod('upi')}
-              className={`p-3.5 rounded-2xl border transition-all cursor-pointer space-y-3 ${
-                selectedMethod === 'upi'
-                  ? 'bg-white border-emerald-600 ring-2 ring-emerald-500/20 shadow-sm'
-                  : 'bg-white border-slate-200'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-800">
-                    <Smartphone className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="flex items-center space-x-1.5">
-                      <h4 className="font-extrabold text-xs text-slate-900">Direct UPI Apps</h4>
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                        Demo Fast-Track
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-emerald-700 font-bold">Simulated Instant Checkout</p>
-                  </div>
-                </div>
-                <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                  selectedMethod === 'upi' ? 'border-emerald-600 bg-emerald-600' : 'border-slate-300'
-                }`}>
-                  {selectedMethod === 'upi' && <Check className="w-3 h-3 text-white stroke-[3]" />}
-                </div>
-              </div>
-
-              {/* Sub UPI App Selector */}
-              {selectedMethod === 'upi' && (
-                <div className="grid grid-cols-4 gap-2 pt-1 border-t border-slate-100 animate-scale-in">
-                  {[
-                    { id: 'gpay', label: 'GPay', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-                    { id: 'phonepe', label: 'PhonePe', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-                    { id: 'paytm', label: 'Paytm', color: 'bg-sky-50 text-sky-700 border-sky-200' },
-                    { id: 'cred', label: 'CRED', color: 'bg-slate-900 text-white border-slate-800' }
-                  ].map((app) => (
+          <h2 className="text-base font-black mt-6">Pay with</h2>
+          <div className="mt-2.5 bg-white border border-slate-300 rounded-md divide-y divide-slate-200" role="radiogroup" aria-label="Payment method">
+            {methods
+              .filter((m) => !m.demoOnly || isDemoMode)
+              .map((m) => {
+                const isSelected = selectedMethod === m.id;
+                return (
+                  <div key={m.id} className={isSelected ? 'bg-brand-50/50' : ''}>
                     <button
-                      key={app.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedUpiApp(app.id as any);
-                      }}
-                      className={`py-2 px-1 rounded-xl text-center border text-xs font-black transition-all ${app.color} ${
-                        selectedUpiApp === app.id ? 'ring-2 ring-emerald-500 scale-102' : 'opacity-80'
-                      }`}
+                      type="button"
+                      role="radio"
+                      aria-checked={isSelected}
+                      onClick={() => setSelectedMethod(m.id)}
+                      className="w-full flex items-center gap-3 px-3.5 py-3.5 text-left cursor-pointer"
                     >
-                      {app.label}
+                      <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? 'border-brand-700' : 'border-slate-400'}`}>
+                        {isSelected && <span className="w-2.5 h-2.5 rounded-full bg-brand-700" />}
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block font-bold text-[15px]">{m.title}</span>
+                        <span className="block text-sm text-slate-500">{m.note}</span>
+                      </span>
                     </button>
-                  ))}
-                </div>
-              )}
-            </div>
 
-            {/* Option 3: Credit / Debit Card */}
-            <div
-              onClick={() => setSelectedMethod('card')}
-              className={`p-3.5 rounded-2xl border transition-all cursor-pointer space-y-3 ${
-                selectedMethod === 'card'
-                  ? 'bg-white border-emerald-600 ring-2 ring-emerald-500/20 shadow-sm'
-                  : 'bg-white border-slate-200'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-blue-100 border border-blue-300 flex items-center justify-center text-blue-800">
-                    <CreditCard className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-xs text-slate-900">Credit or Debit Card</h4>
-                    <p className="text-[10px] text-slate-500">Visa, Mastercard, RuPay, Amex</p>
-                  </div>
-                </div>
-                <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                  selectedMethod === 'card' ? 'border-emerald-600 bg-emerald-600' : 'border-slate-300'
-                }`}>
-                  {selectedMethod === 'card' && <Check className="w-3 h-3 text-white stroke-[3]" />}
-                </div>
-              </div>
+                    {isSelected && m.id === 'upi' && (
+                      <div className="grid grid-cols-4 gap-2 px-3.5 pb-3.5 animate-fade-in">
+                        {[
+                          { id: 'gpay', label: 'GPay' },
+                          { id: 'phonepe', label: 'PhonePe' },
+                          { id: 'paytm', label: 'Paytm' },
+                          { id: 'cred', label: 'CRED' },
+                        ].map((app) => (
+                          <button
+                            key={app.id}
+                            type="button"
+                            onClick={() => setSelectedUpiApp(app.id as any)}
+                            aria-pressed={selectedUpiApp === app.id}
+                            className={`py-2 rounded-md border text-sm font-bold cursor-pointer ${
+                              selectedUpiApp === app.id ? 'bg-ink text-white border-ink' : 'bg-white border-slate-300'
+                            }`}
+                          >
+                            {app.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
-              {selectedMethod === 'card' && (
-                <div className="space-y-2 pt-1 border-t border-slate-100 text-xs animate-scale-in" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="text"
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                    placeholder="Card Number"
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs font-bold"
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      value={cardExpiry}
-                      onChange={(e) => setCardExpiry(e.target.value)}
-                      placeholder="MM/YY"
-                      className="p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-center"
-                    />
-                    <input
-                      type="password"
-                      value={cardCvv}
-                      onChange={(e) => setCardCvv(e.target.value)}
-                      placeholder="CVV"
-                      className="p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-center"
-                    />
+                    {isSelected && m.id === 'card' && (
+                      <div className="px-3.5 pb-3.5 space-y-2 animate-fade-in">
+                        <input type="text" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} placeholder="Card number" aria-label="Card number" className={fieldClass} />
+                        <div className="grid grid-cols-2 gap-2">
+                          <input type="text" value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} placeholder="MM/YY" aria-label="Expiry" className={fieldClass} />
+                          <input type="password" value={cardCvv} onChange={(e) => setCardCvv(e.target.value)} placeholder="CVV" aria-label="CVV" className={fieldClass} />
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-            </div>
-
-            {/* Option 4: iDAM Wallet */}
-            <div
-              onClick={() => setSelectedMethod('wallet')}
-              className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                selectedMethod === 'wallet'
-                  ? 'bg-white border-emerald-600 ring-2 ring-emerald-500/20 shadow-sm'
-                  : 'bg-white border-slate-200'
-              }`}
-            >
-              <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-800">
-                  <Wallet className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="font-extrabold text-xs text-slate-900">iDAM Wallet</h4>
-                  <p className="text-[10px] text-emerald-700 font-bold">Balance: ₹500 Available</p>
-                </div>
-              </div>
-              <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                selectedMethod === 'wallet' ? 'border-emerald-600 bg-emerald-600' : 'border-slate-300'
-              }`}>
-                {selectedMethod === 'wallet' && <Check className="w-3 h-3 text-white stroke-[3]" />}
-              </div>
-            </div>
-            </>)}
+                );
+              })}
           </div>
 
           {paymentError && (
-            <div role="alert" className="text-xs font-semibold text-red-800 bg-red-50 border border-red-200 p-3 rounded-2xl">
+            <div role="alert" className="mt-4 text-sm text-rose-800 bg-rose-50 border-l-4 border-rose-600 p-3 rounded">
               {paymentError}
             </div>
           )}
 
-          {/* Security Badge */}
-          <div className="bg-emerald-50/70 p-3 rounded-2xl border border-emerald-100 flex items-center space-x-2 text-[11px] text-emerald-950 font-semibold">
-            <Shield className="w-4 h-4 text-emerald-700 shrink-0" />
-            <span>Refund Guarantee: 100% instant refund on cancellation before slot time.</span>
-          </div>
-
+          <p className="mt-5 text-sm text-slate-600 flex items-start gap-2">
+            <Shield className="w-4 h-4 mt-0.5 shrink-0 text-slate-500" aria-hidden />
+            Cancel up to 30 minutes before your start time for a full refund.
+          </p>
         </div>
 
-        {/* Sticky Bottom Pay Button */}
-        <div className="p-3.5 bg-white border-t border-slate-200 sticky bottom-0 z-20 shadow-lg space-y-2">
+        <div className="p-3 bg-white border-t border-slate-300">
           <button
             onClick={handlePayment}
             disabled={isProcessing}
-            className={`w-full text-white font-extrabold py-3.5 rounded-2xl shadow-xl text-xs tracking-wide transition-all transform active:scale-98 flex items-center justify-center space-x-2 disabled:opacity-75 ${
-              selectedMethod === 'razorpay'
-                ? 'bg-blue-700 hover:bg-blue-800 shadow-blue-700/20'
-                : 'bg-emerald-950 hover:bg-emerald-900'
-            }`}
+            className="w-full bg-brand-700 active:bg-brand-800 text-white font-black py-3.5 rounded-lg text-base flex items-center justify-center gap-2 disabled:opacity-75 cursor-pointer"
           >
             {isProcessing ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin text-white" />
-                <span>Verifying with Gateway...</span>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Confirming payment…
               </>
+            ) : mustSignIn ? (
+              'Sign in to book'
             ) : (
               <>
-                <Lock className="w-4 h-4 text-emerald-400" />
-                <span>
-                  {mustSignIn
-                    ? 'Sign in to book'
-                    : selectedMethod === 'razorpay'
-                    ? `Pay ₹${bookingDetails.total} via Razorpay`
-                    : `Pay ₹${bookingDetails.total} via ${selectedMethod.toUpperCase()}`}
-                </span>
+                <Lock className="w-4 h-4" aria-hidden />
+                Pay ₹{bookingDetails.total}
               </>
             )}
           </button>
         </div>
 
-        {/* Payment Processing Success Modal Simulation */}
         {paymentSuccessModal && (
-          <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-white rounded-3xl p-6 text-center space-y-3 shadow-2xl max-w-xs w-full animate-scale-in">
-              <div className="w-16 h-16 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/30 animate-bounce">
-                <Check className="w-10 h-10 stroke-[3]" />
-              </div>
-              <h3 className="font-black text-lg text-slate-900">Payment Approved!</h3>
-              {recordedPaymentId && (
-                <div className="bg-slate-100 px-3 py-1.5 rounded-xl font-mono text-[10px] font-bold text-slate-700">
-                  {recordedPaymentId}
-                </div>
-              )}
-              <p className="text-xs text-slate-500">Generating your digital parking pass...</p>
+          <div className="fixed inset-0 z-50 bg-ink/70 flex items-center justify-center p-6 animate-fade-in" role="status">
+            <div className="bg-white rounded-xl p-6 shadow-2xl max-w-xs w-full animate-scale-in">
+              <span className="w-10 h-10 rounded-md bg-go-600 text-white flex items-center justify-center">
+                <Check className="w-6 h-6 stroke-[3]" aria-hidden />
+              </span>
+              <h3 className="font-black text-xl mt-4">Payment received</h3>
+              <p className="text-[15px] text-slate-600 mt-1">Making your parking pass…</p>
+              {recordedPaymentId && <p className="text-xs text-slate-500 mt-3 tabular">{recordedPaymentId}</p>}
             </div>
           </div>
         )}
-
       </div>
 
       {/* Razorpay Interactive Modal for Mobile View */}

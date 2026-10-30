@@ -25,7 +25,7 @@ export default function UserRulesPage() {
         {/* Navigation Breadcrumb */}
         <Link
           href="/"
-          className="inline-flex items-center space-x-2 text-xs font-bold text-gray-500 hover:text-emerald-800 transition-colors"
+          className="inline-flex items-center space-x-2 text-xs font-bold text-gray-500 hover:text-brand-800 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Home</span>
@@ -33,8 +33,8 @@ export default function UserRulesPage() {
 
         {/* Page Header */}
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-200/80 space-y-4">
-          <div className="inline-flex items-center space-x-2 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3.5 py-1 rounded-full text-xs font-bold">
-            <Car className="w-4 h-4 text-emerald-700" />
+          <div className="inline-flex items-center space-x-2 bg-brand-50 text-brand-800 border border-brand-200 px-3.5 py-1 rounded-full text-xs font-bold">
+            <Car className="w-4 h-4 text-brand-700" />
             <span>Driver Guidelines & Safety Rules</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
@@ -46,7 +46,7 @@ export default function UserRulesPage() {
         </div>
 
         {/* Rules Cards */}
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-200/80 prose prose-emerald max-w-none text-sm leading-relaxed space-y-6">
+        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-200/80 prose prose-brand max-w-none text-sm leading-relaxed space-y-6">
           
           <h3 className="text-xl font-extrabold text-gray-900">1. On-Site Parking Etiquette</h3>
           <ul className="list-disc pl-5 space-y-2 text-gray-700 font-medium">

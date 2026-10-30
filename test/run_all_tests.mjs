@@ -11,7 +11,8 @@ const testSuites = [
   { name: 'Phase 8: Razorpay Edge Function Logic', file: 'test/08_razorpay_edge_logic.test.mjs' },
   { name: 'Phase 9: Sign-in Return Path', file: 'test/09_auth_redirect.test.mjs' },
   { name: 'Phase 10: Pass Codes & Gate Input', file: 'test/10_pass_codes.test.mjs' },
-  { name: 'Phase 11: Admin Console Functions', file: 'test/11_admin_console.test.mjs' }
+  { name: 'Phase 11: Admin Console Functions', file: 'test/11_admin_console.test.mjs' },
+  { name: 'Phase 12: Owner Payout Logic', file: 'test/12_owner_payouts_logic.test.mjs' }
 ];
 
 console.log('================================================================');

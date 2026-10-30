@@ -191,18 +191,18 @@ export const OwnerScannerScreen: React.FC<OwnerScannerScreenProps> = ({
       <canvas ref={canvasRef} className="hidden" />
 
       {/* Top Header Bar */}
-      <div className="p-4 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 z-30 flex items-center justify-between">
+      <div className="p-4 bg-slate-950/80 border-b border-slate-800 z-30 flex items-center justify-between">
         <button
           onClick={onBack}
-          className="flex items-center space-x-1.5 text-slate-300 hover:text-white px-2.5 py-1.5 rounded-xl hover:bg-slate-800/80 transition-all active:scale-95 text-xs font-black"
+          className="flex items-center space-x-1.5 text-slate-300 hover:text-white px-2.5 py-1.5 rounded-xl hover:bg-slate-800/80 transition-all text-xs font-black"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Exit Scanner</span>
         </button>
 
         <div className="text-center">
-          <h2 className="text-xs font-black uppercase tracking-wider text-white">QR Pass Scanner</h2>
-          <span className="text-[10px] text-emerald-400 font-bold">Meenakshi Smart Lot</span>
+          <h2 className="text-xs font-black text-white">QR Pass Scanner</h2>
+          <span className="text-[10px] text-brand-400 font-bold">Meenakshi Smart Lot</span>
         </div>
 
         {hasTorch ? (
@@ -238,29 +238,29 @@ export const OwnerScannerScreen: React.FC<OwnerScannerScreenProps> = ({
           <div className="relative z-10 flex flex-col items-center pointer-events-none">
             
             {/* Centered QR Scanning Frame */}
-            <div className="w-64 h-64 sm:w-72 sm:h-72 rounded-3xl relative border-2 border-emerald-400/50 shadow-[0_0_50px_rgba(16,185,129,0.25)] flex items-center justify-center">
+            <div className="w-64 h-64 sm:w-72 sm:h-72 rounded-3xl relative border-2 border-brand-400/50 shadow-[0_0_50px_rgba(16,185,129,0.25)] flex items-center justify-center">
               
               {/* Corner Targets */}
-              <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-emerald-400 rounded-tl-2xl -mt-1 -ml-1" />
-              <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-emerald-400 rounded-tr-2xl -mt-1 -mr-1" />
-              <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-emerald-400 rounded-bl-2xl -mb-1 -ml-1" />
-              <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-emerald-400 rounded-br-2xl -mb-1 -mr-1" />
+              <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-brand-400 rounded-tl-2xl -mt-1 -ml-1" />
+              <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-brand-400 rounded-tr-2xl -mt-1 -mr-1" />
+              <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-brand-400 rounded-bl-2xl -mb-1 -ml-1" />
+              <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-brand-400 rounded-br-2xl -mb-1 -mr-1" />
 
               {/* Animated Emerald Scanline */}
               {!isProcessing && (
-                <div className="absolute inset-x-2 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent animate-pulse shadow-md shadow-emerald-400" />
+                <div className="absolute inset-x-2 h-1 bg-gradient-to-r from-transparent via-brand-400 to-transparent animate-pulse shadow-md shadow-brand-400" />
               )}
 
               {/* Processing Overlay inside Target Box */}
               {isProcessing && (
-                <div className="absolute inset-0 bg-slate-950/80 rounded-3xl flex flex-col items-center justify-center space-y-2 pointer-events-auto backdrop-blur-xs">
-                  <div className="w-8 h-8 border-3 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs font-black text-emerald-300">Validating Pass...</span>
+                <div className="absolute inset-0 bg-slate-950/80 rounded-3xl flex flex-col items-center justify-center space-y-2 pointer-events-auto">
+                  <div className="w-8 h-8 border-3 border-brand-400 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs font-black text-brand-300">Validating Pass...</span>
                 </div>
               )}
             </div>
 
-            <p className="mt-6 text-xs font-extrabold text-slate-200 bg-slate-950/80 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/10 shadow-lg">
+            <p className="mt-6 text-xs font-extrabold text-slate-200 bg-slate-950/80 px-4 py-1.5 rounded-full border border-white/10 shadow-lg">
               Align Driver&apos;s QR Code inside the frame
             </p>
           </div>
@@ -269,7 +269,7 @@ export const OwnerScannerScreen: React.FC<OwnerScannerScreenProps> = ({
         {/* CAMERA REQUESTING STATE */}
         {cameraState === 'requesting' && (
           <div className="text-center p-6 space-y-3 z-10 animate-fade-in">
-            <div className="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 text-emerald-400 flex items-center justify-center mx-auto animate-pulse">
+            <div className="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 text-brand-400 flex items-center justify-center mx-auto animate-pulse">
               <Camera className="w-6 h-6" />
             </div>
             <p className="text-xs font-black text-slate-300">Requesting Camera Access...</p>
@@ -294,7 +294,7 @@ export const OwnerScannerScreen: React.FC<OwnerScannerScreenProps> = ({
             <div className="pt-2 space-y-2">
               <button
                 onClick={() => window.location.reload()}
-                className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5"
+                className="w-full py-2.5 bg-brand-500 hover:bg-brand-400 text-slate-950 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Retry Permission</span>
@@ -323,7 +323,7 @@ export const OwnerScannerScreen: React.FC<OwnerScannerScreenProps> = ({
             </div>
             <button
               onClick={() => setShowManualInput(true)}
-              className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black transition-all"
+              className="w-full py-2.5 bg-brand-500 hover:bg-brand-400 text-slate-950 rounded-xl text-xs font-black transition-all"
             >
               Enter Pass Code Manually
             </button>
@@ -345,14 +345,14 @@ export const OwnerScannerScreen: React.FC<OwnerScannerScreenProps> = ({
                 value={manualCode}
                 onChange={(e) => setManualCode(e.target.value.toUpperCase())}
                 placeholder="Enter Pass Code (e.g. IDM-7K2Q-9XMP)"
-                className="w-full pl-9 pr-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs font-black text-white placeholder-slate-500 uppercase focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                className="w-full pl-9 pr-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs font-black text-white placeholder-slate-500 uppercase focus:outline-none focus:ring-2 focus:ring-brand-400"
                 autoFocus
               />
             </div>
             <button
               type="submit"
               disabled={!manualCode.trim() || isProcessing}
-              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black rounded-xl text-xs transition-all shadow-md"
+              className="px-4 py-2 bg-brand-500 hover:bg-brand-400 disabled:opacity-50 text-slate-950 font-black rounded-xl text-xs transition-all shadow-md"
             >
               Verify
             </button>
@@ -368,7 +368,7 @@ export const OwnerScannerScreen: React.FC<OwnerScannerScreenProps> = ({
           <div className="flex items-center justify-between">
             <button
               onClick={() => setShowManualInput(true)}
-              className="flex items-center space-x-1.5 text-xs text-slate-300 hover:text-emerald-400 font-bold transition-colors"
+              className="flex items-center space-x-1.5 text-xs text-slate-300 hover:text-brand-400 font-bold transition-colors"
             >
               <KeyRound className="w-3.5 h-3.5" />
               <span>Enter Code Manually</span>
@@ -380,7 +380,7 @@ export const OwnerScannerScreen: React.FC<OwnerScannerScreenProps> = ({
         {/* Demo Fast-Track Testing Buttons (For Simulator & Testing) */}
         <div className="pt-1 border-t border-slate-800/80 space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center space-x-1">
+            <span className="text-[10px] font-black text-slate-400 flex items-center space-x-1">
               <Sparkles className="w-3 h-3 text-amber-400" />
               <span>Demo Quick-Scan Scenarios</span>
             </span>
@@ -391,10 +391,10 @@ export const OwnerScannerScreen: React.FC<OwnerScannerScreenProps> = ({
               type="button"
               onClick={() => onScanResult('IDAM:v2:demo_idm_82931_loc-1')}
               disabled={isProcessing}
-              className="p-1.5 rounded-lg bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 truncate text-left transition-all"
+              className="p-1.5 rounded-lg bg-brand-950/70 hover:bg-brand-900 border border-brand-500/40 text-brand-300 truncate text-left transition-all"
               title="IDM-82931 Confirmed Booking"
             >
-              ✓ Valid Pass (82931)
+              Valid Pass (82931)
             </button>
             <button
               type="button"
@@ -403,7 +403,7 @@ export const OwnerScannerScreen: React.FC<OwnerScannerScreenProps> = ({
               className="p-1.5 rounded-lg bg-amber-950/70 hover:bg-amber-900 border border-amber-500/40 text-amber-300 truncate text-left transition-all"
               title="IDM-12049 Wrong Location"
             >
-              ⚠️ Wrong Loc (12049)
+              Wrong Loc (12049)
             </button>
             <button
               type="button"

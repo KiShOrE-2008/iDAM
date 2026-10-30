@@ -1,115 +1,313 @@
 @import "tailwindcss";
 
+/*
+ * iDAM design tokens
+ *
+ * The visual language comes from the street the product lives on:
+ *   - brand    : the blue of the "P" parking sign
+ *   - marigold : yellow road paint on kerbs and bay lines (overrides amber)
+ *   - slate/gray: limewash walls through to asphalt (both scales share one ramp)
+ *   - go       : working green for "spaces free"
+ *   - rose/red : kumkum red for full, cancelled and errors
+ * Radii are small and sign-like; shadows are short and crisp.
+ */
+@theme {
+  --font-sans: 'Overpass', 'Anek Tamil', ui-sans-serif, system-ui, sans-serif;
+  --font-tamil: 'Anek Tamil', 'Overpass', sans-serif;
+  --font-plate: 'Overpass', ui-sans-serif, sans-serif;
+
+  --color-brand-50: #eef3fb;
+  --color-brand-100: #dae5f6;
+  --color-brand-200: #b5caec;
+  --color-brand-300: #86a7dd;
+  --color-brand-400: #5580cb;
+  --color-brand-500: #2f62b8;
+  --color-brand-600: #1e52ac;
+  --color-brand-700: #1846a3;
+  --color-brand-800: #143a86;
+  --color-brand-900: #112f6b;
+  --color-brand-950: #0b1e46;
+
+  --color-amber-50: #fff8e3;
+  --color-amber-100: #ffedb8;
+  --color-amber-200: #ffdd7e;
+  --color-amber-300: #ffcb42;
+  --color-amber-400: #f8b814;
+  --color-amber-500: #f2a900;
+  --color-amber-600: #c98a00;
+  --color-amber-700: #9c6a00;
+  --color-amber-800: #765000;
+  --color-amber-900: #553a00;
+  --color-amber-950: #332200;
+
+  --color-slate-50: #f5f7f5;
+  --color-slate-100: #e9ede9;
+  --color-slate-200: #d8ddd9;
+  --color-slate-300: #b8c0bb;
+  --color-slate-400: #8b948f;
+  --color-slate-500: #66706b;
+  --color-slate-600: #4d5652;
+  --color-slate-700: #3b4240;
+  --color-slate-800: #2b302f;
+  --color-slate-900: #1f2322;
+  --color-slate-950: #161918;
+
+  --color-gray-50: #f5f7f5;
+  --color-gray-100: #e9ede9;
+  --color-gray-200: #d8ddd9;
+  --color-gray-300: #b8c0bb;
+  --color-gray-400: #8b948f;
+  --color-gray-500: #66706b;
+  --color-gray-600: #4d5652;
+  --color-gray-700: #3b4240;
+  --color-gray-800: #2b302f;
+  --color-gray-900: #1f2322;
+  --color-gray-950: #161918;
+
+  --color-go-50: #ebf6ef;
+  --color-go-100: #d0ebd9;
+  --color-go-500: #2a9159;
+  --color-go-600: #1f7a4a;
+  --color-go-700: #186139;
+
+  --color-rose-50: #fcefef;
+  --color-rose-100: #f8dcdc;
+  --color-rose-200: #f0b8b8;
+  --color-rose-300: #e48a8b;
+  --color-rose-400: #d65a5d;
+  --color-rose-500: #c9393d;
+  --color-rose-600: #c1272d;
+  --color-rose-700: #9e1f24;
+  --color-rose-800: #7c1a1e;
+  --color-rose-900: #5c1518;
+  --color-rose-950: #380c0e;
+
+  /* Named surfaces */
+  --color-limewash: #eef1ee;
+  --color-asphalt: #2b302f;
+  --color-ink: #1f2322;
+  --color-paint: #f2a900;
+
+  --radius-md: 0.3125rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.625rem;
+  --radius-3xl: 0.875rem;
+
+  --shadow-xs: 0 1px 0 rgb(31 35 34 / 0.06);
+  --shadow-sm: 0 1px 0 rgb(31 35 34 / 0.06), 0 1px 3px rgb(31 35 34 / 0.06);
+  --shadow-md: 0 1px 0 rgb(31 35 34 / 0.06), 0 4px 10px -4px rgb(31 35 34 / 0.18);
+  --shadow-lg: 0 1px 0 rgb(31 35 34 / 0.06), 0 10px 24px -12px rgb(31 35 34 / 0.28);
+  --shadow-xl: 0 1px 0 rgb(31 35 34 / 0.06), 0 16px 32px -16px rgb(31 35 34 / 0.32);
+  --shadow-2xl: 0 2px 0 rgb(31 35 34 / 0.06), 0 24px 48px -20px rgb(31 35 34 / 0.38);
+}
+
 @layer utilities {
-  /* Hide scrollbar for Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
-  /* Hide scrollbar for IE, Edge and Firefox */
   .no-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Painted road surface with faint aggregate texture */
+  .asphalt {
+    background-color: var(--color-asphalt);
+    background-image:
+      radial-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px),
+      radial-gradient(rgb(0 0 0 / 0.12) 1px, transparent 1px);
+    background-size: 7px 7px, 11px 11px;
+    background-position: 0 0, 3px 5px;
+  }
+
+  /* Alternating black/yellow kerb paint */
+  .kerb {
+    background-image: repeating-linear-gradient(
+      90deg,
+      var(--color-paint) 0 28px,
+      var(--color-ink) 28px 56px
+    );
+  }
+
+  /* Indian registration plate: white field, black border and lettering */
+  .plate {
+    font-family: var(--font-plate);
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    background: #fff;
+    color: var(--color-ink);
+    border: 2px solid var(--color-ink);
+    border-radius: 0.3125rem;
+    box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 3px rgb(31 35 34 / 0.25);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  font-family: 'Inter', var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #14201D;
-  background-color: #F8F8F5;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background-color: var(--color-limewash);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-amber-300);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-700);
+  outline-offset: 2px;
 }
 
 .font-tamil {
-  font-family: 'Mukta Malar', 'Noto Sans Tamil', sans-serif;
+  font-family: var(--font-tamil);
 }
 
-/* Sleek Modern Emerald Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px !important;
-  height: 6px !important;
+  width: 8px;
+  height: 8px;
 }
-
 ::-webkit-scrollbar-track {
-  background: transparent !important;
+  background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: rgba(16, 185, 129, 0.45) !important;
-  border-radius: 9999px !important;
+  background: rgb(31 35 34 / 0.22);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(5, 150, 105, 0.8) !important;
+  background-color: rgb(31 35 34 / 0.4);
 }
-
-::-webkit-scrollbar-thumb:active {
-  background: #047857 !important;
-}
-
-/* Firefox */
-html, body {
+html,
+body {
   scrollbar-width: thin;
-  scrollbar-color: rgba(16, 185, 129, 0.45) transparent;
+  scrollbar-color: rgb(31 35 34 / 0.25) transparent;
 }
 
-/* Animations for Mobile & Interactive Experience */
+/* Motion: kept to transitions that answer an action */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-
 @keyframes slideInUp {
-  from { transform: translateY(16px); opacity: 0; }
+  from { transform: translateY(10px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
-
 @keyframes slideInRight {
-  from { transform: translateX(20px); opacity: 0; }
+  from { transform: translateX(14px); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
-
 @keyframes scaleIn {
-  from { transform: scale(0.94); opacity: 0; }
+  from { transform: scale(0.97); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
-
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-  50% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgb(24 70 163 / 0.35); }
+  50% { box-shadow: 0 0 0 8px rgb(24 70 163 / 0); }
+}
+/* Bay lines being painted in, used once on the home hero */
+@keyframes paintIn {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
 }
 
-@keyframes floatSubtle {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+/* Admin console motion: each answers something the admin did or a value that changed */
+@keyframes barGrow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes meterFill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes stampIn {
+  0% { transform: rotate(-9deg) scale(1.6); opacity: 0; }
+  60% { transform: rotate(-9deg) scale(0.94); opacity: 1; }
+  100% { transform: rotate(-9deg) scale(1); opacity: 1; }
+}
+@keyframes cardFold {
+  from { grid-template-rows: 1fr; opacity: 1; }
+  to { grid-template-rows: 0fr; opacity: 0; margin-top: 0; padding: 0; }
+}
+@keyframes badgePop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+@keyframes changedFlash {
+  0% { background-color: var(--color-amber-100); }
+  100% { background-color: #fff; }
+}
+@keyframes shimmer {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+@keyframes rowIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.bar-grow {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: barGrow 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.meter-fill {
+  transform-origin: left;
+  animation: meterFill 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.stamp-in { animation: stampIn 0.42s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+.card-fold { display: grid; animation: cardFold 0.45s cubic-bezier(0.4, 0, 0.2, 1) 0.7s forwards; }
+.badge-pop { animation: badgePop 0.4s ease-out; }
+.changed-flash { animation: changedFlash 1.4s ease-out; }
+.row-in { animation: rowIn 0.3s ease-out both; }
+.admin-shimmer {
+  background: linear-gradient(90deg, var(--color-slate-100) 30%, var(--color-slate-50) 50%, var(--color-slate-100) 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s linear infinite;
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.animate-fade-in { animation: fadeIn 0.24s ease-out forwards; }
+.animate-slide-up { animation: slideInUp 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.animate-slide-right { animation: slideInRight 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.animate-scale-in { animation: scaleIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.animate-pulse-glow { animation: pulseGlow 2.4s infinite; }
+/* Float was decorative; kept as a no-op so existing markup stays valid */
+.animate-float { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
-.animate-slide-up {
-  animation: slideInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* Leaflet popups/controls follow the system */
+.leaflet-container {
+  font-family: var(--font-sans);
+  background: #e4e8e4;
 }
-
-.animate-slide-right {
-  animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-lg);
 }
-
-.animate-scale-in {
-  animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-pulse-glow {
-  animation: pulseGlow 2s infinite;
-}
-
-.animate-float {
-  animation: floatSubtle 3s ease-in-out infinite;
-}
-
 
 /* Printing (e.g. the parking pass): keep banner colours and QR contrast, use small margins */
 @media print {

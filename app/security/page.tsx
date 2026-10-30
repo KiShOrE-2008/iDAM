@@ -31,7 +31,7 @@ export default function SecurityPage() {
         {/* 1. Overview */}
         <section className="space-y-2">
           <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-            <Shield className="w-5 h-5 text-emerald-600" />
+            <Shield className="w-5 h-5 text-brand-600" />
             1. Security by Design
           </h2>
           <p>
@@ -47,7 +47,7 @@ export default function SecurityPage() {
             
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
               <div className="flex items-center gap-2 text-slate-900 font-black text-sm">
-                <QrCode className="w-4 h-4 text-emerald-600" />
+                <QrCode className="w-4 h-4 text-brand-600" />
                 Cryptographic QR Validation
               </div>
               <p className="text-xs text-slate-600">
@@ -57,7 +57,7 @@ export default function SecurityPage() {
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
               <div className="flex items-center gap-2 text-slate-900 font-black text-sm">
-                <Server className="w-4 h-4 text-emerald-600" />
+                <Server className="w-4 h-4 text-brand-600" />
                 Database Row-Level Security (RLS)
               </div>
               <p className="text-xs text-slate-600">
@@ -67,7 +67,7 @@ export default function SecurityPage() {
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
               <div className="flex items-center gap-2 text-slate-900 font-black text-sm">
-                <Lock className="w-4 h-4 text-emerald-600" />
+                <Lock className="w-4 h-4 text-brand-600" />
                 Transport & Rest Encryption
               </div>
               <p className="text-xs text-slate-600">
@@ -77,7 +77,7 @@ export default function SecurityPage() {
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
               <div className="flex items-center gap-2 text-slate-900 font-black text-sm">
-                <Key className="w-4 h-4 text-emerald-600" />
+                <Key className="w-4 h-4 text-brand-600" />
                 PCI-DSS Payment Tokenization
               </div>
               <p className="text-xs text-slate-600">
@@ -89,9 +89,9 @@ export default function SecurityPage() {
         </section>
 
         {/* 3. Vulnerability Reporting & Responsible Disclosure */}
-        <section className="space-y-4 p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200/60">
+        <section className="space-y-4 p-5 rounded-2xl bg-brand-50/70 border border-brand-200/60">
           <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-emerald-700" />
+            <AlertTriangle className="w-5 h-5 text-brand-700" />
             3. Vulnerability Reporting & Safe Harbor
           </h2>
           <p className="text-slate-700">
@@ -107,16 +107,16 @@ export default function SecurityPage() {
             </ul>
           </div>
 
-          <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-emerald-200/60 pt-3">
+          <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-brand-200/60 pt-3">
             <div>
               <p className="text-xs font-bold text-slate-900">Dedicated Security Contact:</p>
-              <a href="mailto:security@idam.park" className="text-emerald-700 font-mono font-black text-xs hover:underline">
+              <a href="mailto:security@idam.park" className="text-brand-700 tabular font-black text-xs hover:underline">
                 security@idam.park
               </a>
             </div>
             <Link
               href="/contact?category=security"
-              className="px-4 py-2 rounded-xl bg-emerald-700 text-white font-bold hover:bg-emerald-800 transition-colors text-xs"
+              className="px-4 py-2 rounded-xl bg-brand-700 text-white font-bold hover:bg-brand-800 transition-colors text-xs"
             >
               Report via Secure Form
             </Link>
@@ -126,11 +126,11 @@ export default function SecurityPage() {
         {/* 4. Cross Links */}
         <section className="border-t border-slate-100 pt-4 flex flex-wrap gap-4 text-xs font-bold text-slate-500">
           <span>Related resources:</span>
-          <Link href="/privacy-policy" className="text-emerald-700 hover:underline">Privacy Policy</Link>
+          <Link href="/privacy-policy" className="text-brand-700 hover:underline">Privacy Policy</Link>
           <span>•</span>
-          <Link href="/terms" className="text-emerald-700 hover:underline">Terms of Service</Link>
+          <Link href="/terms" className="text-brand-700 hover:underline">Terms of Service</Link>
           <span>•</span>
-          <Link href="/how-it-works" className="text-emerald-700 hover:underline">Pass Architecture in How It Works</Link>
+          <Link href="/how-it-works" className="text-brand-700 hover:underline">Pass Architecture in How It Works</Link>
         </section>
 
       </div>

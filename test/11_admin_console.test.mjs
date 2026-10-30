@@ -233,6 +233,80 @@ try {
   assert.deepStrictEqual([users[0].bookings, Number(users[0].spent)], [2, 85]);
   console.log('  PASSED\n');
 
+  console.log('Test 8: paying opens an owner payout; clients cannot touch the ledger...');
+  const payoutOf = (bookingId) =>
+    psql(`SELECT json_build_object('status', status, 'amount', amount, 'owner', owner_id)::text FROM owner_payouts WHERE booking_id = '${bookingId}';`, { tuples: true })
+      .split('\n').filter(l => l.startsWith('{')).map(l => JSON.parse(l))[0];
+  const first = payoutOf(paid.booking_id);
+  assert.deepStrictEqual([first.status, Number(first.amount), first.owner], ['awaiting_account', 80, owner], 'owner share = 85 paid - 5 fee, waiting for a bank account');
+  for (const role of ['anon', 'authenticated']) {
+    setSession(role === 'anon' ? null : owner, role);
+    expectDenied(role, `SELECT count(*) FROM owner_payouts;`, `${role} read ledger`);
+    expectDenied(role, `UPDATE owner_payouts SET status = 'released';`, `${role} edit ledger`);
+    expectDenied(role, `INSERT INTO owner_payout_accounts (owner_id, activation_status) VALUES ('${owner}', 'activated');`, `${role} self-activate`);
+  }
+  setSession(null, 'anon');
+  expectDenied('anon', `SELECT owner_payout_overview()::text;`, 'anon payout overview');
+  setSession(owner, 'authenticated');
+  const mine = asRole('authenticated', `SELECT owner_payout_overview()::text;`);
+  assert.strictEqual(mine.has_listings, true);
+  assert.strictEqual(mine.account, null);
+  assert.strictEqual(Number(mine.totals.waiting_for_bank), 80);
+  assert.deepStrictEqual(mine.payouts.map(p => p.pass_code), ['IDM-ADM1-AAAA']);
+  setSession(driver, 'authenticated');
+  const notMine = asRole('authenticated', `SELECT owner_payout_overview()::text;`);
+  assert.deepStrictEqual([notMine.has_listings, notMine.payouts.length], [false, 0], 'drivers see no one else\'s payouts');
+  try {
+    asRole('authenticated', `SELECT admin_payouts(NULL)::text;`);
+    assert.fail('driver read admin_payouts');
+  } catch (e) {
+    assert.match(e.stderr?.toString() || String(e), /Admins only/);
+  }
+  console.log('  PASSED\n');
+
+  console.log('Test 9: account activation releases waiting payouts; cancellations drop or reverse them...');
+  setSession(null, 'service_role');
+  asRole('service_role', `INSERT INTO owner_payout_accounts (owner_id, razorpay_account_id, activation_status) VALUES ('${owner}', 'acc_test1', 'under_review');`);
+  assert.strictEqual(payoutOf(paid.booking_id).status, 'awaiting_account', 'not released before Razorpay activates the account');
+  asRole('service_role', `UPDATE owner_payout_accounts SET activation_status = 'activated' WHERE owner_id = '${owner}';`);
+  assert.strictEqual(payoutOf(paid.booking_id).status, 'ready');
+
+  // Pay the second booking: the account is live, so it is ready straight away
+  const second = psql(`SELECT id FROM bookings WHERE pass_code = 'IDM-ADM2-BBBB';`, { tuples: true }).trim().split('\n').pop();
+  asRole('service_role', `SELECT record_payment_reconciliation('${second}'::uuid, 'pay_adm_2', 45, 'Razorpay', 'success')::text;`);
+  assert.strictEqual(payoutOf(second).status, 'ready');
+  // Sent and on hold, then the driver cancels -> must be taken back
+  asRole('service_role', `UPDATE owner_payouts SET status = 'on_hold', razorpay_transfer_id = 'trf_test2' WHERE booking_id = '${second}';`);
+  setSession(driver, 'authenticated');
+  assert.strictEqual(asRole('authenticated', `SELECT cancel_booking('${second}'::uuid, 'Plans changed')::text;`).success, true);
+  assert.strictEqual(payoutOf(second).status, 'reversal_pending');
+
+  // Paid and cancelled before anything was sent -> simply cancelled
+  const third = asRole('authenticated', `SELECT create_verified_booking('${liveSpace}'::uuid, 'bike', NOW() + INTERVAL '8 hours', 1, 'TN 01 BB 2222', 'Dev', '902', ARRAY[]::text[], 'h_adm_3', 'IDM-ADM3-CCCC', NULL)::text;`);
+  setSession(null, 'service_role');
+  asRole('service_role', `SELECT record_payment_reconciliation('${third.booking_id}'::uuid, 'pay_adm_3', 25, 'Razorpay', 'success')::text;`);
+  assert.strictEqual(payoutOf(third.booking_id).status, 'ready');
+  setSession(driver, 'authenticated');
+  asRole('authenticated', `SELECT cancel_booking('${third.booking_id}'::uuid, NULL)::text;`);
+  assert.strictEqual(payoutOf(third.booking_id).status, 'cancelled');
+
+  // Released money is never silently changed by a late cancellation, but it is flagged
+  asRole('service_role', `UPDATE owner_payouts SET status = 'released' WHERE booking_id = '${paid.booking_id}';`);
+  setSession(driver, 'authenticated');
+  asRole('authenticated', `SELECT cancel_booking('${paid.booking_id}'::uuid, 'No-show')::text;`);
+  const late = psql(`SELECT status || '|' || COALESCE(last_error, '') FROM owner_payouts WHERE booking_id = '${paid.booking_id}';`, { tuples: true }).trim().split('\n').pop();
+  assert.match(late, /^released\|Booking was cancelled after the payout was released$/);
+
+  setSession(admin, 'authenticated');
+  const ap = asRole('authenticated', `SELECT admin_payouts(NULL)::text;`);
+  assert.strictEqual(ap.payouts.length, 3);
+  assert.strictEqual(Number(ap.totals.released), 80);
+  assert.strictEqual(Number(ap.totals.reversals), 40);
+  assert.strictEqual(ap.totals.problems, 1);
+  assert.deepStrictEqual(ap.owners.map(o => [o.email, o.activation_status]), [['p11.owner@idam.test', 'activated']]);
+  assert.strictEqual(asRole('authenticated', `SELECT admin_payouts('reversal_pending')::text;`).payouts.length, 1);
+  console.log('  PASSED\n');
+
   console.log('================================================================');
   console.log('ALL PHASE 11 ADMIN CONSOLE TESTS PASSED!');
   console.log('================================================================');

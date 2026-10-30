@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F8F5] flex flex-col justify-between font-sans selection:bg-emerald-200 text-slate-900">
+    <div className="min-h-screen bg-limewash flex flex-col justify-between font-sans selection:bg-brand-200 text-slate-900">
       
       <Navbar
         lang={lang}
@@ -85,8 +85,8 @@ export default function ForgotPasswordPage() {
         <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-200/80 space-y-5 max-w-sm mx-auto w-full">
           
           <div className="text-center space-y-1.5">
-            <div className="text-xl font-black tracking-widest text-slate-900 uppercase">
-              iDAM <span className="text-emerald-700 font-tamil">இடம்</span>
+            <div className="text-xl font-black text-slate-900 uppercase">
+              iDAM <span className="text-brand-700 font-tamil">இடம்</span>
             </div>
             <h2 className="text-lg font-black text-slate-900">
               {isPasswordRecovery ? 'Set New Password' : 'Reset Password'}
@@ -100,23 +100,23 @@ export default function ForgotPasswordPage() {
 
           {isUpdateSuccess ? (
             <div className="py-6 text-center space-y-3 animate-scale-in">
-              <div className="w-14 h-14 bg-emerald-100 text-emerald-800 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                <CheckCircle2 className="w-8 h-8 text-emerald-700" />
+              <div className="w-14 h-14 bg-brand-100 text-brand-800 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                <CheckCircle2 className="w-8 h-8 text-brand-700" />
               </div>
               <h3 className="text-base font-black text-slate-900">Password Updated!</h3>
               <p className="text-xs text-slate-500 font-medium">Your password has been changed successfully. You can now sign in.</p>
-              <Link href="/login" className="inline-block pt-2 text-xs font-extrabold text-emerald-800 hover:underline">
+              <Link href="/login" className="inline-block pt-2 text-xs font-extrabold text-brand-800 hover:underline">
                 Sign In Now →
               </Link>
             </div>
           ) : isSuccess ? (
             <div className="py-6 text-center space-y-3 animate-scale-in">
-              <div className="w-14 h-14 bg-emerald-100 text-emerald-800 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                <CheckCircle2 className="w-8 h-8 text-emerald-700" />
+              <div className="w-14 h-14 bg-brand-100 text-brand-800 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                <CheckCircle2 className="w-8 h-8 text-brand-700" />
               </div>
               <h3 className="text-base font-black text-slate-900">Reset Email Sent!</h3>
               <p className="text-xs text-slate-500 font-medium">Check your inbox for instructions to reset your password.</p>
-              <Link href="/login" className="inline-block pt-2 text-xs font-extrabold text-emerald-800 hover:underline">
+              <Link href="/login" className="inline-block pt-2 text-xs font-extrabold text-brand-800 hover:underline">
                 Return to Sign In →
               </Link>
             </div>
@@ -138,7 +138,7 @@ export default function ForgotPasswordPage() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="At least 6 characters"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/40"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-600/40"
                   />
                 </div>
 
@@ -150,17 +150,17 @@ export default function ForgotPasswordPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Repeat new password"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/40"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-600/40"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3 rounded-xl shadow-md text-xs tracking-wide transition-all transform active:scale-98 flex items-center justify-center space-x-2 disabled:opacity-75"
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3 rounded-xl shadow-md text-xs tracking-wide transition-all transform flex items-center justify-center space-x-2 disabled:opacity-75"
                 >
                   {isLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                    <Loader2 className="w-4 h-4 animate-spin text-brand-400" />
                   ) : (
                     <span>Update Password →</span>
                   )}
@@ -187,7 +187,7 @@ export default function ForgotPasswordPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@example.com"
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/40"
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-600/40"
                     />
                   </div>
                 </div>
@@ -195,10 +195,10 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3 rounded-xl shadow-md text-xs tracking-wide transition-all transform active:scale-98 flex items-center justify-center space-x-2 disabled:opacity-75"
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3 rounded-xl shadow-md text-xs tracking-wide transition-all transform flex items-center justify-center space-x-2 disabled:opacity-75"
                 >
                   {isLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                    <Loader2 className="w-4 h-4 animate-spin text-brand-400" />
                   ) : (
                     <span>Send Reset Email →</span>
                   )}

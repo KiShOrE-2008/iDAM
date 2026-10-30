@@ -70,7 +70,7 @@ export default function TermsPage() {
         <section className="space-y-2">
           <h2 className="text-base sm:text-lg font-black text-slate-900">5. Payments, Fees & Refunds</h2>
           <p>
-            Drivers pay the upfront quoted amount including applicable GST and platform service fee. Free cancellation is permitted up to 30 minutes prior to the start time with an instant 100% refund. Cancellations made inside 30 minutes are subject to our <Link href="/cancellation-refund" className="text-emerald-700 font-bold underline">Cancellation & Refund Policy</Link>.
+            Drivers pay the upfront quoted amount including applicable GST and platform service fee. Free cancellation is permitted up to 30 minutes prior to the start time with an instant 100% refund. Cancellations made inside 30 minutes are subject to our <Link href="/cancellation-refund" className="text-brand-700 font-bold underline">Cancellation & Refund Policy</Link>.
           </p>
         </section>
 
@@ -89,7 +89,7 @@ export default function TermsPage() {
             These Terms are governed by and construed in accordance with the laws of the Republic of India. Any disputes arising out of these terms shall be subject to the exclusive jurisdiction of the competent courts in Madurai, Tamil Nadu.
           </p>
           <p>
-            For legal inquiries or notices, write to <a href="mailto:legal@idam.park" className="text-emerald-700 font-bold">legal@idam.park</a>.
+            For legal inquiries or notices, write to <a href="mailto:legal@idam.park" className="text-brand-700 font-bold">legal@idam.park</a>.
           </p>
         </section>
 

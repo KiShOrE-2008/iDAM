@@ -4,256 +4,141 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/web/PageContainer';
 import { Language } from '@/types';
-import { Search, MapPin, Calendar, CreditCard, QrCode, CheckCircle2, Building2, Sliders, Smartphone, ArrowRight, ShieldCheck, Clock, Car } from 'lucide-react';
+
+type Step = { title: string; body: string; link?: { href: string; label: string } };
+
+const DRIVER_STEPS: Step[] = [
+  {
+    title: 'Search where you’re going',
+    body: 'Type a landmark such as Meenakshi Temple, Madurai Junction or Mattuthavani. You see parking within walking distance and how many spaces are free right now.',
+    link: { href: '/explore', label: 'Open the map' },
+  },
+  {
+    title: 'Pick a time and vehicle',
+    body: 'Choose car or bike, the day, when you’ll arrive and how many hours you need. Extras like EV charging are optional.',
+  },
+  {
+    title: 'Pay once, get your pass',
+    body: 'The price is itemised before you pay, with no surge pricing. Pay through Razorpay with UPI, a card or net banking, and your QR pass appears straight away.',
+  },
+  {
+    title: 'Show the pass at the gate',
+    body: 'Follow directions to the place. The owner scans your QR code and checks your number plate, and you park.',
+  },
+];
+
+const OWNER_STEPS: Step[] = [
+  {
+    title: 'Tell us about your space',
+    body: 'Add the address, how many cars and bikes fit, your opening hours, rates and a few photos.',
+    link: { href: '/list-your-space', label: 'Start a listing' },
+  },
+  {
+    title: 'We check it',
+    body: 'Our team confirms the location and that vehicles can get in and out safely. Approved spaces go live on the map.',
+  },
+  {
+    title: 'Run it from your phone',
+    body: 'See today’s earnings and expected arrivals, change rates, or close the space for a day whenever you need it back.',
+  },
+  {
+    title: 'Scan passes, get paid',
+    body: 'Scan each driver’s pass with the iDAM app. Payments reach your bank account daily.',
+  },
+];
+
+const SAFEGUARDS = [
+  {
+    title: 'Codes can’t be guessed',
+    body: 'Each pass carries a long random token, not a running number, so one pass can’t be used to work out another.',
+  },
+  {
+    title: 'We never store the code itself',
+    body: 'Only a one-way fingerprint of the token is kept. A scanned pass is matched against it and against the booking’s place and time.',
+  },
+  {
+    title: 'Each pass works once',
+    body: 'After check-in the booking is marked as parked. A screenshot of the same pass is flagged on the next scan.',
+  },
+];
+
+const StepList: React.FC<{ steps: Step[] }> = ({ steps }) => (
+  <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-t-2 border-ink">
+    {steps.map((s, i) => (
+      <li key={s.title} className="pt-6 pb-8 sm:pr-8 border-b sm:border-b-0 border-slate-300 lg:border-r lg:last:border-r-0 lg:pl-6 lg:first:pl-0">
+        <span className="block text-5xl font-black text-brand-700 tabular leading-none" aria-hidden>
+          {i + 1}
+        </span>
+        <h3 className="mt-4 text-lg font-bold text-ink">{s.title}</h3>
+        <p className="mt-2 text-[15px] leading-relaxed text-slate-600">{s.body}</p>
+        {s.link && (
+          <Link href={s.link.href} className="inline-block mt-3 text-[15px] font-bold text-brand-700 underline underline-offset-4 decoration-brand-200 hover:decoration-brand-700">
+            {s.link.label}
+          </Link>
+        )}
+      </li>
+    ))}
+  </ol>
+);
 
 export default function HowItWorksPage() {
   const [lang, setLang] = useState<Language>('en');
 
-  const driverSteps = [
-    {
-      step: '01',
-      title: 'Search & Discover Destination',
-      description: 'Enter your destination (e.g. Meenakshi Temple, Madurai Junction, Mattuthavani). View available lots with walking distance and real-time bay availability.',
-      icon: Search,
-      actionText: 'Explore Map',
-      actionHref: '/explore'
-    },
-    {
-      step: '02',
-      title: 'Select Spot & Add-Ons',
-      description: 'Choose your preferred bay (Car, Bike, SUV, or EV Charging). Select your arrival time and duration. Add EV fast charging or express wash if needed.',
-      icon: Sliders
-    },
-    {
-      step: '03',
-      title: 'Transparent Payment & Instant Pass',
-      description: 'Review the itemized quote with zero surge charges. Pay securely with Razorpay or Instant UPI. Your cryptographically signed QR pass is generated immediately.',
-      icon: CreditCard
-    },
-    {
-      step: '04',
-      title: 'Navigate & Scan In at Gate',
-      description: 'Get turn-by-turn navigation straight to your assigned parking bay. Present your digital QR pass to the attendant or gate scanner for instant verification and entry.',
-      icon: QrCode
-    }
-  ];
-
-  const ownerSteps = [
-    {
-      step: '01',
-      title: 'Apply & Describe Your Property',
-      description: 'Tell us about your driveway, commercial lot, or basement. Submit your address, capacity (cars & bikes), operating hours, and photos in our 6-step wizard.',
-      icon: Building2,
-      actionText: 'List Your Space',
-      actionHref: '/list-your-space'
-    },
-    {
-      step: '02',
-      title: 'Review & Live Activation',
-      description: 'Our operations team verifies location coordinates and access safety. Once approved, your listing goes live to thousands of drivers looking for spots nearby.',
-      icon: ShieldCheck
-    },
-    {
-      step: '03',
-      title: 'Manage Dynamic Rates & Occupancy',
-      description: 'Access the Owner Portal dashboard. Track Today\'s Revenue, view expected arrivals, and adjust hourly rates or toggle maintenance mode at any time.',
-      icon: Clock
-    },
-    {
-      step: '04',
-      title: 'Scan Passes & Collect Payouts',
-      description: 'Use the Owner QR Scanner on any smartphone. Validate passes in milliseconds with haptic feedback, check in vehicles, and receive guaranteed digital payouts.',
-      icon: Smartphone
-    }
-  ];
-
   return (
     <PageContainer
-      title="How iDAM | இடம் Works"
-      titleTa="iDAM எவ்வாறு செயல்படுகிறது?"
-      subtitle="A seamless two-sided marketplace designed to end parking uncertainty for drivers while generating predictable revenue for space owners."
-      subtitleTa="ஓட்டுநர்கள் மற்றும் பார்க்கிங் உரிமையாளர்களுக்கான எளிய வழிகாட்டி."
-      badge="Step-by-Step Experience Guide"
-      breadcrumbs={[{ label: 'How It Works' }]}
+      title="How iDAM works"
+      titleTa="iDAM எவ்வாறு செயல்படுகிறது"
+      subtitle="Drivers book a space before they leave home. Owners earn from driveways and plots that would otherwise sit empty."
+      subtitleTa="ஓட்டுநர்கள் புறப்படும் முன்பே இடம் பிடிக்கிறார்கள். உரிமையாளர்கள் காலியான இடங்களில் இருந்து சம்பாதிக்கிறார்கள்."
+      breadcrumbs={[{ label: 'How it works' }]}
       lang={lang}
       onLanguageToggle={setLang}
+      maxWidthClass="max-w-7xl"
     >
-      <div className="space-y-16">
+      <div className="space-y-20">
+        <section aria-labelledby="drivers">
+          <h2 id="drivers" className="text-3xl font-black tracking-tight">If you’re driving</h2>
+          <p className="text-slate-600 mt-2 mb-8 max-w-2xl">Four steps, and the first three happen before you leave home.</p>
+          <StepList steps={DRIVER_STEPS} />
+        </section>
 
-        {/* DRIVER JOURNEY SECTION */}
-        <div className="space-y-8">
-          <div className="space-y-2 border-b border-slate-200/80 pb-4">
-            <span className="text-xs font-black text-emerald-800 uppercase tracking-wider bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
-              For Drivers
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight pt-1">
-              Find, Reserve, and Park in 4 Simple Steps
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 font-medium">
-              Eliminate street cruising anxiety with advance reservations and verifiable digital passes.
-            </p>
-          </div>
+        <section aria-labelledby="owners">
+          <h2 id="owners" className="text-3xl font-black tracking-tight">If you have a space</h2>
+          <p className="text-slate-600 mt-2 mb-8 max-w-2xl">No barrier, ticket machine or attendant booth needed. A phone is enough.</p>
+          <StepList steps={OWNER_STEPS} />
+        </section>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {driverSteps.map((s, idx) => {
-              const Icon = s.icon;
-              return (
-                <div
-                  key={idx}
-                  className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-md space-y-4 flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black">
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <span className="text-xs font-black text-slate-400 font-mono">
-                        STEP {s.step}
-                      </span>
-                    </div>
+        <section aria-labelledby="passes" className="asphalt text-white rounded-xl p-7 sm:p-10">
+          <h2 id="passes" className="text-2xl sm:text-3xl font-black">Why a pass can’t be copied</h2>
+          <p className="text-white/70 mt-2 max-w-2xl">Owners need to trust the QR code a driver shows them. Three things make sure they can.</p>
+          <dl className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8 border-t-[3px] border-paint pt-6">
+            {SAFEGUARDS.map((g) => (
+              <div key={g.title}>
+                <dt className="font-bold text-lg text-amber-300">{g.title}</dt>
+                <dd className="mt-2 text-[15px] leading-relaxed text-white/80">{g.body}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
 
-                    <h3 className="text-base font-black text-slate-900 leading-snug">
-                      {s.title}
-                    </h3>
-
-                    <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                      {s.description}
-                    </p>
-                  </div>
-
-                  {s.actionText && s.actionHref && (
-                    <div className="pt-2">
-                      <Link
-                        href={s.actionHref}
-                        className="inline-flex items-center space-x-1.5 text-xs font-black text-emerald-700 hover:text-emerald-900 hover:underline"
-                      >
-                        <span>{s.actionText}</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* OWNER JOURNEY SECTION */}
-        <div className="space-y-8">
-          <div className="space-y-2 border-b border-slate-200/80 pb-4">
-            <span className="text-xs font-black text-amber-800 uppercase tracking-wider bg-amber-100 px-3 py-1 rounded-full border border-amber-300">
-              For Parking Owners
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight pt-1">
-              Monetize Empty Spaces with Zero Hardware Friction
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 font-medium">
-              Transform residential driveways or commercial lots into passive recurring income.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {ownerSteps.map((s, idx) => {
-              const Icon = s.icon;
-              return (
-                <div
-                  key={idx}
-                  className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-md space-y-4 flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-black">
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <span className="text-xs font-black text-slate-400 font-mono">
-                        STEP {s.step}
-                      </span>
-                    </div>
-
-                    <h3 className="text-base font-black text-slate-900 leading-snug">
-                      {s.title}
-                    </h3>
-
-                    <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                      {s.description}
-                    </p>
-                  </div>
-
-                  {s.actionText && s.actionHref && (
-                    <div className="pt-2">
-                      <Link
-                        href={s.actionHref}
-                        className="inline-flex items-center space-x-1.5 text-xs font-black text-amber-700 hover:text-amber-900 hover:underline"
-                      >
-                        <span>{s.actionText}</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Cryptographic Pass Security Explainer */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl p-6 sm:p-10 shadow-xl space-y-5 border border-slate-700">
-          <div className="flex items-center space-x-2 text-emerald-400 font-black text-xs uppercase tracking-wider">
-            <ShieldCheck className="w-4 h-4" />
-            <span>Pass Security Architecture</span>
-          </div>
-
-          <h3 className="text-xl sm:text-2xl font-black text-white">
-            Why iDAM Parking Passes Cannot Be Forged or Reused
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2 text-xs leading-relaxed text-slate-300">
-            <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-700 space-y-1.5">
-              <span className="text-emerald-400 font-black block">1. High-Entropy Tokens</span>
-              <p>Every pass encodes a cryptographic 32-character hexadecimal token (e.g. IDAM:v2:...). No predictable sequential numbers.</p>
-            </div>
-            <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-700 space-y-1.5">
-              <span className="text-emerald-400 font-black block">2. SHA-256 Hash Matching</span>
-              <p>The database stores only one-way SHA-256 hashes. Scanned tokens are verified mathematically against active reservations.</p>
-            </div>
-            <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-700 space-y-1.5">
-              <span className="text-emerald-400 font-black block">3. Single-Use Check-In Lock</span>
-              <p>Once scanned and verified, the booking is instantly locked as &apos;checked_in&apos;. Screenshots or duplicate scans are flagged immediately.</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Dual Call to Action */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-md space-y-4">
-            <h3 className="text-xl font-black text-slate-900">Need to Park Today?</h3>
-            <p className="text-xs sm:text-sm text-slate-600 font-medium">
-              Find guaranteed parking spots in Madurai. Check availability and reserve your spot in under 60 seconds.
-            </p>
-            <Link
-              href="/explore"
-              className="inline-flex items-center space-x-2 bg-slate-950 hover:bg-slate-900 text-white font-black text-xs px-5 py-3 rounded-2xl shadow-md transition-all active:scale-95"
-            >
-              <span>Explore Live Parking</span>
-              <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white border border-slate-300 rounded-xl p-7 sm:p-8">
+            <h2 className="text-2xl font-black">Parking today?</h2>
+            <p className="text-slate-600 mt-2">See what’s free near your destination and book in about a minute.</p>
+            <Link href="/explore" className="inline-block mt-6 bg-ink hover:bg-slate-800 text-white font-bold px-5 py-3 rounded-md">
+              Find parking
             </Link>
           </div>
-
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-md space-y-4">
-            <h3 className="text-xl font-black text-slate-900">Have an Empty Space?</h3>
-            <p className="text-xs sm:text-sm text-slate-600 font-medium">
-              List your driveway, empty plot, or business lot. Start accepting verified driver reservations.
-            </p>
-            <Link
-              href="/list-your-space"
-              className="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs px-5 py-3 rounded-2xl shadow-md transition-all active:scale-95"
-            >
-              <span>List Your Space</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+          <div className="bg-brand-700 text-white rounded-xl p-1.5">
+            <div className="border-2 border-white/90 rounded-lg p-6 sm:p-7 h-full">
+              <h2 className="text-2xl font-black">Have an empty space?</h2>
+              <p className="text-white/85 mt-2">List a driveway, plot or business lot and start taking bookings.</p>
+              <Link href="/list-your-space" className="inline-block mt-6 bg-paint hover:bg-amber-400 text-ink font-black px-5 py-3 rounded-md">
+                List your space
+              </Link>
+            </div>
           </div>
-        </div>
-
+        </section>
       </div>
     </PageContainer>
   );

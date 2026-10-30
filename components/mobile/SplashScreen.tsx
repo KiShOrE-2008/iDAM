@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { ArrowRight, Sparkles } from 'lucide-react';
 import { Language } from '@/types';
 import { TRANSLATIONS } from '@/lib/i18n/translations';
 
@@ -11,64 +10,41 @@ interface SplashScreenProps {
   onLanguageToggle?: (lang: Language) => void;
 }
 
+/** Opens the app on a full-bleed parking sign: blue field, white inset border, இடம் where the P would be */
 export const SplashScreen: React.FC<SplashScreenProps> = ({ lang, onNext, onLanguageToggle }) => {
   const t = TRANSLATIONS[lang];
 
   return (
-    <div className="h-full flex flex-col justify-between p-6 sm:p-8 bg-[#F8F8F5] text-slate-900 relative overflow-hidden select-none animate-fade-in">
-      
-      {/* Top Subtle Brand Tag & Language Switcher */}
-      <div className="pt-4 z-10 flex items-center justify-between">
-        <div className="inline-flex items-center space-x-2 bg-white border border-slate-200 px-3.5 py-1.5 rounded-full text-xs font-black text-slate-800 shadow-2xs">
-          <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Madurai Smart Parking</span>
+    <div className="h-full bg-brand-700 p-3 select-none animate-fade-in">
+      <div className="h-full border-[3px] border-white rounded-xl flex flex-col text-white px-6 pt-5 pb-6">
+        <div className="flex items-center justify-between">
+          <span className="text-lg font-black tracking-tight">iDAM</span>
+          {onLanguageToggle && (
+            <button
+              type="button"
+              onClick={() => onLanguageToggle(lang === 'en' ? 'ta' : 'en')}
+              className={`border border-white/60 rounded-md px-3 py-1.5 text-sm font-bold active:bg-white/10 cursor-pointer ${lang === 'en' ? 'font-tamil' : ''}`}
+            >
+              {lang === 'en' ? 'தமிழ்' : 'English'}
+            </button>
+          )}
         </div>
 
-        {onLanguageToggle && (
-          <button
-            type="button"
-            onClick={() => onLanguageToggle(lang === 'en' ? 'ta' : 'en')}
-            className="bg-white border border-slate-200/90 hover:border-emerald-500/60 px-3 py-1.5 rounded-full text-[11px] font-black text-slate-700 hover:text-emerald-700 transition-all shadow-2xs active:scale-95 flex items-center space-x-1"
-          >
-            <span>{lang === 'en' ? 'தமிழ்' : 'English'}</span>
-          </button>
-        )}
-      </div>
-
-      {/* Center Warm Minimal iDAM Brand Hero */}
-      <div className="my-auto z-10 space-y-6 text-center">
-        <div className="relative mx-auto w-52 sm:w-60 rounded-3xl p-5 bg-white shadow-lg border border-slate-200/80 flex flex-col items-center justify-center transform hover:scale-102 transition-all">
-          <img
-            src="/idam-logo.png"
-            alt="iDAM | இடம் Logo"
-            className="w-full h-auto object-contain"
-          />
-        </div>
-
-        <div className="space-y-2 max-w-xs mx-auto">
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-            iDAM <span className="text-emerald-700 font-tamil font-bold">இடம்</span>
-          </h1>
-          <p className="text-emerald-800 font-black text-base tracking-wide font-tamil">
-            {t.sloganTamil || 'இடம் தேடு. நிறுத்து. போ.'}
-          </p>
-          <p className="text-xs text-slate-500 font-semibold leading-relaxed">
-            Find your space. Parking before you arrive.
+        <div className="my-auto">
+          <h1 className="font-tamil font-extrabold text-[6.4rem] leading-[0.9] tracking-tight -ml-1">இடம்</h1>
+          <p className="font-tamil text-xl font-semibold mt-6 text-amber-300">{t.sloganTamil}</p>
+          <p className="text-lg text-white/85 mt-3 leading-snug max-w-[17rem]">
+            Find a space in Madurai and book it before you leave home.
           </p>
         </div>
-      </div>
 
-      {/* Bottom Action CTA */}
-      <div className="pb-4 z-10">
         <button
           onClick={onNext}
-          className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-4 rounded-2xl shadow-md flex items-center justify-center space-x-2 text-xs tracking-wide transition-all transform active:scale-98"
+          className={`w-full bg-paint active:bg-amber-400 text-ink font-black py-4 rounded-lg text-base cursor-pointer ${lang === 'ta' ? 'font-tamil' : ''}`}
         >
-          <span>Get started</span>
-          <ArrowRight className="w-4 h-4 text-emerald-400" />
+          {lang === 'ta' ? 'தொடங்குங்கள்' : 'Get started'}
         </button>
       </div>
-
     </div>
   );
 };

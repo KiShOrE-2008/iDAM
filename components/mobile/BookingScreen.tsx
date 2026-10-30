@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { ArrowLeft, Minus, Plus, Car, Bike, Zap, Sparkles, Tag, Check, ShieldCheck, Key, Shield } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, Car, Bike, Zap, Check } from 'lucide-react';
 import { ParkingLocation, Language } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { getUserVehicles, getDefaultVehicle, Vehicle } from '@/lib/user/garageService';
@@ -86,7 +86,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
     code: 'DEMO50',
     discount: 20
   });
-  const [promoMessage, setPromoMessage] = useState<string | null>('Code DEMO50 applied: ₹20 OFF');
+  const [promoMessage, setPromoMessage] = useState<string | null>('DEMO50 applied: ₹20 off');
 
   const hourlyRate = vehicleType === 'bike' ? (location.hourlyRateBike || 20) : (location.hourlyRateCar || 40);
   const basePrice = hourlyRate * duration;
@@ -106,9 +106,9 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   const handleApplyPromo = () => {
     if (promoInput.trim().toUpperCase() === 'IDAM20' || promoInput.trim().toUpperCase() === 'DEMO50') {
       setAppliedPromo({ code: promoInput.toUpperCase(), discount: 25 });
-      setPromoMessage(`Code ${promoInput.toUpperCase()} applied! ₹25 OFF 🎉`);
+      setPromoMessage(`${promoInput.toUpperCase()} applied: ₹25 off`);
     } else {
-      setPromoMessage('Invalid coupon code. Try DEMO50');
+      setPromoMessage('Invalid code. Check the spelling, or try DEMO50.');
     }
   };
 
@@ -133,37 +133,97 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
     });
   };
 
+  const sectionTitle = 'text-base font-black text-ink';
+  const choice = (selected: boolean) =>
+    `border rounded-md cursor-pointer ${selected ? 'bg-ink text-white border-ink' : 'bg-white text-ink border-slate-300 active:bg-slate-50'}`;
+
+  const addonRows: { key: keyof typeof addons; title: string; note: string; price: number }[] = [
+    { key: 'insurance', title: 'Cancellation cover', note: 'Full refund if you cancel late', price: 10 },
+    { key: 'evCharge', title: 'EV charging', note: '₹30 for each hour', price: 30 * duration },
+    { key: 'wash', title: 'Car wash', note: 'Outside wash while you’re away', price: 150 },
+    { key: 'valet', title: 'Valet', note: 'Hand over keys at the gate', price: 50 },
+  ];
+
   return (
-    <div className="h-full flex flex-col justify-between bg-[#F8F8F5] text-[#14201D] relative overflow-y-auto no-scrollbar animate-fade-in">
-      
-      {/* Top Navigation Bar */}
-      <div className="pt-3 px-4 pb-3 flex items-center space-x-3 bg-white border-b border-slate-200 sticky top-0 z-20 shadow-2xs">
+    <div className="h-full flex flex-col bg-limewash text-ink relative animate-fade-in">
+      <header className="px-3 py-3 flex items-center gap-3 bg-limewash border-b border-slate-300">
         <button
           onClick={onBack}
-          className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 active:scale-95 transition-transform"
+          aria-label="Back"
+          className="w-10 h-10 rounded-md border border-slate-300 bg-white flex items-center justify-center active:bg-slate-100 cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-5 h-5" />
         </button>
-        <div>
-          <h3 className="font-extrabold text-slate-900 text-sm">Reservation & Vehicle Details</h3>
-          <p className="text-[10px] text-slate-500">{location.title}</p>
+        <div className="min-w-0">
+          <h1 className="font-black text-lg leading-tight">When are you coming?</h1>
+          <p className="text-sm text-slate-600 truncate">{location.title}</p>
         </div>
-      </div>
+      </header>
 
-      {/* Main Form Content */}
-      <div className="p-4 space-y-4 flex-1">
-        
-        {/* Vehicle Type Selector */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-black text-slate-900 uppercase tracking-wider block">
-            Vehicle Category
-          </label>
-          <div className="grid grid-cols-4 gap-2">
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-5 space-y-7">
+        <section>
+          <h2 className={sectionTitle}>Day</h2>
+          <div className="grid grid-cols-4 gap-2 mt-2.5">
+            {dateOptions.map((item, idx) => {
+              const isSelected = selectedDate === item.date;
+              return (
+                <button key={idx} onClick={() => setSelectedDate(item.date)} aria-pressed={isSelected} className={`py-2.5 text-center ${choice(isSelected)}`}>
+                  <span className={`block text-xs font-semibold ${isSelected ? 'text-white/70' : 'text-slate-500'}`}>{item.day}</span>
+                  <span className="block text-[15px] font-black mt-0.5 tabular">{item.date}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section>
+          <h2 className={sectionTitle}>Arrival time</h2>
+          <div className="grid grid-cols-4 gap-2 mt-2.5">
+            {['9:00 AM', '10:00 AM', '11:30 AM', '02:00 PM'].map((tVal) => {
+              const isSelected = selectedTime === tVal;
+              return (
+                <button key={tVal} onClick={() => setSelectedTime(tVal)} aria-pressed={isSelected} className={`py-2.5 text-sm font-bold tabular ${choice(isSelected)}`}>
+                  {tVal.replace(/^0/, '')}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section>
+          <h2 className={sectionTitle}>How long</h2>
+          <div className="mt-2.5 flex items-center justify-between bg-white border border-slate-300 rounded-md p-1.5">
+            <button
+              onClick={() => setDuration(Math.max(1, duration - 1))}
+              aria-label="One hour less"
+              className="w-11 h-11 rounded bg-slate-100 flex items-center justify-center active:bg-slate-200 cursor-pointer"
+            >
+              <Minus className="w-5 h-5" />
+            </button>
+            <p className="text-center" aria-live="polite">
+              <span className="block text-xl font-black tabular">
+                {duration} {duration === 1 ? 'hour' : 'hours'}
+              </span>
+              <span className="block text-xs text-slate-500 tabular">₹{hourlyRate} an hour</span>
+            </p>
+            <button
+              onClick={() => setDuration(duration + 1)}
+              aria-label="One hour more"
+              className="w-11 h-11 rounded bg-slate-100 flex items-center justify-center active:bg-slate-200 cursor-pointer"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
+        </section>
+
+        <section>
+          <h2 className={sectionTitle}>Vehicle</h2>
+          <div className="grid grid-cols-4 gap-2 mt-2.5">
             {[
               { id: 'car', label: 'Car', icon: Car },
               { id: 'bike', label: 'Bike', icon: Bike },
               { id: 'suv', label: 'SUV', icon: Car },
-              { id: 'ev', label: 'EV ⚡', icon: Zap }
+              { id: 'ev', label: 'EV', icon: Zap },
             ].map((v) => {
               const Icon = v.icon;
               const isSelected = vehicleType === v.id;
@@ -171,33 +231,31 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                 <button
                   key={v.id}
                   onClick={() => setVehicleType(v.id as any)}
-                  className={`py-2 px-1 rounded-xl text-center border transition-all flex flex-col items-center justify-center space-y-1 text-xs ${
-                    isSelected
-                      ? 'bg-emerald-950 text-white border-emerald-700 font-extrabold shadow-sm ring-1 ring-emerald-400/30'
-                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 font-semibold'
-                  }`}
+                  aria-pressed={isSelected}
+                  className={`py-2.5 flex flex-col items-center gap-1 text-sm font-bold ${choice(isSelected)}`}
                 >
-                  <Icon className={`w-4 h-4 ${isSelected ? 'text-emerald-300' : 'text-slate-500'}`} />
-                  <span className="text-[11px]">{v.label}</span>
+                  <Icon className="w-5 h-5" aria-hidden />
+                  {v.label}
                 </button>
               );
             })}
           </div>
-        </div>
 
-        {/* License Plate Number Input */}
-        <div className="space-y-2 bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-black text-slate-900 block">
-              Vehicle Registration Plate
-            </label>
-            {garageVehicles.length > 0 && (
-              <span className="text-[10px] text-slate-400 font-bold uppercase">From Garage</span>
-            )}
-          </div>
-
+          <label htmlFor="plate" className="block text-sm text-slate-600 mt-4">
+            Number plate
+          </label>
+          <input
+            id="plate"
+            type="text"
+            value={vehicleNumber}
+            onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
+            placeholder="TN 59 AB 1234"
+            autoCapitalize="characters"
+            className="plate mt-1.5 w-full text-center text-2xl py-2.5 uppercase placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-amber-300/60"
+          />
           {garageVehicles.length > 0 && (
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar mt-2.5">
+              <span className="text-xs text-slate-500 shrink-0">Saved:</span>
               {garageVehicles.map((v) => {
                 const isSelected = vehicleNumber === v.plate;
                 return (
@@ -208,254 +266,99 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                       setVehicleNumber(v.plate);
                       setVehicleType(v.type.toLowerCase() as any);
                     }}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-black border transition-all shrink-0 flex items-center space-x-1 cursor-pointer ${
-                      isSelected
-                        ? 'bg-emerald-950 text-white border-emerald-700 shadow-2xs'
-                        : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
-                    }`}
+                    aria-pressed={isSelected}
+                    className={`px-2.5 py-1 text-xs font-bold shrink-0 tabular ${choice(isSelected)}`}
                   >
-                    <span>{v.plate}</span>
-                    <span className="opacity-75">({v.type})</span>
+                    {v.plate}
                   </button>
                 );
               })}
             </div>
           )}
+        </section>
 
-          <div className="flex items-center space-x-2">
-            <span className="bg-amber-400 text-slate-950 font-black px-2 py-1 rounded-lg text-[10px] border border-amber-500 shrink-0">
-              IND
-            </span>
+        <section>
+          <h2 className={sectionTitle}>Extras</h2>
+          <div className="mt-2.5 bg-white border border-slate-300 rounded-md divide-y divide-slate-200">
+            {addonRows.map((row) => (
+              <label key={row.key} className="flex items-center gap-3 px-3.5 py-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={addons[row.key]}
+                  onChange={(e) => setAddons({ ...addons, [row.key]: e.target.checked })}
+                  className="w-5 h-5 accent-[#1846A3] shrink-0"
+                />
+                <span className="flex-1 min-w-0">
+                  <span className="block font-bold text-[15px]">{row.title}</span>
+                  <span className="block text-sm text-slate-500">{row.note}</span>
+                </span>
+                <span className="font-bold tabular text-[15px]">₹{row.price}</span>
+              </label>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <label htmlFor="promo" className={sectionTitle}>
+            Coupon
+          </label>
+          <div className="flex gap-2 mt-2.5">
             <input
-              type="text"
-              value={vehicleNumber}
-              onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
-              placeholder="e.g. TN 59 AB 1234"
-              className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-mono font-extrabold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 uppercase"
-            />
-          </div>
-        </div>
-
-        {/* Date Selector Pills */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-black text-slate-900 uppercase tracking-wider block">
-            Select Date
-          </label>
-          <div className="grid grid-cols-4 gap-2">
-            {dateOptions.map((item, idx) => {
-              const isSelected = selectedDate === item.date;
-              return (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedDate(item.date)}
-                  className={`py-2 px-1 rounded-xl text-center border transition-all ${
-                    isSelected
-                      ? 'bg-emerald-950 text-white border-emerald-700 shadow-xs font-extrabold'
-                      : 'bg-white text-slate-700 border-slate-200 font-semibold'
-                  }`}
-                >
-                  <div className="text-[9px] opacity-80 uppercase font-bold">{item.day}</div>
-                  <div className="text-xs font-extrabold mt-0.5">{item.date}</div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Start Time Section */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-black text-slate-900 uppercase tracking-wider block">
-            Arrival Time
-          </label>
-          <div className="grid grid-cols-4 gap-2">
-            {['9:00 AM', '10:00 AM', '11:30 AM', '02:00 PM'].map((tVal) => {
-              const isSelected = selectedTime === tVal;
-              return (
-                <button
-                  key={tVal}
-                  onClick={() => setSelectedTime(tVal)}
-                  className={`py-2 text-[11px] font-extrabold rounded-xl border transition-all ${
-                    isSelected
-                      ? 'bg-emerald-950 text-white border-emerald-700 shadow-xs'
-                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
-                  }`}
-                >
-                  {tVal}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Duration Stepper */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-black text-slate-900 uppercase tracking-wider block">
-            Parking Duration
-          </label>
-          <div className="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
-            <button
-              onClick={() => setDuration(Math.max(1, duration - 1))}
-              className="w-8 h-8 rounded-xl bg-slate-100 text-slate-800 font-black border border-slate-200 flex items-center justify-center hover:bg-slate-200 active:scale-95 transition-all"
-            >
-              <Minus className="w-4 h-4" />
-            </button>
-            <div className="text-center">
-              <span className="font-black text-sm text-slate-900 block">{duration} Hours</span>
-              <span className="text-[10px] text-slate-500 font-medium">₹{hourlyRate}/hr rate</span>
-            </div>
-            <button
-              onClick={() => setDuration(duration + 1)}
-              className="w-8 h-8 rounded-xl bg-slate-100 text-slate-800 font-black border border-slate-200 flex items-center justify-center hover:bg-slate-200 active:scale-95 transition-all"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Value-added Add-on Options */}
-        <div className="space-y-2 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
-          <label className="text-xs font-black text-slate-900 flex items-center justify-between">
-            <span>Value-Added Add-ons</span>
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-          </label>
-
-          <div className="space-y-2 text-xs">
-            {/* EV Charging */}
-            <label className="flex items-center justify-between p-2 rounded-xl border border-slate-100 bg-slate-50/60 cursor-pointer hover:bg-slate-100/60">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={addons.evCharge}
-                  onChange={(e) => setAddons({ ...addons, evCharge: e.target.checked })}
-                  className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"
-                />
-                <div>
-                  <div className="font-bold text-slate-900 flex items-center space-x-1">
-                    <Zap className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Fast EV Charging</span>
-                  </div>
-                  <div className="text-[10px] text-slate-500">+₹30 / hour</div>
-                </div>
-              </div>
-              <span className="font-extrabold text-emerald-800">+₹{30 * duration}</span>
-            </label>
-
-            {/* Express Car Wash */}
-            <label className="flex items-center justify-between p-2 rounded-xl border border-slate-100 bg-slate-50/60 cursor-pointer hover:bg-slate-100/60">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={addons.wash}
-                  onChange={(e) => setAddons({ ...addons, wash: e.target.checked })}
-                  className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"
-                />
-                <div>
-                  <div className="font-bold text-slate-900">Express Foam Car Wash</div>
-                  <div className="text-[10px] text-slate-500">Exterior cleaning while parked</div>
-                </div>
-              </div>
-              <span className="font-extrabold text-emerald-800">+₹150</span>
-            </label>
-
-            {/* Valet Service */}
-            <label className="flex items-center justify-between p-2 rounded-xl border border-slate-100 bg-slate-50/60 cursor-pointer hover:bg-slate-100/60">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={addons.valet}
-                  onChange={(e) => setAddons({ ...addons, valet: e.target.checked })}
-                  className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"
-                />
-                <div>
-                  <div className="font-bold text-slate-900 flex items-center space-x-1">
-                    <Key className="w-3.5 h-3.5 text-slate-700" />
-                    <span>VIP Valet Parking</span>
-                  </div>
-                  <div className="text-[10px] text-slate-500">Express drop-off & pick-up</div>
-                </div>
-              </div>
-              <span className="font-extrabold text-emerald-800">+₹50</span>
-            </label>
-          </div>
-        </div>
-
-        {/* Promo Code Input */}
-        <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-          <label className="text-xs font-black text-slate-900 flex items-center space-x-1">
-            <Tag className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Apply Coupon Code</span>
-          </label>
-          <div className="flex space-x-2">
-            <input
+              id="promo"
               type="text"
               value={promoInput}
               onChange={(e) => setPromoInput(e.target.value)}
-              placeholder="Try DEMO50 or IDAM20"
-              className="flex-1 bg-slate-100 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold uppercase focus:outline-none"
+              placeholder="Enter a code"
+              className="flex-1 min-w-0 bg-white border border-slate-300 rounded-md px-3 py-2.5 text-[15px] font-bold uppercase placeholder:normal-case placeholder:font-normal focus:outline-none focus:border-ink"
             />
-            <button
-              onClick={handleApplyPromo}
-              className="bg-slate-900 text-white font-extrabold text-xs px-3.5 py-1.5 rounded-xl hover:bg-slate-800 transition-colors"
-            >
+            <button onClick={handleApplyPromo} className="bg-ink text-white font-bold text-sm px-4 rounded-md cursor-pointer">
               Apply
             </button>
           </div>
           {promoMessage && (
-            <p className="text-[11px] font-bold text-emerald-700 flex items-center space-x-1">
-              <Check className="w-3 h-3 text-emerald-600" />
-              <span>{promoMessage}</span>
+            <p className={`text-sm font-semibold mt-2 flex items-center gap-1.5 ${promoMessage.startsWith('Invalid') ? 'text-rose-700' : 'text-go-700'}`} role="status">
+              {!promoMessage.startsWith('Invalid') && <Check className="w-4 h-4" aria-hidden />}
+              {promoMessage.replace(/\s*/u, '')}
             </p>
           )}
-        </div>
+        </section>
 
-        {/* Transparent Bill Calculation Summary */}
-        <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs space-y-2 text-xs">
-          <div className="flex justify-between text-slate-600 font-medium">
-            <span>Parking ({duration} hrs × ₹{hourlyRate})</span>
-            <span className="font-bold text-slate-900">₹{basePrice}</span>
-          </div>
-
-          {totalAddons > 0 && (
-            <div className="flex justify-between text-slate-600 font-medium">
-              <span>Value-Added Add-ons</span>
-              <span className="font-bold text-slate-900">₹{totalAddons}</span>
+        <section>
+          <h2 className={sectionTitle}>Price</h2>
+          <dl className="mt-2.5 text-[15px] border-t-2 border-ink">
+            <div className="flex justify-between py-2.5 border-b border-slate-200">
+              <dt className="text-slate-600 tabular">Parking, {duration} h × ₹{hourlyRate}</dt>
+              <dd className="font-bold tabular">₹{basePrice}</dd>
             </div>
-          )}
-
-          <div className="flex justify-between text-slate-600 font-medium">
-            <span>Platform Service Fee</span>
-            <span className="font-bold text-slate-900">₹{platformFee}</span>
-          </div>
-
-          {discountAmount > 0 && (
-            <div className="flex justify-between text-emerald-700 font-bold">
-              <span>Promo Discount ({appliedPromo?.code})</span>
-              <span>-₹{discountAmount}</span>
+            {totalAddons > 0 && (
+              <div className="flex justify-between py-2.5 border-b border-slate-200">
+                <dt className="text-slate-600">Extras</dt>
+                <dd className="font-bold tabular">₹{totalAddons}</dd>
+              </div>
+            )}
+            <div className="flex justify-between py-2.5 border-b border-slate-200">
+              <dt className="text-slate-600">Platform fee</dt>
+              <dd className="font-bold tabular">₹{platformFee}</dd>
             </div>
-          )}
-
-          <div className="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-100">
-            <span>Total Payable</span>
-            <span className="text-emerald-800 text-base">₹{finalTotal}</span>
-          </div>
-        </div>
-
+            {discountAmount > 0 && (
+              <div className="flex justify-between py-2.5 border-b border-slate-200 text-go-700">
+                <dt>Coupon {appliedPromo?.code}</dt>
+                <dd className="font-bold tabular">−₹{discountAmount}</dd>
+              </div>
+            )}
+          </dl>
+        </section>
       </div>
 
-      {/* Sticky Bottom CTA */}
-      <div className="p-3.5 bg-white border-t border-slate-200 sticky bottom-0 z-20 shadow-lg">
+      <div className="p-3 bg-white border-t border-slate-300">
         <button
           onClick={handleContinue}
-          className="w-full bg-emerald-950 hover:bg-emerald-900 text-white font-extrabold py-3.5 rounded-2xl shadow-xl text-xs tracking-wide transition-all transform active:scale-98 flex items-center justify-between px-5"
+          className="w-full bg-brand-700 active:bg-brand-800 text-white rounded-lg py-3.5 px-5 flex items-center justify-between cursor-pointer"
         >
-          <span>Proceed to Payment</span>
-          <div className="flex items-center space-x-1 text-emerald-300 font-black">
-            <span>₹{finalTotal}</span>
-            <span>&rarr;</span>
-          </div>
+          <span className="text-base font-black">Continue to payment</span>
+          <span className="text-lg font-black tabular">₹{finalTotal}</span>
         </button>
       </div>
-
     </div>
   );
 };

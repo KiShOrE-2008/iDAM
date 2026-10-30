@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowLeft, User, Car, Wallet, Plus, Trash2, ShieldCheck, Sparkles, LogOut, HelpCircle, Building2, Home, BookOpen, UserCheck, Shield, Zap, Star, Check, History, X } from 'lucide-react';
+import { ArrowLeft, Car, Wallet, Plus, Trash2, ShieldCheck, LogOut, HelpCircle, Building2, Star, X, ChevronRight } from 'lucide-react';
+import { AppTabBar } from './AppTabBar';
 import { Language, PassVerificationResult, Booking, CheckInCredentials } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { useRegisterModal } from '@/context/BackNavigationContext';
@@ -241,46 +242,40 @@ export const MyAccountScreen: React.FC<MyAccountScreenProps> = ({
   }
 
   return (
-    <div className="h-full flex flex-col justify-between bg-[#F8F8F5] relative overflow-y-auto no-scrollbar animate-fade-in text-slate-900 select-none">
-      
-      {/* Top Mobile Header */}
-      <div className="p-3.5 bg-white border-b border-slate-200/80 sticky top-0 z-20 flex items-center justify-between shadow-2xs">
-        <button onClick={onBack} className="p-1 rounded-lg text-slate-700 hover:bg-slate-100 active:scale-95 transition-transform">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">
-          {userRole === 'owner' ? 'Owner Portal' : 'My Account & Garage'}
-        </h3>
-        <div className="w-5" />
-      </div>
-
-      <div className="p-4 sm:p-5 space-y-5 flex-1">
-        
-        {/* Role Toggle Switcher */}
-        <div className="bg-slate-200/80 p-1 rounded-2xl flex text-xs font-black">
+    <div className="h-full flex flex-col bg-limewash text-ink relative animate-fade-in">
+      <header className="px-4 pt-4 border-b border-slate-300">
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => handleRoleToggle('driver')}
-            className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center space-x-1 ${
-              userRole === 'driver' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
-            }`}
+            onClick={onBack}
+            aria-label="Back"
+            className="w-10 h-10 -ml-1 rounded-md flex items-center justify-center active:bg-slate-200 cursor-pointer"
           >
-            <Car className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Driver Mode</span>
+            <ArrowLeft className="w-5 h-5" />
           </button>
-          <button
-            onClick={() => handleRoleToggle('owner')}
-            className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center space-x-1 ${
-              userRole === 'owner' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5 text-amber-600" />
-            <span>Owner Portal</span>
-          </button>
+          <h1 className="text-[1.6rem] font-black">{userRole === 'owner' ? 'Your space' : 'Account'}</h1>
         </div>
+        <div className="flex mt-3" role="tablist" aria-label="View">
+          {(['driver', 'owner'] as const).map((r) => (
+            <button
+              key={r}
+              role="tab"
+              aria-selected={userRole === r}
+              onClick={() => handleRoleToggle(r)}
+              className={`flex-1 pb-2.5 text-[15px] font-bold border-b-[3px] -mb-px flex items-center justify-center gap-1.5 cursor-pointer ${
+                userRole === r ? 'border-brand-700 text-ink' : 'border-transparent text-slate-500'
+              }`}
+            >
+              {r === 'driver' ? <Car className="w-4 h-4" aria-hidden /> : <Building2 className="w-4 h-4" aria-hidden />}
+              {r === 'driver' ? 'I drive' : 'I own a space'}
+            </button>
+          ))}
+        </div>
+      </header>
 
+      <div className="flex-1 overflow-y-auto no-scrollbar p-4 space-y-5">
         {/* If Owner Role: Render Owner Monetization Portal */}
         {userRole === 'owner' && !ownerSpaceId ? (
-          <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-md space-y-3 text-center">
+          <div className="bg-white rounded-lg p-4 border border-slate-300 space-y-3 text-center">
             <Building2 className="w-8 h-8 text-amber-600 mx-auto" />
             <h4 className="font-black text-sm text-slate-900">
               {spacesError ? 'Could not load your spaces' : 'You have no parking space listed yet'}
@@ -326,75 +321,54 @@ export const MyAccountScreen: React.FC<MyAccountScreenProps> = ({
           </>
         ) : (
           <>
-            {/* Driver Profile Header */}
-            <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-md space-y-3">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-800 flex items-center justify-center font-black text-lg shadow-inner">
-                  {profile?.name ? profile.name.charAt(0).toUpperCase() : 'K'}
-                </div>
-                <div>
-                  <div className="flex items-center space-x-1.5">
-                    <h4 className="font-black text-base text-slate-900">{profile?.name || 'Kishore Kumar'}</h4>
-                    {isDemoMode && (
-                      <span className="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[9px] font-black px-2 py-0.5 rounded-full">
-                        DEMO MODE
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500 font-semibold">{profile?.email || 'kishore@idam.park'}</p>
-                  <p className="text-xs text-slate-400 font-medium">{profile?.phone || '+91 98765 43210'}</p>
-                </div>
+            <div className="flex items-center gap-3.5">
+              <span className="w-14 h-14 rounded-md bg-brand-700 text-white flex items-center justify-center font-black text-2xl shrink-0">
+                {profile?.name ? profile.name.charAt(0).toUpperCase() : 'K'}
+              </span>
+              <div className="min-w-0">
+                <p className="font-black text-xl leading-tight flex items-center gap-2">
+                  <span className="truncate">{profile?.name || 'Kishore Kumar'}</span>
+                  {isDemoMode && (
+                    <span className="text-[11px] font-bold text-amber-800 bg-amber-100 border border-amber-300 rounded px-1.5 py-0.5 shrink-0">Demo</span>
+                  )}
+                </p>
+                <p className="text-sm text-slate-600 truncate">{profile?.email || 'kishore@idam.park'}</p>
+                <p className="text-sm text-slate-500 tabular">{profile?.phone || '+91 98765 43210'}</p>
               </div>
             </div>
 
-            {/* iDAM Wallet Card */}
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl p-5 shadow-xl space-y-3 relative overflow-hidden">
-              <div className="flex items-center justify-between z-10 relative">
-                <div className="flex items-center space-x-2">
-                  <Wallet className="w-5 h-5 text-emerald-400" />
-                  <span className="text-xs font-black tracking-wider uppercase text-slate-300">iDAM Wallet</span>
-                </div>
-                <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/40 px-2.5 py-0.5 rounded-full font-extrabold flex items-center space-x-1">
-                  <Zap className="w-2.5 h-2.5 text-emerald-400 fill-emerald-400" />
-                  <span>Instant Pay Active</span>
-                </span>
-              </div>
-
-              <div className="z-10 relative flex items-baseline justify-between pt-1">
+            <section className="bg-white border border-slate-300 rounded-lg">
+              <div className="p-4 flex items-end justify-between gap-4">
                 <div>
-                  <span className="text-[10px] text-slate-400 font-bold block">Available Balance</span>
-                  <span className="text-2xl font-black text-white">₹{walletBalance}</span>
+                  <h2 className="text-sm text-slate-600 flex items-center gap-1.5">
+                    <Wallet className="w-4 h-4" aria-hidden />
+                    iDAM wallet
+                  </h2>
+                  <p className="text-[2rem] font-black leading-none mt-1.5 tabular">₹{walletBalance}</p>
                 </div>
-
                 <button
                   onClick={() => setShowTopUpModal(true)}
-                  className="bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-black px-3.5 py-2 rounded-xl text-xs flex items-center space-x-1 shadow-md transition-all cursor-pointer"
+                  className="bg-brand-700 active:bg-brand-800 text-white font-bold px-4 py-2.5 rounded-md text-sm flex items-center gap-1.5 cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Top Up Balance</span>
+                  <Plus className="w-4 h-4" aria-hidden />
+                  Add money
                 </button>
               </div>
-
-              {/* Recent Transaction Peek */}
               {walletTransactions.length > 0 && (
-                <div className="pt-2 border-t border-slate-700/60 flex items-center justify-between text-[11px] text-slate-300">
-                  <div className="flex items-center space-x-1.5">
-                    <History className="w-3 h-3 text-slate-400" />
-                    <span className="text-slate-400">Latest:</span>
-                    <span className="font-semibold truncate max-w-[150px]">{walletTransactions[0].description}</span>
-                  </div>
-                  <span className="text-emerald-400 font-black">+{walletTransactions[0].amount ? `₹${walletTransactions[0].amount}` : ''}</span>
-                </div>
+                <p className="border-t border-slate-200 px-4 py-2.5 text-sm text-slate-600 flex items-center justify-between gap-3">
+                  <span className="truncate">Last: {walletTransactions[0].description}</span>
+                  <span className="font-bold text-go-700 tabular shrink-0">{walletTransactions[0].amount ? `+₹${walletTransactions[0].amount}` : ''}</span>
+                </p>
               )}
-            </div>
+            </section>
 
             {/* Wallet Top-Up Modal */}
             {showTopUpModal && (
-              <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 sm:p-4 animate-fade-in">
-                <div className="bg-white rounded-3xl w-full max-w-sm p-5 border border-slate-200 shadow-2xl space-y-4 animate-scale-in">
+              <div className="fixed inset-0 z-50 bg-ink/70 flex items-end sm:items-center justify-center p-3 sm:p-4 animate-fade-in">
+                <div className="bg-white rounded-xl w-full max-w-sm p-5 shadow-2xl space-y-4 animate-scale-in">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div className="flex items-center space-x-2">
-                      <div className="p-2 rounded-xl bg-emerald-100 text-emerald-800">
+                      <div className="p-2 rounded-xl bg-brand-100 text-brand-800">
                         <Wallet className="w-4 h-4" />
                       </div>
                       <div>
@@ -411,7 +385,7 @@ export const MyAccountScreen: React.FC<MyAccountScreenProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-black uppercase text-slate-500 tracking-wider block mb-2">
+                    <label className="text-[11px] font-black uppercase text-slate-500 block mb-2">
                       Select Top-Up Amount
                     </label>
                     <div className="grid grid-cols-4 gap-2">
@@ -422,7 +396,7 @@ export const MyAccountScreen: React.FC<MyAccountScreenProps> = ({
                           onClick={() => setSelectedTopUpPreset(preset)}
                           className={`py-2.5 rounded-2xl text-xs font-black transition-all ${
                             selectedTopUpPreset === preset
-                              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-2 ring-emerald-400'
+                              ? 'bg-brand-600 text-white shadow-md shadow-brand-600/30 ring-2 ring-brand-400'
                               : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                           }`}
                         >
@@ -432,22 +406,22 @@ export const MyAccountScreen: React.FC<MyAccountScreenProps> = ({
                     </div>
                   </div>
 
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-xs text-emerald-950 space-y-1">
+                  <div className="bg-brand-50 border border-brand-200 rounded-2xl p-3 text-xs text-brand-950 space-y-1">
                     <div className="flex items-center justify-between font-bold">
                       <span>Instant Add:</span>
-                      <span className="font-black text-emerald-700">+₹{selectedTopUpPreset}</span>
+                      <span className="font-black text-brand-700">+₹{selectedTopUpPreset}</span>
                     </div>
-                    <div className="flex items-center justify-between font-black text-sm pt-1 border-t border-emerald-200/60">
+                    <div className="flex items-center justify-between font-black text-sm pt-1 border-t border-brand-200/60">
                       <span>New Wallet Balance:</span>
-                      <span className="text-emerald-900">₹{walletBalance + selectedTopUpPreset}</span>
+                      <span className="text-brand-900">₹{walletBalance + selectedTopUpPreset}</span>
                     </div>
                   </div>
 
                   <button
                     onClick={() => handleExecuteTopUp(selectedTopUpPreset)}
-                    className="w-full py-3 rounded-2xl bg-slate-950 hover:bg-slate-900 active:scale-98 text-white font-black text-xs shadow-lg flex items-center justify-center space-x-2 transition-all cursor-pointer"
+                    className="w-full py-3 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-black text-xs shadow-lg flex items-center justify-center space-x-2 transition-all cursor-pointer"
                   >
-                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <ShieldCheck className="w-4 h-4 text-brand-400" />
                     <span>Confirm & Pay ₹{selectedTopUpPreset} (Instant UPI)</span>
                   </button>
                 </div>
@@ -455,51 +429,44 @@ export const MyAccountScreen: React.FC<MyAccountScreenProps> = ({
             )}
 
             {/* Registered Vehicle Garage */}
-            <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-md space-y-3">
+            <div className="bg-white rounded-lg p-4 border border-slate-300 space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Car className="w-4 h-4 text-emerald-600" />
-                  <h4 className="font-black text-xs text-slate-900 uppercase tracking-wider">Registered Garage</h4>
-                </div>
+                <h2 className="font-black text-base">Your vehicles</h2>
                 <button
                   onClick={() => setShowAddVehicle(!showAddVehicle)}
-                  className="text-xs font-black text-emerald-700 hover:underline flex items-center space-x-1 cursor-pointer"
+                  aria-expanded={showAddVehicle}
+                  className="text-sm font-bold text-brand-700 flex items-center gap-1 cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Vehicle</span>
+                  <Plus className="w-4 h-4" aria-hidden />
+                  Add vehicle
                 </button>
               </div>
 
               {/* Add Vehicle Interactive Form */}
               {showAddVehicle && (
-                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-3 animate-scale-in">
+                <div className="bg-limewash p-3.5 rounded-md border border-slate-300 space-y-3 animate-fade-in">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                      Registration Plate Number
-                    </label>
+                    <label className="text-sm text-slate-600">Number plate</label>
                     <input
                       type="text"
                       value={newPlate}
                       onChange={(e) => setNewPlate(e.target.value)}
                       placeholder="e.g. TN 59 AB 9999"
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-extrabold uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500 tracking-wider"
+                      className="plate w-full px-3 py-2 text-lg text-center uppercase focus:outline-none focus:ring-4 focus:ring-amber-300/60"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                      Vehicle Type
-                    </label>
+                    <label className="text-sm text-slate-600">Type</label>
                     <div className="grid grid-cols-4 gap-1.5">
                       {(['Car', 'Bike', 'SUV', 'EV'] as const).map((type) => (
                         <button
                           key={type}
                           type="button"
                           onClick={() => setNewType(type)}
-                          className={`py-1.5 rounded-xl text-xs font-black transition-all ${
-                            newType === type
-                              ? 'bg-slate-950 text-white shadow-xs'
-                              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                          aria-pressed={newType === type}
+                          className={`py-2 rounded-md text-sm font-bold border cursor-pointer ${
+                            newType === type ? 'bg-ink text-white border-ink' : 'bg-white text-ink border-slate-300'
                           }`}
                         >
                           {type}
@@ -509,74 +476,58 @@ export const MyAccountScreen: React.FC<MyAccountScreenProps> = ({
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                      Nickname (Optional)
-                    </label>
+                    <label className="text-sm text-slate-600">Nickname (optional)</label>
                     <input
                       type="text"
                       value={newNickname}
                       onChange={(e) => setNewNickname(e.target.value)}
                       placeholder="e.g. Family Creta or City Scooter"
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-md text-[15px] focus:outline-none focus:border-ink"
                     />
                   </div>
 
-                  <label className="flex items-center space-x-2 text-xs font-bold text-slate-700 cursor-pointer pt-1">
+                  <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer pt-1">
                     <input
                       type="checkbox"
                       checked={newIsDefault}
                       onChange={(e) => setNewIsDefault(e.target.checked)}
-                      className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      className="w-5 h-5 accent-[#1846A3]"
                     />
-                    <span>Set as primary default vehicle for bookings</span>
+                    <span>Use this vehicle by default</span>
                   </label>
 
                   <div className="flex justify-end space-x-2 pt-1 border-t border-slate-200">
                     <button
                       onClick={() => setShowAddVehicle(false)}
-                      className="px-3 py-1.5 text-xs text-slate-500 font-bold hover:text-slate-800"
+                      className="px-3 py-2 text-sm text-slate-600 font-bold cursor-pointer"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleAddVehicle}
                       disabled={!newPlate.trim()}
-                      className="px-4 py-1.5 bg-slate-950 disabled:bg-slate-400 text-white rounded-xl text-xs font-black shadow-xs cursor-pointer"
+                      className="px-4 py-2 bg-brand-700 disabled:bg-slate-300 disabled:text-slate-600 text-white rounded-md text-sm font-bold cursor-pointer"
                     >
-                      Save to Garage
+                      Save vehicle
                     </button>
                   </div>
                 </div>
               )}
 
               {/* Vehicle List */}
-              <div className="space-y-2">
+              <div className="divide-y divide-slate-200 border-t border-slate-200">
                 {vehicles.map((v) => (
                   <div
                     key={v.id}
-                    className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs font-bold"
+                    className="flex items-center justify-between gap-3 py-3"
                   >
-                    <div className="flex items-center space-x-2.5">
-                      <div className="p-2 rounded-xl bg-white border border-slate-200 text-slate-700">
-                        {v.type === 'EV' ? (
-                          <Zap className="w-4 h-4 text-emerald-500 fill-emerald-500" />
-                        ) : (
-                          <Car className="w-4 h-4 text-emerald-600" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="flex items-center space-x-1.5">
-                          <span className="text-slate-900 font-black tracking-wide block">{v.plate}</span>
-                          {v.default && (
-                            <span className="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[9px] font-black px-1.5 py-0.2 rounded-full">
-                              DEFAULT
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-[10px] text-slate-500 font-medium">
-                          {v.type} {v.nickname ? `• ${v.nickname}` : ''}
-                        </span>
-                      </div>
+                    <div className="min-w-0">
+                      <span className="plate inline-block text-base px-2.5 py-0.5">{v.plate}</span>
+                      <span className="block text-sm text-slate-600 mt-1.5">
+                        {v.type}
+                        {v.nickname ? `, ${v.nickname}` : ''}
+                        {v.default && <span className="ml-2 text-xs font-bold text-brand-700">Default</span>}
+                      </span>
                     </div>
 
                     <div className="flex items-center space-x-1.5">
@@ -585,7 +536,8 @@ export const MyAccountScreen: React.FC<MyAccountScreenProps> = ({
                           type="button"
                           onClick={() => handleSetDefault(v.id)}
                           title="Set as default vehicle"
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer"
+                          aria-label={`Make ${v.plate} the default`}
+                          className="p-2 rounded-md text-slate-500 hover:text-brand-700 hover:bg-brand-50 cursor-pointer"
                         >
                           <Star className="w-4 h-4" />
                         </button>
@@ -594,7 +546,8 @@ export const MyAccountScreen: React.FC<MyAccountScreenProps> = ({
                         type="button"
                         onClick={() => handleDeleteVehicle(v.id)}
                         title="Remove vehicle"
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                        aria-label={`Remove ${v.plate}`}
+                        className="p-2 rounded-md text-slate-500 hover:text-rose-700 hover:bg-rose-50 cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -604,20 +557,14 @@ export const MyAccountScreen: React.FC<MyAccountScreenProps> = ({
               </div>
             </div>
 
-            {/* AI Support Hub Shortcut */}
-            <button
-              onClick={onNavigateToSupport}
-              className="w-full bg-white hover:bg-slate-50 rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between text-xs font-black text-slate-900 transition-all"
-            >
-              <div className="flex items-center space-x-2.5">
-                <HelpCircle className="w-4 h-4 text-emerald-600" />
-                <span>AI Support & Ticket Hub</span>
-              </div>
-              <span className="text-slate-400">→</span>
-            </button>
-
-            {/* Sign Out Action */}
-            <div className="pt-2">
+            <nav className="bg-white border border-slate-300 rounded-lg divide-y divide-slate-200" aria-label="More">
+              <button onClick={onNavigateToSupport} className="w-full flex items-center justify-between px-4 py-3.5 text-[15px] font-bold cursor-pointer active:bg-slate-50">
+                <span className="flex items-center gap-2.5">
+                  <HelpCircle className="w-5 h-5 text-slate-500" aria-hidden />
+                  Help and support
+                </span>
+                <ChevronRight className="w-5 h-5 text-slate-400" aria-hidden />
+              </button>
               <button
                 onClick={async () => {
                   if (isDemoMode) {
@@ -631,42 +578,18 @@ export const MyAccountScreen: React.FC<MyAccountScreenProps> = ({
                     onNavigateToHome();
                   }
                 }}
-                className="w-full bg-rose-50 hover:bg-rose-100 text-rose-800 font-extrabold py-3.5 rounded-2xl text-xs flex items-center justify-center space-x-2 border border-rose-200 transition-all"
+                className="w-full flex items-center gap-2.5 px-4 py-3.5 text-[15px] font-bold text-rose-700 cursor-pointer active:bg-rose-50"
               >
-                <LogOut className="w-4 h-4 text-rose-600" />
-                <span>{isDemoMode ? 'Exit Demo Session' : 'Sign Out Account'}</span>
+                <LogOut className="w-5 h-5" aria-hidden />
+                {isDemoMode ? 'Leave demo' : 'Sign out'}
               </button>
-            </div>
+            </nav>
           </>
         )}
 
       </div>
 
-      {/* Bottom App Navigation Bar */}
-      <div className="bg-white border-t border-slate-200 px-8 py-2.5 flex items-center justify-between text-xs font-extrabold text-slate-500 z-20">
-        <button
-          onClick={onNavigateToHome}
-          className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-900"
-        >
-          <Home className="w-5 h-5" />
-          <span>Home</span>
-        </button>
-
-        <button
-          onClick={onNavigateToPasses}
-          className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-900"
-        >
-          <BookOpen className="w-5 h-5" />
-          <span>Passes</span>
-        </button>
-
-        <button
-          className="flex flex-col items-center gap-0.5 text-emerald-900 font-black scale-105"
-        >
-          <UserCheck className="w-5 h-5 text-emerald-700" />
-          <span>Profile</span>
-        </button>
-      </div>
+      <AppTabBar active="profile" onHome={onNavigateToHome} onPasses={onNavigateToPasses} />
 
     </div>
   );

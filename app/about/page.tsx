@@ -24,8 +24,8 @@ export default function AboutPage() {
         
         {/* The Core Problem */}
         <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-md space-y-5">
-          <div className="flex items-center space-x-2 text-emerald-800 font-extrabold text-xs uppercase tracking-wider">
-            <Clock className="w-4 h-4 text-emerald-600" />
+          <div className="flex items-center space-x-2 text-brand-800 font-extrabold text-xs">
+            <Clock className="w-4 h-4 text-brand-600" />
             <span>The Urban Challenge</span>
           </div>
 
@@ -45,8 +45,8 @@ export default function AboutPage() {
         {/* Before vs After Comparison */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-rose-50/70 border border-rose-200/80 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm">
-            <div className="flex items-center space-x-2 text-rose-800 font-black text-sm uppercase tracking-wide">
-              <span>❌ The Street Cruising Way</span>
+            <div className="flex items-center space-x-2 text-rose-800 font-black text-sm">
+              <span>The Street Cruising Way</span>
             </div>
             <ul className="space-y-3 text-xs sm:text-sm text-slate-700 font-medium">
               <li className="flex items-start space-x-2">
@@ -68,25 +68,25 @@ export default function AboutPage() {
             </ul>
           </div>
 
-          <div className="bg-emerald-950 text-white rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl border border-emerald-900">
-            <div className="flex items-center space-x-2 text-emerald-400 font-black text-sm uppercase tracking-wide">
-              <span>✅ The iDAM Smart Way</span>
+          <div className="bg-brand-950 text-white rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl border border-brand-900">
+            <div className="flex items-center space-x-2 text-brand-400 font-black text-sm">
+              <span>The iDAM Smart Way</span>
             </div>
-            <ul className="space-y-3 text-xs sm:text-sm text-emerald-100 font-medium">
+            <ul className="space-y-3 text-xs sm:text-sm text-brand-100 font-medium">
               <li className="flex items-start space-x-2">
-                <span className="text-emerald-400 font-black">•</span>
+                <span className="text-brand-400 font-black">•</span>
                 <span>Search destination in advance on live PostGIS spatial map.</span>
               </li>
               <li className="flex items-start space-x-2">
-                <span className="text-emerald-400 font-black">•</span>
+                <span className="text-brand-400 font-black">•</span>
                 <span>Pick dedicated spot (Car, Bike, EV) with upfront pricing breakdown.</span>
               </li>
               <li className="flex items-start space-x-2">
-                <span className="text-emerald-400 font-black">•</span>
+                <span className="text-brand-400 font-black">•</span>
                 <span>Instant payment with instant cryptographic QR pass on phone.</span>
               </li>
               <li className="flex items-start space-x-2">
-                <span className="text-emerald-400 font-black">•</span>
+                <span className="text-brand-400 font-black">•</span>
                 <span>Navigate straight to slot, scan QR at gate, and park with confidence.</span>
               </li>
             </ul>
@@ -106,7 +106,7 @@ export default function AboutPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-2">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black">
+              <div className="w-10 h-10 rounded-xl bg-brand-100 text-brand-800 flex items-center justify-center font-black">
                 <Compass className="w-5 h-5" />
               </div>
               <h4 className="font-black text-sm text-slate-900">Hyper-Local Spatial Indexing</h4>
@@ -116,7 +116,7 @@ export default function AboutPage() {
             </div>
 
             <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-2">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black">
+              <div className="w-10 h-10 rounded-xl bg-brand-100 text-brand-800 flex items-center justify-center font-black">
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <h4 className="font-black text-sm text-slate-900">Cryptographic Verification</h4>
@@ -126,7 +126,7 @@ export default function AboutPage() {
             </div>
 
             <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-2">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black">
+              <div className="w-10 h-10 rounded-xl bg-brand-100 text-brand-800 flex items-center justify-center font-black">
                 <Building2 className="w-5 h-5" />
               </div>
               <h4 className="font-black text-sm text-slate-900">Empowering Local Owners</h4>
@@ -138,10 +138,10 @@ export default function AboutPage() {
         </div>
 
         {/* Call to Actions */}
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-3xl p-8 sm:p-10 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-3xl p-8 sm:p-10 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="space-y-2 text-center sm:text-left">
             <h3 className="text-2xl font-black">Experience the Future of Parking</h3>
-            <p className="text-xs sm:text-sm text-emerald-100 font-medium">
+            <p className="text-xs sm:text-sm text-brand-100 font-medium">
               Explore live parking spots in Madurai or list your private driveway today.
             </p>
           </div>
@@ -149,13 +149,13 @@ export default function AboutPage() {
           <div className="flex items-center gap-3 shrink-0">
             <Link
               href="/explore"
-              className="bg-white hover:bg-slate-100 text-slate-900 font-black px-5 py-3 rounded-2xl text-xs shadow-md transition-all active:scale-95"
+              className="bg-white hover:bg-slate-100 text-slate-900 font-black px-5 py-3 rounded-2xl text-xs shadow-md transition-all"
             >
               Find Parking
             </Link>
             <Link
               href="/owners"
-              className="bg-slate-950 hover:bg-slate-900 text-white font-black px-5 py-3 rounded-2xl text-xs shadow-md transition-all active:scale-95 border border-emerald-400/40"
+              className="bg-slate-950 hover:bg-slate-900 text-white font-black px-5 py-3 rounded-2xl text-xs shadow-md transition-all border border-brand-400/40"
             >
               For Owners
             </Link>

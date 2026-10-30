@@ -36,7 +36,7 @@ export default function FaqPage() {
       id: 'find-2',
       cat: 'finding',
       q: 'Can I filter parking spots for EV Charging or Two-Wheelers?',
-      a: 'Yes. On the Explore Map, tap the vehicle filter chips (All, Car, Bike, or EV ⚡). EV spots indicate connector availability, while bike bays display specialized two-wheeler rates.'
+      a: 'Yes. On the Explore Map, tap the vehicle filter chips (All, Car, Bike, or EV ). EV spots indicate connector availability, while bike bays display specialized two-wheeler rates.'
     },
     {
       id: 'find-3',
@@ -197,7 +197,7 @@ export default function FaqPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search questions (e.g. refund, QR code, EV, listing, cancellation)..."
-            className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-300 rounded-2xl text-xs sm:text-sm font-semibold text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-300 rounded-2xl text-xs sm:text-sm font-semibold text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
 
@@ -217,7 +217,7 @@ export default function FaqPage() {
                     : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-emerald-400' : 'text-slate-500'}`} />
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-brand-400' : 'text-slate-500'}`} />
                 <span>{c.label}</span>
               </button>
             );
@@ -232,7 +232,7 @@ export default function FaqPage() {
               <p className="text-xs text-slate-500">Try searching with a different keyword or contact our support team directly.</p>
               <Link
                 href="/contact"
-                className="inline-flex items-center space-x-1.5 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-black"
+                className="inline-flex items-center space-x-1.5 px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-black"
               >
                 <span>Contact Support</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -254,7 +254,7 @@ export default function FaqPage() {
                     <span className="pr-4">{faq.q}</span>
                     <ChevronDown
                       className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
-                        isOpen ? 'rotate-180 text-emerald-700' : ''
+                        isOpen ? 'rotate-180 text-brand-700' : ''
                       }`}
                     />
                   </button>
@@ -266,7 +266,7 @@ export default function FaqPage() {
                         <div>
                           <Link
                             href={faq.linkHref}
-                            className="inline-flex items-center space-x-1 text-xs font-black text-emerald-700 hover:text-emerald-900 hover:underline"
+                            className="inline-flex items-center space-x-1 text-xs font-black text-brand-700 hover:text-brand-900 hover:underline"
                           >
                             <span>{faq.linkText}</span>
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -282,17 +282,17 @@ export default function FaqPage() {
         </div>
 
         {/* Still Have Questions Contact Card */}
-        <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="bg-brand-50 border border-brand-200 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="space-y-1.5 text-center sm:text-left">
-            <h3 className="text-xl font-black text-emerald-950">Still Have Questions?</h3>
-            <p className="text-xs sm:text-sm text-emerald-800 font-medium">
+            <h3 className="text-xl font-black text-brand-950">Still Have Questions?</h3>
+            <p className="text-xs sm:text-sm text-brand-800 font-medium">
               Our local Madurai operations team is available 7 days a week to assist drivers and space owners.
             </p>
           </div>
 
           <Link
             href="/contact"
-            className="bg-slate-950 hover:bg-slate-900 text-white font-black px-6 py-3 rounded-2xl text-xs shadow-md transition-all active:scale-95 shrink-0"
+            className="bg-slate-950 hover:bg-slate-900 text-white font-black px-6 py-3 rounded-2xl text-xs shadow-md transition-all shrink-0"
           >
             <span>Send Us a Message</span>
           </Link>

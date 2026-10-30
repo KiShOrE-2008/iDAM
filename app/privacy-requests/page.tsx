@@ -69,7 +69,7 @@ export default function PrivacyRequestsPage() {
         {/* Left explanation card */}
         <div className="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-md space-y-6">
           <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-emerald-600" />
+            <FileText className="w-5 h-5 text-brand-600" />
             Your Statutory Rights
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
@@ -78,7 +78,7 @@ export default function PrivacyRequestsPage() {
 
           <div className="space-y-3">
             <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-start gap-3">
-              <Eye className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+              <Eye className="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5" />
               <div className="text-xs">
                 <strong className="text-slate-900 block font-bold">1. Right to Access</strong>
                 <span className="text-slate-600">Obtain a summary of all personal information, vehicle plates, and booking history linked to your profile.</span>
@@ -86,7 +86,7 @@ export default function PrivacyRequestsPage() {
             </div>
 
             <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-start gap-3">
-              <Edit3 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+              <Edit3 className="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5" />
               <div className="text-xs">
                 <strong className="text-slate-900 block font-bold">2. Right to Correction</strong>
                 <span className="text-slate-600">Correct inaccurate mobile numbers, vehicle registrations, or owner payout records.</span>
@@ -94,7 +94,7 @@ export default function PrivacyRequestsPage() {
             </div>
 
             <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-start gap-3">
-              <Download className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+              <Download className="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5" />
               <div className="text-xs">
                 <strong className="text-slate-900 block font-bold">3. Right to Portability</strong>
                 <span className="text-slate-600">Export your garage vehicle inventory and completed reservation receipts in machine-readable JSON format.</span>
@@ -107,7 +107,7 @@ export default function PrivacyRequestsPage() {
                 <strong className="text-slate-900 block font-bold">4. Right to Erasure</strong>
                 <span className="text-slate-600">
                   Request complete account purge. If you prefer self-service, visit the{' '}
-                  <Link href="/account-deletion" className="text-emerald-700 font-bold underline">
+                  <Link href="/account-deletion" className="text-brand-700 font-bold underline">
                     Account Deletion tool
                   </Link>.
                 </span>
@@ -124,7 +124,7 @@ export default function PrivacyRequestsPage() {
         <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-md">
           {submittedTicket ? (
             <div className="text-center py-8 space-y-4">
-              <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-sm">
+              <div className="w-16 h-16 rounded-3xl bg-brand-100 text-brand-700 flex items-center justify-center mx-auto shadow-sm">
                 <CheckCircle2 className="w-9 h-9" />
               </div>
               <div>
@@ -137,7 +137,7 @@ export default function PrivacyRequestsPage() {
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 max-w-md mx-auto text-left space-y-2 text-xs">
                 <div className="flex justify-between">
                   <span className="text-slate-500">Ticket Reference:</span>
-                  <span className="font-mono font-bold text-slate-900">{submittedTicket.id}</span>
+                  <span className="tabular font-bold text-slate-900">{submittedTicket.id}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Submission Date:</span>
@@ -149,7 +149,7 @@ export default function PrivacyRequestsPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Statutory SLA:</span>
-                  <span className="font-bold text-emerald-700">30 Calendar Days</span>
+                  <span className="font-bold text-brand-700">30 Calendar Days</span>
                 </div>
               </div>
 
@@ -195,7 +195,7 @@ export default function PrivacyRequestsPage() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Enter your registered name"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-medium"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-medium"
                   />
                 </div>
 
@@ -211,7 +211,7 @@ export default function PrivacyRequestsPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="driver@example.com"
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-medium"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-medium"
                     />
                   </div>
                   <div>
@@ -224,7 +224,7 @@ export default function PrivacyRequestsPage() {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="+91 98765 43210"
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-medium"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-medium"
                     />
                   </div>
                 </div>
@@ -237,7 +237,7 @@ export default function PrivacyRequestsPage() {
                     id="pr-type"
                     value={requestType}
                     onChange={(e) => setRequestType(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-medium bg-white"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-medium bg-white"
                   >
                     <option value="access">Access — Summary of Stored Personal Data</option>
                     <option value="correction">Correction — Rectify Plate Number / Profile</option>
@@ -257,7 +257,7 @@ export default function PrivacyRequestsPage() {
                     value={details}
                     onChange={(e) => setDetails(e.target.value)}
                     placeholder="Specify the license plates, booking dates, or account details relevant to your request..."
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-medium resize-none"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm font-medium resize-none"
                   />
                 </div>
               </div>
@@ -265,7 +265,7 @@ export default function PrivacyRequestsPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-black text-xs sm:text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-70"
+                className="w-full py-3.5 px-6 rounded-xl bg-brand-600 hover:bg-brand-700 active:scale-[0.99] text-white font-black text-xs sm:text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-70"
               >
                 {isSubmitting ? (
                   <span>Logging Request...</span>

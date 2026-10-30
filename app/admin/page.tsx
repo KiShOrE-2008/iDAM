@@ -10,9 +10,16 @@ export default function AdminSummaryPage() {
   const [summary, setSummary] = useState<AdminSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Keeps the old numbers on screen while refreshing, so changed tiles tween and flash
   const load = () => {
     setError(null);
-    fetchAdminSummary().then(setSummary).catch((e) => setError(e.message));
+    setRefreshing(true);
+    fetchAdminSummary()
+      .then(setSummary)
+      .catch((e) => setError(e.message))
+      .finally(() => setRefreshing(false));
   };
 
   return (
@@ -20,8 +27,8 @@ export default function AdminSummaryPage() {
       title="Summary"
       subtitle={summary ? `Updated ${formatDateTime(summary.generated_at)}` : 'Your marketplace at a glance'}
       actions={
-        <button onClick={load} className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1">
-          <RefreshCw className="w-3.5 h-3.5" /> Refresh
+        <button onClick={load} disabled={refreshing} className="text-sm font-bold text-slate-600 hover:text-ink flex items-center gap-1.5 border border-slate-300 bg-white rounded-md px-3 py-1.5 disabled:opacity-70 cursor-pointer">
+          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> {refreshing ? 'Refreshing' : 'Refresh'}
         </button>
       }
     >
@@ -41,7 +48,7 @@ function SummaryBody({ summary, error, onMount }: { summary: AdminSummary | null
           {s.listings.pending_review > 0 && (
             <Link
               href="/admin/requests"
-              className="flex items-center justify-between bg-amber-50 border border-amber-300 text-amber-950 rounded-2xl px-4 py-3 text-sm font-bold hover:bg-amber-100"
+              className="row-in flex items-center justify-between bg-amber-50 border-l-4 border-paint text-ink rounded px-4 py-3 text-[15px] font-bold hover:bg-amber-100"
             >
               <span>{s.listings.pending_review} parking {s.listings.pending_review === 1 ? 'space is' : 'spaces are'} waiting for your review</span>
               <ArrowRight className="w-4 h-4" />
@@ -50,10 +57,10 @@ function SummaryBody({ summary, error, onMount }: { summary: AdminSummary | null
 
           <AdminCard title="Money (paid bookings)">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <StatTile label="Today" value={formatInr(s.money.paid_today)} />
-              <StatTile label="Last 7 days" value={formatInr(s.money.paid_7d)} />
-              <StatTile label="Last 30 days" value={formatInr(s.money.paid_30d)} />
-              <StatTile label="All time" value={formatInr(s.money.paid_total)} hint={`iDAM fees ${formatInr(s.money.platform_fees)}`} />
+              <StatTile label="Today" value={Number(s.money.paid_today)} format={formatInr} />
+              <StatTile label="Last 7 days" value={Number(s.money.paid_7d)} format={formatInr} />
+              <StatTile label="Last 30 days" value={Number(s.money.paid_30d)} format={formatInr} />
+              <StatTile label="All time" value={Number(s.money.paid_total)} format={formatInr} hint={`iDAM fees ${formatInr(s.money.platform_fees)}`} />
             </div>
             {Number(s.money.marked_refunded) > 0 && (
               <p className="text-[11px] text-slate-500 mt-3">

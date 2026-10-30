@@ -3,6 +3,7 @@
 // Deployed with --no-verify-jwt: Razorpay authenticates with X-Razorpay-Signature instead.
 import { adminClient, requireEnv } from '../_shared/supabase.ts';
 import { amountInPaise, capturedPaymentFromWebhook, json, verifyWebhookSignature } from '../_shared/razorpay.ts';
+import { processPayout, razorpayKeys } from '../_shared/payoutRunner.ts';
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'METHOD_NOT_ALLOWED' }, 405);
@@ -53,5 +54,9 @@ Deno.serve(async (req) => {
     // 500 makes Razorpay retry later
     return json({ error: 'RECONCILIATION_FAILED' }, 500);
   }
+
+  // Owner's share -> their Razorpay linked account (on hold). A failure here never
+  // un-confirms the booking: the ledger row stays and the hourly sweep retries it.
+  await processPayout(admin, razorpayKeys(), booking.id).catch(err => console.error('Owner payout failed', booking.id, err));
   return json({ received: true });
 });

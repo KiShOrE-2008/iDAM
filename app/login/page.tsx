@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [lang, setLang] = useState<Language>('en');
 
   return (
-    <div className="min-h-screen bg-[#F8F8F5] flex flex-col justify-between font-sans selection:bg-emerald-200 text-slate-900">
+    <div className="min-h-screen bg-limewash flex flex-col justify-between font-sans selection:bg-brand-200 text-slate-900">
       
       <Navbar
         lang={lang}

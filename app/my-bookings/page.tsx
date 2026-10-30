@@ -94,7 +94,7 @@ export default function MyBookingsPage() {
           onOpenOwnerModal={() => {}}
         />
         <main className="max-w-md mx-auto px-4 py-16 text-center space-y-6 flex-1 flex flex-col items-center justify-center">
-          <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto shadow-inner">
+          <div className="w-16 h-16 rounded-3xl bg-brand-100 text-brand-800 flex items-center justify-center mx-auto shadow-inner">
             <Lock className="w-8 h-8" />
           </div>
           <div className="space-y-2">
@@ -106,7 +106,7 @@ export default function MyBookingsPage() {
           <div className="flex items-center space-x-3 w-full pt-2">
             <Link
               href={loginUrlReturningTo('/my-bookings')}
-              className="flex-1 bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 px-6 rounded-2xl text-xs shadow-md transition-all text-center"
+              className="flex-1 bg-brand-950 hover:bg-brand-900 text-white font-bold py-3.5 px-6 rounded-2xl text-xs shadow-md transition-all text-center"
             >
               Sign In
             </Link>
@@ -159,12 +159,12 @@ export default function MyBookingsPage() {
                 placeholder="Enter Pass ID e.g. IDM-82931"
                 value={lookupCode}
                 onChange={(e) => setLookupCode(e.target.value)}
-                className="pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-xs font-mono font-bold uppercase tracking-wider text-gray-900 outline-none focus:ring-2 focus:ring-emerald-700"
+                className="pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-xs tabular font-bold text-gray-900 outline-none focus:ring-2 focus:ring-brand-700"
               />
             </div>
             <button
               type="submit"
-              className="bg-emerald-950 hover:bg-emerald-900 text-white font-bold px-4 py-2 rounded-xl text-xs"
+              className="bg-brand-950 hover:bg-brand-900 text-white font-bold px-4 py-2 rounded-xl text-xs"
             >
               Lookup
             </button>
@@ -175,12 +175,12 @@ export default function MyBookingsPage() {
         <div className="space-y-4">
           {isLoading && activeBookings.length === 0 ? (
             <div className="bg-white p-12 rounded-3xl border border-gray-200 shadow-sm text-center space-y-3">
-              <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="w-10 h-10 border-4 border-brand-600 border-t-transparent rounded-full animate-spin mx-auto" />
               <p className="text-xs text-gray-500 font-medium">Loading your parking passes...</p>
             </div>
           ) : activeBookings.length === 0 ? (
             <div className="bg-white p-12 rounded-3xl border border-gray-200 shadow-sm text-center space-y-4">
-              <div className="w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto shadow-inner">
+              <div className="w-16 h-16 rounded-3xl bg-brand-50 text-brand-800 flex items-center justify-center mx-auto shadow-inner">
                 <QrCode className="w-8 h-8" />
               </div>
               <div className="space-y-1">
@@ -192,7 +192,7 @@ export default function MyBookingsPage() {
               <div className="pt-2">
                 <Link
                   href="/explore"
-                  className="inline-flex items-center space-x-2 bg-emerald-950 hover:bg-emerald-900 text-white font-bold py-3.5 px-6 rounded-2xl text-xs shadow-md transition-all"
+                  className="inline-flex items-center space-x-2 bg-brand-950 hover:bg-brand-900 text-white font-bold py-3.5 px-6 rounded-2xl text-xs shadow-md transition-all"
                 >
                   <span>Explore Parking Spaces</span>
                 </Link>
@@ -213,9 +213,9 @@ export default function MyBookingsPage() {
                   />
                   <div className="space-y-1">
                     <div className="flex items-center space-x-2">
-                      <span className="font-mono font-extrabold text-gray-900 text-sm">{b.passCode}</span>
+                      <span className="tabular font-extrabold text-gray-900 text-sm">{b.passCode}</span>
                       <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
-                        b.status === 'CONFIRMED' ? 'bg-emerald-100 text-emerald-900' : 'bg-gray-100 text-gray-700'
+                        b.status === 'CONFIRMED' ? 'bg-brand-100 text-brand-900' : 'bg-gray-100 text-gray-700'
                       }`}>
                         {b.status}
                       </span>
@@ -241,10 +241,10 @@ export default function MyBookingsPage() {
                 <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100">
                   <div className="text-right">
                     <div className="text-xs text-gray-400">Total Paid</div>
-                    <div className="text-base font-extrabold text-emerald-900">₹{b.amount}</div>
+                    <div className="text-base font-extrabold text-brand-900">₹{b.amount}</div>
                   </div>
 
-                  <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-900 flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-full bg-brand-50 text-brand-900 flex items-center justify-center">
                     <ChevronRight className="w-5 h-5" />
                   </div>
                 </div>

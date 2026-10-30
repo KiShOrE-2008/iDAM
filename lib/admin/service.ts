@@ -4,6 +4,7 @@
  */
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import type { ActivationStatus, PayoutStatus } from '@/lib/owner/payouts';
 
 export interface AdminSummary {
   generated_at: string;
@@ -82,6 +83,20 @@ export interface AdminUser {
   spent: number;
 }
 
+export interface AdminPayouts {
+  totals: { waiting_for_bank: number; to_send: number; on_hold: number; released: number; reversals: number; problems: number };
+  payouts: {
+    booking_id: string; amount: number; gross_amount: number; platform_fee: number; status: PayoutStatus;
+    on_hold_until: string | null; razorpay_transfer_id: string | null; attempts: number; last_error: string | null;
+    released_at: string | null; reversed_at: string | null; created_at: string; updated_at: string;
+    pass_code: string; lot: string | null; owner_name: string | null; owner_email: string | null;
+  }[];
+  owners: {
+    id: string; name: string | null; email: string | null; phone: string | null; activation_status: ActivationStatus;
+    razorpay_account_id: string | null; bank_last4: string | null; last_error: string | null; owed: number;
+  }[];
+}
+
 async function rpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T> {
   if (!isSupabaseConfigured || !supabase) throw new Error('The database is not configured.');
   const { data, error } = await supabase.rpc(fn, args);
@@ -96,6 +111,16 @@ export const fetchAdminAnalytics = (days: number) => rpc<AdminAnalytics>('admin_
 export const fetchAdminBookings = (status: string | null, search: string | null) =>
   rpc<AdminBooking[]>('admin_list_bookings', { p_status: status, p_search: search, p_limit: 200 });
 export const fetchAdminUsers = (search: string | null) => rpc<AdminUser[]>('admin_list_users', { p_search: search, p_limit: 300 });
+
+export const fetchAdminPayouts = (status: string | null) => rpc<AdminPayouts>('admin_payouts', { p_status: status });
+
+/** Sends, releases and reverses every payout that is due (normally done hourly by pg_cron). */
+export async function runPayoutsNow(): Promise<{ processed: number; accounts_changed: number; results: Record<string, number> }> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('The database is not configured.');
+  const { data, error } = await supabase.functions.invoke('process-payouts', { body: {} });
+  if (error) throw new Error('Could not run payouts. Is the process-payouts function deployed?');
+  return data;
+}
 
 export async function reviewSpace(spaceId: string, action: ReviewAction, note?: string) {
   const res = await rpc<{ success: boolean; message?: string; status?: string }>('admin_review_space', {
